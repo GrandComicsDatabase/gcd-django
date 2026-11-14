@@ -99,6 +99,21 @@ def dashboard(request):
                    'agendas': Agenda.objects.all()})
 
 
+def _for_and_against(topic):
+    """
+    The For and Against options of a Pass / Fail or Charter topic, with
+    their vote counts also when they got no votes.  None for other types,
+    or if the options were renamed.
+    """
+    if topic.vote_type.name not in (TYPE_PASS_FAIL, TYPE_CHARTER):
+        return None
+    options = topic.counted_options()
+    try:
+        return options.get(name='For'), options.get(name='Against')
+    except Option.DoesNotExist:
+        return None
+
+
 def _calculate_results(unresolved):
     """
     Given a QuerySet of unresolved topics (with expired deadlines),
@@ -107,7 +122,6 @@ def _calculate_results(unresolved):
     TODO: Handle the case of abstaning being a "winning" option.
     """
 
-    extra = ''
     for topic in unresolved:
         # if topic.agenda.quorum:
             # raise Exception, '%d / %d' % (topic.agenda.quorum, topic.num_voters())
@@ -126,28 +140,33 @@ def _calculate_results(unresolved):
         # election, then there should be only three winners even though there
         # are four or five positions.
 
+        extra = ''
         options = topic.counted_options().filter(num_votes__gt=0)
         num_options = options.count()
+        for_and_against = _for_and_against(topic)
 
-        if topic.vote_type.name == TYPE_CHARTER:
-            # Charter amendments require a 2/3 majority.
-            for_option = options.get(name='For')
-            against_option = options.get(name='Against')
-            total_votes = for_option.num_votes + against_option.num_votes
-            if for_option.num_votes >= (total_votes * (2.0 / 3.0)):
-                for_option.result = True
-                for_option.save()
+        if for_and_against:
+            for_option, against_option = for_and_against
+            if topic.vote_type.name == TYPE_CHARTER:
+                # Charter amendments require a 2/3 majority.
+                total_votes = for_option.num_votes + against_option.num_votes
+                passed = total_votes > 0 and \
+                    for_option.num_votes >= (total_votes * (2.0 / 3.0))
+                extra = ('\n\nPlease note that Charter Amendments require a '
+                         '2/3 majority to pass.')
             else:
-                against_option.result = True
-                against_option.save()
+                # A Pass / Fail motion needs more votes for than against,
+                # so a tie fails.
+                passed = for_option.num_votes > against_option.num_votes
+            winner = for_option if passed else against_option
+            winner.result = True
+            winner.save()
 
             # It's not possible for this sort of measure to tie- it either
-            # reaches the two-thirds threshold or it does not.
+            # passes or it fails.  Abstentions do not count.
             topic.invalid = False
             topic.result_calculated = True
             topic.save()
-            extra = ('\n\nPlease note that Charter Amendments require a 2/3 '
-                     'majority to pass.')
 
         elif not topic.vote_type.max_votes:
             # evaluate Schulze method. First collect votes, than use library.
