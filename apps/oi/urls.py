@@ -25,7 +25,8 @@ register_converter(SignedIntConverter, 'signed_int')
 
 
 urlpatterns = [
-    path('changeset/<int:id>/sequences/migrate/', oi_sequences.migrate_all_credits,
+    path('changeset/<int:id>/sequences/migrate/',
+         oi_sequences.migrate_all_credits,
          name='migrate_all_sequence_credits'),
     path('changeset/<int:id>/sequences/add/', oi_sequences.add_sequence,
          name='add_changeset_sequence'),
