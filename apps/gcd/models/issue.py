@@ -520,11 +520,11 @@ class Issue(GcdData):
 
             if self.is_indexed != is_indexed:
                 self.is_indexed = is_indexed
-                self.save()
+                self.save(update_fields=['is_indexed', 'modified'])
                 if self.active_variants():
                     for variant in self.active_variants():
                         variant.is_indexed = is_indexed
-                        variant.save()
+                        variant.save(update_fields=['is_indexed', 'modified'])
 
         index_delta = 0
         if self.series.is_comics_publication:

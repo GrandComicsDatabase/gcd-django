@@ -339,11 +339,14 @@ def test_ensure_sort_code_space_no_after(multiple_issue_revs):
     # don't matter, and always adding the same amount makes the code simpler.
     # So these end up one higher than necessary, which is correct.
     assert i1.sort_code == 3
-    i1.save.assert_called_once_with()
+    i1.save.assert_called_once_with(
+      update_fields=['sort_code', 'modified'])
     assert i4.sort_code == 4
-    i4.save.assert_called_once_with()
+    i4.save.assert_called_once_with(
+      update_fields=['sort_code', 'modified'])
     assert i5.sort_code == 5
-    i5.save.assert_called_once_with()
+    i5.save.assert_called_once_with(
+      update_fields=['sort_code', 'modified'])
 
 
 def test_ensure_sort_code_space_with_after(multiple_issue_revs):
@@ -361,9 +364,11 @@ def test_ensure_sort_code_space_with_after(multiple_issue_revs):
     assert not i1.save.called
 
     assert i4.sort_code == 3
-    i4.save.assert_called_once_with()
+    i4.save.assert_called_once_with(
+      update_fields=['sort_code', 'modified'])
     assert i5.sort_code == 4
-    i5.save.assert_called_once_with()
+    i5.save.assert_called_once_with(
+      update_fields=['sort_code', 'modified'])
 
 
 def test_ensure_sort_code_space_append_to_series(multiple_issue_revs):
