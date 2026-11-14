@@ -30,6 +30,14 @@ Comparing :: {{ revision }}
 {% endwith %}
       </table>
       <div style="clear: both;"></div>
+      {% if is_story %}
+      <p>
+        <label>
+          <input type="checkbox" name="keep_characters">
+          For Characters, keep those already in Target and add only the others
+        </label>
+      </p>
+      {% endif %}
       <button><input class="btn-blue-editing" type="submit" name="copy_select" value="Copy Selected Values"></button>
       {% if is_story %}
       <button><input class="btn-blue-editing" type="submit" name="copy_select_with_qualifiers" value="Copy Selected Values With Credit Qualifiers"></button>
