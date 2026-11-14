@@ -4567,6 +4567,10 @@ def reserve_reprint(request, changeset_id, reprint_id):
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES['reprint'],
                                     id=reprint_id)
+    if which_side == 'matching_sequence':
+        refusal = _reprint_sequence_refusal(display_obj, changeset)
+        if refusal:
+            return render_error(request, refusal, redirect=False)
     revision_lock = _get_revision_lock(display_obj, changeset)
     if not revision_lock:
         return render_error(
@@ -5326,6 +5330,35 @@ def copy_sequence(request, issue_revision_id, story_id=None,
                                             'id': story_revision.id}))
 
 
+def _matching_sequence_refusal(issue_revision, story):
+    """
+    Return why a copy of story cannot be added to issue_revision, or None.
+
+    A variant holds a single cover sequence, and only if its cover artwork
+    differs from the base issue.
+    """
+    if not issue_revision.variant_of:
+        return None
+    if issue_revision.variant_cover_status != VCS_Codes.ARTWORK_DIFFERENCE:
+        return 'A cover sequence can only be added to a variant if its ' \
+               'cover artwork is different from the base issue.'
+    if story.type_id != STORY_TYPES['cover']:
+        return 'Only a cover sequence can be added to a variant issue.'
+    if issue_revision.active_stories().exists():
+        return 'You cannot add more than one story to a variant issue.'
+    return None
+
+
+def _reprint_sequence_refusal(reprint, changeset):
+    """
+    Return why the sequence for a link cannot be added to changeset, or None.
+
+    The link is either a reprint or a reprint revision.
+    """
+    return _matching_sequence_refusal(changeset.issuerevisions.get(),
+                                      reprint.origin or reprint.target)
+
+
 @permission_required('indexer.can_reserve')
 def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
                              edit=False, qualifier=False):
@@ -5334,13 +5367,16 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
     reprint_revision = get_object_or_404(ReprintRevision,
                                          id=reprint_revision_id)
     changeset = reprint_revision.changeset
-    changeset_issue = changeset.issuerevisions.get()
+    changeset_issue = changeset.issuerevisions.select_for_update().get()
     if request.user != changeset.indexer:
         return render_error(
           request,
           'Only the reservation holder may access this page.')
     if issue != changeset_issue.issue:
         return _cant_get(request)
+    refusal = _matching_sequence_refusal(changeset_issue, story)
+    if refusal:
+        return render_error(request, refusal, redirect=False)
     if request.method != 'POST' and not edit:
         if story == reprint_revision.origin:
             direction = 'from'
@@ -5556,6 +5592,12 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         revision.validate_reprint_link()
     except ValueError as error:
         return render_error(request, str(error), redirect=False)
+
+    if 'matching_sequence' in request.POST or \
+       'matching_sequence_with_qualifiers' in request.POST:
+        refusal = _reprint_sequence_refusal(revision, changeset)
+        if refusal:
+            return render_error(request, refusal, redirect=False)
 
     if story_revision:
         story_revision.save()
