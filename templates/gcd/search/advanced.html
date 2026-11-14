@@ -74,6 +74,7 @@
             {{ form.characters|show_form }}
             {{ form.synopsis|show_form }}
             {{ form.reprint_notes|show_form }}
+            {{ form.reprint_link_notes|show_form }}
             {{ form.story_reprinted|show_form }}
           </ol>
         </fieldset>
@@ -95,6 +96,8 @@
           {{ form.issue_title|show_form }}
           {{ form.variant_name|show_form }}
           {{ form.is_variant|show_form }}
+          {{ form.has_variant_name|show_form }}
+          {{ form.has_variants|show_form }}
           {{ form.issue_date|show_form }}
           {{ form.indicia_frequency|show_form }}
           {{ form.price|show_form }}

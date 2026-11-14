@@ -184,6 +184,16 @@ class AdvancedSearch(forms.Form):
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
+    has_variant_name = forms.NullBooleanField(
+      label='Has a Variant Name', required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
+    has_variants = forms.NullBooleanField(
+      label='Has Variants', required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(label='Issue Pages', required=False)
     issue_pages_uncertain = forms.NullBooleanField(
@@ -278,6 +288,8 @@ class AdvancedSearch(forms.Form):
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
+    reprint_link_notes = forms.CharField(label='Reprint Link Notes',
+                                         required=False)
     story_reprinted = forms.ChoiceField(
       label="Reprinted", required=False,
       choices=[('', ""),
