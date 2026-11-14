@@ -9299,9 +9299,11 @@ class PreviewReceivedAward(ReceivedAward):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class DataSourceRevisionManager(RevisionManager):
@@ -9846,9 +9848,11 @@ class PreviewCreator(Creator):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorRelationRevision(Revision):
@@ -10214,9 +10218,11 @@ class PreviewCreatorSchool(CreatorSchool):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorDegreeRevision(Revision):
@@ -10309,9 +10315,11 @@ class PreviewCreatorDegree(CreatorDegree):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorMembershipRevision(Revision):
@@ -10422,9 +10430,11 @@ class PreviewCreatorMembership(CreatorMembership):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorArtInfluenceRevision(Revision):
@@ -10512,9 +10522,11 @@ class PreviewCreatorArtInfluence(CreatorArtInfluence):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class MultiURLValidator(URLValidator):
@@ -10677,6 +10689,8 @@ class PreviewCreatorNonComicWork(CreatorNonComicWork):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
