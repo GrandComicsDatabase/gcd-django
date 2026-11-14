@@ -1625,7 +1625,7 @@ def used_search(search_values):
         used_search_terms.append(('genre', genres))
         del search_values['genre']
     for i in search_values:
-        if search_values[i] and search_values[i] not in ['None', 'False']:
+        if search_values[i] and search_values[i] != 'None':
             used_search_terms.append((i, search_values[i]))
     return target, method, logic, used_search_terms
 
@@ -1677,6 +1677,7 @@ def process_advanced(request, export_csv=False):
     heading = mark_safe('matching your <a href="#search_terms">query</a>')
 
     context = {'object': target,
+               'target': display_target,
                'heading': heading,
                'plural_suffix': 's',
                'query_string': query_string,
@@ -1916,7 +1917,7 @@ def search_indicia_publishers(data, op):
     """
     target = data['target']
     if data['indicia_publisher'] or data['ind_pub_notes'] or \
-       data['is_surrogate'] or target == 'indicia_publisher':
+       data['is_surrogate'] is not None or target == 'indicia_publisher':
         prefix = compute_prefix(target, 'indicia_publisher')
     else:
         return None
