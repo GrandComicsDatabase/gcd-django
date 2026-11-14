@@ -96,8 +96,8 @@
         {% with changeset.comments as comments %}
           {% include 'oi/bits/comments.html' %}
         {% endwith %}
-<div id="changeset-actions" class="sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2 sm:px-4" role="region" aria-label="Changeset actions">
-  <button class="rounded-md bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800" type="submit" form="changeset-workflow" name="submit">{{ workflow_action_labels.submit }}</button>
+<div id="changeset-actions" class="sticky-action-bar" role="region" aria-label="Changeset actions">
+  <button class="btn-blue-editing" type="submit" form="changeset-workflow" name="submit">{{ workflow_action_labels.submit }}</button>
   {% if sequence_workbench %}
   <button class="btn-blue-editing inline opacity-50" type="button" data-save-sequences disabled title="Save the sequence edits (Ctrl+S)">Save</button>
   {% endif %}

@@ -1323,20 +1323,12 @@ form :is(input, select, textarea) {
   position: relative;
 }
 
-.sticky {
-  position: sticky;
-}
-
 .-right-1 {
   right: -0.25rem;
 }
 
 .-top-1 {
   top: -0.25rem;
-}
-
-.bottom-0 {
-  bottom: 0px;
 }
 
 .left-0 {
@@ -1459,11 +1451,6 @@ form :is(input, select, textarea) {
 .my-3 {
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
-}
-
-.my-4 {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
 }
 
 .my-\[0\.5px\] {
@@ -2393,11 +2380,6 @@ form :is(input, select, textarea) {
   background-color: rgb(37 99 235 / var(--tw-bg-opacity));
 }
 
-.bg-blue-700 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(29 78 216 / var(--tw-bg-opacity));
-}
-
 .bg-cyan-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(34 211 238 / var(--tw-bg-opacity));
@@ -2501,11 +2483,6 @@ form :is(input, select, textarea) {
 .bg-stone-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 244 / var(--tw-bg-opacity));
-}
-
-.bg-stone-200 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(231 229 228 / var(--tw-bg-opacity));
 }
 
 .bg-stone-300 {
@@ -2665,10 +2642,6 @@ form :is(input, select, textarea) {
 
 .pb-2 {
   padding-bottom: 0.5rem;
-}
-
-.pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom\)\)\] {
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
 }
 
 .pe-1 {
@@ -3219,11 +3192,6 @@ select {
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));
 }
 
-.hover\:bg-blue-800:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(30 64 175 / var(--tw-bg-opacity));
-}
-
 .hover\:bg-gray-100:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(243 244 246 / var(--tw-bg-opacity));
@@ -3604,10 +3572,6 @@ select {
 
   .sm\:justify-center {
     justify-content: center;
-  }
-
-  .sm\:gap-2 {
-    gap: 0.5rem;
   }
 
   .sm\:\!px-6 {

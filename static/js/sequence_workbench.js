@@ -172,6 +172,7 @@
       if (focus?.disabled) { form.tabIndex = -1; form.focus({preventScroll: true}); }
       else focus?.focus({preventScroll: true});
       window.scrollTo(scroll);
+      if (rowId) window.location.assign(`/story/revision/${encodeURIComponent(rowId)}/edit/`);
     }
   });
   function postJSON(url, data, keepalive = false) {

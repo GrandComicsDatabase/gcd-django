@@ -1,5 +1,4 @@
 {% load static display %}
-{% with btn="inline-block rounded-md bg-stone-200 px-4 py-2 text-center font-semibold text-black visited:text-black hover:bg-stone-300 hover:no-underline" %}
 {{ sequence_workbench|json_script:"sequence-workbench-data" }}
 <div id="sequence-workbench" data-add-url="{% url 'add_changeset_sequence' id=changeset.id %}" data-save-url="{% url 'save_changeset_sequences' id=changeset.id %}" data-autocomplete-url="{% url 'feature_name_autocomplete' %}" class="min-w-0 space-y-6">
   <p data-error role="alert" class="hidden rounded-md border border-red-300 bg-red-50 p-3 text-red-800"></p>
@@ -7,36 +6,57 @@
 
   {% for issue_revision in changeset.issuerevisions.all %}
   <section data-issue="{{ issue_revision.id }}" data-language="{{ issue_revision.series.language.code }}" class="rounded-lg border border-gray-300 bg-white shadow-sm">
-    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-4">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-1">
       <div>
-        <h2 class="text-2xl font-bold">{% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}<a href="{{ issue_revision.series.get_absolute_url }}">{{ issue_revision.full_name }}</a>{% else %}{{ issue_revision.full_name }}{% endif %}</h2>
+        <h2>{% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}<a href="{{ issue_revision.series.get_absolute_url }}">{{ issue_revision.full_name }}</a>{% else %}{{ issue_revision.full_name }}{% endif %}</h2>
         {% if issue_revision.variant_of %}<p class="text-sm text-gray-500">Variant of {{ issue_revision.variant_of }}</p>{% endif %}
       </div>
       <div class="flex flex-wrap items-center gap-3">
-        <a class="rounded-md bg-blue-700 px-4 py-2 font-semibold text-white visited:text-white hover:bg-blue-800 hover:no-underline" href="{% url 'edit_revision' model_name='issue' id=issue_revision.id %}">Edit Issue Fields</a>
+        <a class="btn-blue-editing visited:text-black" href="{% url 'edit_revision' model_name='issue' id=issue_revision.id %}">Edit Issue Fields</a>
         {% if issue_revision.old_credits %}
-        <form method="POST" action="{% url 'migrate_issue_revision' id=issue_revision.id %}">{% csrf_token %}<button class="{{ btn }}"><span class="text-red-600">Migrate Editing</span></button></form>
+        <form method="POST" action="{% url 'migrate_issue_revision' id=issue_revision.id %}">{% csrf_token %}<button class="btn-blue-editing"><span class="text-red-600">Migrate Editing</span></button></form>
         {% endif %}
-        {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}<a class="{{ btn }}" href="{% url 'add_variant_to_issue_revision' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">Add Variant Issue</a>{% endif %}
+        {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}<a class="btn-blue-editing" href="{% url 'add_variant_to_issue_revision' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">Add Variant Issue</a>{% endif %}
       </div>
     </div>
     {% if issue_revision.issue.get_prev_next_issue.0 or issue_revision.after and not issue_revision.variant_of or issue_revision.variant_of %}
-    <div class="flex flex-wrap gap-3 border-b border-gray-200 p-3">
+    <div class="flex flex-wrap gap-3 border-b border-gray-200 p-1">
       {% if issue_revision.issue.get_prev_next_issue.0 %}
-      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">Compare With &amp; Copy From Preceding Issue</a>
+      <a class="btn-blue-editing" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">Compare With &amp; Copy From Preceding Issue</a>
       {% elif issue_revision.after and not issue_revision.variant_of %}
-      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">Compare With &amp; Copy From Preceding Issue</a>
+      <a class="btn-blue-editing" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">Compare With &amp; Copy From Preceding Issue</a>
       {% elif issue_revision.variant_of.get_prev_next_issue.0 %}
-      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.get_prev_next_issue.0.id %}">Compare With &amp; Copy From Preceding Issue</a>
+      <a class="btn-blue-editing" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.get_prev_next_issue.0.id %}">Compare With &amp; Copy From Preceding Issue</a>
       {% endif %}
       {% if issue_revision.variant_of %}
-      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">Compare With &amp; Copy From Base Issue</a>
+      <a class="btn-blue-editing" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">Compare With &amp; Copy From Base Issue</a>
       {% endif %}
     </div>
     {% endif %}
     {% if issue_revision.variant_of %}
     <p class="border-b border-gray-200 p-3 text-sm text-gray-600">A cover sequence can be added in case the cover artwork is different between variant and base. Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.</p>
     {% endif %}
+    <div class="flex flex-wrap items-center gap-3 border-b border-gray-200 p-1">
+      {% if issue_revision.issue or issue_revision.variant_of %}
+        {% if not issue_revision.variant_of or issue_revision.variant_cover_status == 3 and not issue_revision.ordered_story_revisions.count %}
+      <form class="flex flex-wrap gap-3" method="GET" action="{% url 'add_story' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+        <input type="hidden" name="added_sequence_number" data-next-sequence value="{{ issue_revision.next_sequence_number }}">
+        <button type="submit" class="btn-blue-editing"><input type="submit" id="add_story" name="add" value="Add Sequence"></button>
+        <button type="button" data-add-sequence class="btn-blue-editing">+ Add Sequence</button>
+        {% if not issue_revision.variant_of %}<button type="submit" name="copy" class="btn-blue-editing">Copy Sequences</button>
+        {% elif issue_revision.issue %}<button type="submit" name="copy_cover" class="btn-blue-editing">Copy Cover Sequence</button>{% endif %}
+      </form>
+        {% endif %}
+      {% endif %}
+      {% if issue_revision.source and changeset.change_type == CTYPES.issue %}
+      <a class="btn-blue-editing" href="{% url 'list_issue_reprints' id=issue_revision.id %}">Edit Issue &amp; Sequence Reprint Links</a>
+        {% if issue_revision.can_add_reprints %}<a class="btn-blue-editing" href="{% url 'add_issue_reprint' issue_id=issue_revision.id changeset_id=changeset.id %}">Add Reprint</a>{% endif %}
+      {% endif %}
+      <form data-migrate-credits method="POST" action="{% url 'migrate_all_sequence_credits' id=changeset.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-blue-editing"><span class="text-red-600">Migrate All Credits <span data-migration-count></span></span></button>
+      </form>
+    </div>
     <div class="min-w-0">
       <table class="block w-full text-left text-sm lg:table lg:table-fixed">
         <colgroup class="hidden lg:table-column-group"><col class="w-56"><col><col class="w-[20%]"><col class="w-[15%]"><col class="w-[7%]"><col class="w-[9%]"><col class="w-[8%]"></colgroup>
@@ -53,26 +73,6 @@
     </div>
     <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 p-4 text-sm"><span data-total class="font-semibold" aria-live="polite"></span><span data-page-check></span></div>
 
-    <div class="flex flex-wrap items-center gap-3 border-t border-gray-200 p-3">
-      {% if issue_revision.issue or issue_revision.variant_of %}
-        {% if not issue_revision.variant_of or issue_revision.variant_cover_status == 3 and not issue_revision.ordered_story_revisions.count %}
-      <form class="flex flex-wrap gap-3" method="GET" action="{% url 'add_story' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
-        <input type="hidden" name="added_sequence_number" data-next-sequence value="{{ issue_revision.next_sequence_number }}">
-        <button type="button" data-add-sequence class="rounded-md bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">+ Add Sequence</button>
-        {% if not issue_revision.variant_of %}<button type="submit" name="copy" class="{{ btn }}">Copy Sequences</button>
-        {% elif issue_revision.issue %}<button type="submit" name="copy_cover" class="{{ btn }}">Copy Cover Sequence</button>{% endif %}
-      </form>
-        {% endif %}
-      {% endif %}
-      {% if issue_revision.source and changeset.change_type == CTYPES.issue %}
-      <a class="{{ btn }}" href="{% url 'list_issue_reprints' id=issue_revision.id %}">Edit Issue &amp; Sequence Reprint Links</a>
-        {% if issue_revision.can_add_reprints %}<a class="{{ btn }}" href="{% url 'add_issue_reprint' issue_id=issue_revision.id changeset_id=changeset.id %}">Add Reprint</a>{% endif %}
-      {% endif %}
-      <form data-migrate-credits method="POST" action="{% url 'migrate_all_sequence_credits' id=changeset.id %}">
-        {% csrf_token %}
-        <button type="submit" class="{{ btn }}"><span class="text-red-600">Migrate all credits <span data-migration-count></span></span></button>
-      </form>
-    </div>
     <div class="space-y-3 border-t border-gray-200 p-4">
       {% if issue_revision.issue and not issue_revision.variant_of %}
         {% if not changeset.storyrevisions.count %}
@@ -98,7 +98,7 @@
       <form class="flex flex-wrap items-center gap-2" method="GET" action="{% url 'move_issue' issue_revision_id=issue_revision.id series_id=0 %}">
         <label for="move-series-{{ issue_revision.id }}" class="text-sm">Move to Series ID</label>
         <input id="move-series-{{ issue_revision.id }}" type="number" min="1" required name="series_id" class="w-24 rounded-md border-gray-300" title="Series ID from /series/ID/. Brand and indicia publisher may reset.">
-        <button class="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50" type="submit">Move</button>
+        <button class="btn-blue-editing" type="submit">Move</button>
       </form>
     </div>
   </section>
@@ -106,8 +106,7 @@
 </div>
 {% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
   {% for cover in changeset.coverrevisions.all %}<div class="mt-2">{{ cover.cover|cover_image_tag:'1, moved_cover' }} Cover is moved from {{ cover.issue }}.<form action="{% url 'undo_move_cover' id=changeset.id cover_id=cover.id %}" method="POST">{% csrf_token %}<button class="btn-blue-editing">Undo Cover Move</button></form></div>{% endfor %}
-  {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}<a class="{{ btn }}" href="{% url 'move_cover' id=changeset.id %}">Move Covers Between Both Issues</a>{% endif %}
+  {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}<a class="btn-blue-editing" href="{% url 'move_cover' id=changeset.id %}">Move Covers Between Both Issues</a>{% endif %}
 {% endif %}
-<p class="my-4 flex flex-wrap gap-3"><a class="{{ btn }}" href="{% url 'compare' id=changeset.id %}">Compare Changes</a>{% for issue_revision in changeset.issuerevisions.all %} <a class="{{ btn }}" href="{% url 'preview_revision' model_name='issue' id=issue_revision.id %}" target="_blank" rel="noopener">Preview{% if issue_revision.variant_of %} (Variant){% endif %}</a>{% endfor %}</p>
-{% endwith %}
+<p class="my-2 flex flex-wrap gap-3"><a class="btn-blue-editing visited:text-black" href="{% url 'compare' id=changeset.id %}">Compare Changes</a>{% for issue_revision in changeset.issuerevisions.all %} <a class="btn-blue-editing visited:text-black new_window" href="{% url 'preview_revision' model_name='issue' id=issue_revision.id %}" target="_blank" rel="noopener">Preview{% if issue_revision.variant_of %} (Variant){% endif %}</a>{% endfor %}</p>
 <script src="{% static 'js/sequence_workbench.js' %}" defer></script>
