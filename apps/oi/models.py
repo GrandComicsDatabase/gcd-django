@@ -3602,6 +3602,10 @@ class SeriesRevision(Revision):
                 self.save()
                 self.series.notes = ''
                 self.series.save()
+            if self.keywords:
+                self.keywords = ''
+                self.save()
+                self.series.keywords.clear()
             # We assume that a non-four-digit year is a typo of some
             # sort, and do not propagate it.  The approval process
             # should catch that sort of thing.
