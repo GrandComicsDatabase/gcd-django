@@ -17,6 +17,7 @@ from django.urls import reverse, NoReverseMatch
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, QueryDict
 from django.core import signing
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
@@ -525,6 +526,27 @@ def reserve(request, id, model_name, delete=False,
         raise
 
 
+def _lock_current(display_obj, changeset=None):
+    """
+    Take the lock of display_obj and read the object again, as an approval
+    frees the lock before it writes the object and commits.  Return the
+    lock, or None if another change holds it, or if the object was
+    deleted or removed by then, in which case no lock is kept.
+    """
+    revision_lock = _get_revision_lock(display_obj, changeset)
+    if revision_lock is None:
+        return None
+    try:
+        display_obj.refresh_from_db()
+        gone = getattr(display_obj, 'deleted', False)
+    except ObjectDoesNotExist:
+        gone = True
+    if gone:
+        revision_lock.delete()
+        return None
+    return revision_lock
+
+
 def _do_reserve(indexer, display_obj, model_name, delete=False,
                 changeset=None):
     """
@@ -532,12 +554,14 @@ def _do_reserve(indexer, display_obj, model_name, delete=False,
     Returns either the changeset, False (when indexer cannot reserve more)
     or None (when something goes wrong). The revision_lock is deleted for
     both False and None as return values.
+    The revision starts from the object as it is once its lock is taken;
+    an object deleted or removed by then gives None.
     """
     if model_name != 'cover' and (delete is False or indexer.indexer.is_new)\
        and indexer.indexer.can_reserve_another() is False:
         return False
 
-    revision_lock = _get_revision_lock(display_obj)
+    revision_lock = _lock_current(display_obj)
     if not revision_lock:
         return None
 
@@ -2193,7 +2217,7 @@ def edit_issues_in_bulk(request):
             if form.is_valid():
                 cd_credits.append(form.cleaned_data)
     for issue in items:
-        revision_lock = _get_revision_lock(issue, changeset)
+        revision_lock = _lock_current(issue, changeset)
         if revision_lock:
             revision = IssueRevision.clone(issue, changeset=changeset)
             for field in initial:
@@ -4572,7 +4596,7 @@ def reserve_reprint(request, changeset_id, reprint_id):
         refusal = _reprint_sequence_refusal(display_obj, changeset)
         if refusal:
             return render_error(request, refusal, redirect=False)
-    revision_lock = _get_revision_lock(display_obj, changeset)
+    revision_lock = _lock_current(display_obj, changeset)
     if not revision_lock:
         return render_error(
           request,
@@ -6083,7 +6107,7 @@ def move_cover(request, id, cover_id=None):
           request, 'Covers cannot be moved to a variant with the variant '
                    'cover status "No Difference".')
 
-    revision_lock = _get_revision_lock(cover, changeset)
+    revision_lock = _lock_current(cover, changeset)
     if not revision_lock:
         return render_error(
           request, 'Cannot move the cover as it is already reserved.')
