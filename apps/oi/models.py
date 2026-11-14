@@ -4553,6 +4553,15 @@ class IssueRevision(Revision):
                                                cover=cover, deleted=True)
                 cover_revision.save()
 
+    def _adjust_stats(self, changes, old_counts, new_counts):
+        if self.deleted:
+            # The story and cover revisions of this changeset are committed
+            # after this one and remove their own counts. The last story
+            # also removes the issue index count.
+            old_counts = {k: v for k, v in old_counts.items()
+                          if k not in ('stories', 'covers', 'issue indexes')}
+        super()._adjust_stats(changes, old_counts, new_counts)
+
     def _handle_dependents(self, changes):
         # These story revisions will handle their own stats when committed.
         # They will also update the issue's is_indexed field.
