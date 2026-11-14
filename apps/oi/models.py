@@ -6854,6 +6854,8 @@ class StoryRevision(Revision):
 
     @property
     def my_issue_revision(self):
+        # For a variant-add (inside an existing issue changeset or on its own)
+        # we get the issue revision of the variant via None for self.issue.
         if not hasattr(self, '_saved_my_issue_revision'):
             self._saved_my_issue_revision = \
                 self.changeset.issuerevisions.filter(issue=self.issue)[0]
