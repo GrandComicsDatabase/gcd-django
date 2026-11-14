@@ -2761,6 +2761,22 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     def _do_complete_added_revision(self, parent):
         self.parent = parent
 
+    def _pre_commit_check(self):
+        """
+        Refuse to delete an indicia publisher that issues, or changes of
+        issues, use now: they may have come since the deletion was asked
+        for.  The row is locked first, so that a change writing a link to
+        it ends before it is read again.
+        """
+        if self.deleted:
+            indicia_publisher = IndiciaPublisher.objects \
+              .select_for_update().get(id=self.indicia_publisher_id)
+            if indicia_publisher.has_dependents():
+                raise ErrorWithMessage(
+                  'This indicia publisher cannot be deleted while issues, '
+                  'or changes of issues, use it; please discard this '
+                  'change.')
+
     def get_absolute_url(self):
         if self.indicia_publisher is None:
             return "/indicia_publisher/revision/%i/preview" % self.id
