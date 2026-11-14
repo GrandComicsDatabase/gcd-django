@@ -7005,12 +7005,16 @@ class StoryRevision(Revision):
             if not getattr(self, attr) and field_name in (name, no_name):
                 setattr(self, attr, True)
 
-                # Just putting in a question mark isn't worth an IMP.
+                # Just putting in a question mark isn't worth an IMP,
+                # replacing a value with it is.
                 # Note that the input data is already whitespace-stripped.
                 # Changed StoryCredits give also positive is_changed and
                 # therefore corresponding IMP here.
                 if field_name == name and getattr(self, field_name) == '?':
-                    if self.story_credit_revisions.exists() == 0:
+                    previous = self.previous()
+                    if self.story_credit_revisions.exists() == 0 and \
+                       not (previous and
+                            getattr(previous, field_name) not in ('', '?')):
                         return 0
                 return 1
         return 0
