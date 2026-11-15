@@ -12,7 +12,7 @@
         {% if issue_revision.variant_of %}<p class="text-sm text-gray-500">Variant of {{ issue_revision.variant_of }}</p>{% endif %}
       </div>
       <div class="flex flex-wrap items-center gap-3">
-        <a class="btn-blue-editing visited:text-black" href="{% url 'edit_revision' model_name='issue' id=issue_revision.id %}">Edit Issue Fields</a>
+        <a class="btn-blue-editing" href="{% url 'edit_revision' model_name='issue' id=issue_revision.id %}">Edit Issue Fields</a>
         {% if issue_revision.old_credits %}
         <form method="POST" action="{% url 'migrate_issue_revision' id=issue_revision.id %}">{% csrf_token %}<button class="btn-blue-editing"><span class="text-red-600">Migrate Editing</span></button></form>
         {% endif %}
@@ -108,5 +108,10 @@
   {% for cover in changeset.coverrevisions.all %}<div class="mt-2">{{ cover.cover|cover_image_tag:'1, moved_cover' }} Cover is moved from {{ cover.issue }}.<form action="{% url 'undo_move_cover' id=changeset.id cover_id=cover.id %}" method="POST">{% csrf_token %}<button class="btn-blue-editing">Undo Cover Move</button></form></div>{% endfor %}
   {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}<a class="btn-blue-editing" href="{% url 'move_cover' id=changeset.id %}">Move Covers Between Both Issues</a>{% endif %}
 {% endif %}
-<p class="my-2 flex flex-wrap gap-3"><a class="btn-blue-editing visited:text-black" href="{% url 'compare' id=changeset.id %}">Compare Changes</a>{% for issue_revision in changeset.issuerevisions.all %} <a class="btn-blue-editing visited:text-black new_window" href="{% url 'preview_revision' model_name='issue' id=issue_revision.id %}" target="_blank" rel="noopener">Preview{% if issue_revision.variant_of %} (Variant){% endif %}</a>{% endfor %}</p>
+<p class="my-2 flex flex-wrap gap-3">
+  <a class="btn-blue-editing" href="{% url 'compare' id=changeset.id %}">Compare Changes</a>
+{% for issue_revision in changeset.issuerevisions.all %}
+  <a class="btn-blue-editing new_window bg-[position:right_8px_center] pr-8" href="{% url 'preview_revision' model_name='issue' id=issue_revision.id %}" target="_blank" rel="noopener">Preview{% if issue_revision.variant_of %} (Variant){% endif %}</a>
+{% endfor %}
+</p>
 <script src="{% static 'js/sequence_workbench.js' %}" defer></script>
