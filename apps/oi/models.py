@@ -1922,6 +1922,10 @@ class Revision(models.Model):
         its row would put back older values that another request may
         have committed in the meantime.
         """
+        # update_cached_counts() sets each count that it changes to an F()
+        # expression, such as F('issue_count') + 1, and touches no other
+        # field: the others keep the plain values read from the database.
+        # So the fields that hold an expression are the counts to write.
         counts = [field.name for field in parent._meta.concrete_fields
                   if hasattr(getattr(parent, field.attname),
                              'resolve_expression')]
