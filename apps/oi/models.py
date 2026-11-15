@@ -3315,7 +3315,7 @@ class CoverRevision(Revision):
             if cover.issue.series.scan_count == 0:
                 series = cover.issue.series
                 series.has_gallery = False
-                series.save()
+                series.save(update_fields=['has_gallery', 'modified'])
             return
 
         if self.cover and self.is_replacement is False:
@@ -3340,10 +3340,12 @@ class CoverRevision(Revision):
                                      country=issue_rev.series.country)
                     if not issue_rev.series.has_gallery:
                         issue_rev.series.has_gallery = True
-                        issue_rev.series.save()
+                        issue_rev.series.save(
+                            update_fields=['has_gallery', 'modified'])
                     if old_issue.series.scan_count == 0:
                         old_issue.series.has_gallery = False
-                        old_issue.series.save()
+                        old_issue.series.save(
+                            update_fields=['has_gallery', 'modified'])
             else:
                 # implement in case we do different kind if cover moves
                 raise NotImplementedError
@@ -3358,7 +3360,7 @@ class CoverRevision(Revision):
                 if not cover.issue.series.has_gallery:
                     series = cover.issue.series
                     series.has_gallery = True
-                    series.save()
+                    series.save(update_fields=['has_gallery', 'modified'])
             copy_approved_cover(self)
             cover.marked = self.marked
             cover.last_upload = self.changeset.comments \
