@@ -13,11 +13,12 @@ from django.db import connection, connections, transaction
 from django.test import Client
 from django.urls import reverse
 
-from apps.gcd.models import Series
+from apps.gcd.models import Publisher, Series
 from apps.indexer.models import Indexer
 from apps.oi import states
 from apps.oi.models import (
-    Changeset, IssueRevision, CTYPES, _get_revision_lock)
+    Changeset, IssueRevision, PublisherRevision, SeriesRevision, CTYPES,
+    _get_revision_lock)
 from apps.stats.models import CountStats
 
 
@@ -189,3 +190,44 @@ def test_an_edit_approved_during_an_add_keeps_the_new_last_issue(
     added.refresh_from_db()
     series = Series.objects.get(id=any_added_issue.series_id)
     assert series.last_issue_id == added.issue_id
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize('parent', ['series', 'publisher'])
+def test_an_edit_of_a_parent_approved_during_an_add_keeps_its_counts(
+        statistics, parent, any_added_issue, issue_add_values, any_indexer,
+        editor):
+    """
+    An edit of the series, or of its publisher, approved while the add of
+    an issue of the series commits: the edited row keeps the issue count
+    of the add, and the publisher counts the issue once.
+    """
+    series = Series.objects.get(id=any_added_issue.series_id)
+    publisher = Publisher.objects.get(id=series.publisher_id)
+    series_count, publisher_count = series.issue_count, publisher.issue_count
+    added = _added_after(any_added_issue, any_indexer, issue_add_values)
+    if parent == 'series':
+        edit = _change(any_indexer, series, SeriesRevision, CTYPES['series'],
+                       notes='Edited notes')
+    else:
+        edit = _change(any_indexer, publisher, PublisherRevision,
+                       CTYPES['publisher'], notes='Edited notes')
+    approver = _assigned(editor, edit)
+
+    with _held(lambda: _commit(added)):
+        thread, result = _approval_started(approver, edit)
+        _wait_for_lock_wait('gcd_%s' % parent)
+    thread.join(60)
+
+    assert result['response'].status_code == 302
+    added.refresh_from_db()
+    series.refresh_from_db()
+    publisher.refresh_from_db()
+    if parent == 'series':
+        assert series.issue_count == series_count + 1
+        assert series.last_issue_id == added.issue_id
+        assert series.notes == 'Edited notes'
+        assert publisher.issue_count == publisher_count + 1
+    else:
+        assert publisher.issue_count == publisher_count + 1
+        assert publisher.notes == 'Edited notes'
