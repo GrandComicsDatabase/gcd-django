@@ -199,7 +199,7 @@ def set_series_first_last(series):
     else:
         series.first_issue = issues[0]
         series.last_issue = issues[len(issues) - 1]
-    series.save()
+    series.save(update_fields=['first_issue', 'last_issue', 'modified'])
 
 
 def validated_isbn(entered_isbn):
@@ -4335,7 +4335,7 @@ class IssueRevision(Revision):
 
         for later_issue in later_issues:
             later_issue.sort_code += num_issues
-            later_issue.save()
+            later_issue.save(update_fields=['sort_code', 'modified'])
 
     def _handle_prerequisites(self, changes):
         if self.edited and not self.series_changed:

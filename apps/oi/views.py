@@ -6505,6 +6505,19 @@ def reorder_characters(request, character_order_id):
         return vte.response
 
 
+def _save_sort_field(child, sort_field):
+    """
+    Save only sort_field of child, and the time of the change if it keeps
+    one: its row was read earlier, so the other columns may be older than
+    what another request has committed.
+    """
+    fields = [sort_field]
+    if any(field.name == 'modified'
+           for field in child._meta.concrete_fields):
+        fields.append('modified')
+    child.save(update_fields=fields)
+
+
 def _reorder_children(request, parent, children, sort_field, child_set,
                       commit, unique=True, skip=None, extras=None):
     """
@@ -6570,7 +6583,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
                 current_code += 1
         if commit:
             setattr(child, sort_field, current_code)
-            child.save()
+            _save_sort_field(child, sort_field)
         else:
             child_list.append((child, current_code))
         current_code += 1
@@ -6582,7 +6595,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
     if commit and extras:
         for child in extras:
             setattr(child, sort_field, current_code)
-            child.save()
+            _save_sort_field(child, sort_field)
             current_code += 1
 
     return child_list
