@@ -2506,6 +2506,10 @@ form :is(input, select, textarea) {
   background-color: rgb(250 204 21 / var(--tw-bg-opacity));
 }
 
+.bg-\[position\:right_8px_center\] {
+  background-position: right 8px center;
+}
+
 .fill-black {
   fill: #000;
 }
@@ -2656,6 +2660,10 @@ form :is(input, select, textarea) {
 
 .pr-4 {
   padding-right: 1rem;
+}
+
+.pr-8 {
+  padding-right: 2rem;
 }
 
 .ps-1 {
