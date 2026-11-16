@@ -47,6 +47,8 @@ urlpatterns = [
     # Creator URLs
     path('creator/add/',
      oi_views.add_creator, name='add_creator'),
+    path('creator_name/<int:creator_name_id>/move/',
+         oi_views.move_creator_name, name='move_creator_name'),
     path('creator/<int:creator_id>/award/add/',
      oi_views.add_creator_award, name='add_creator_award'),
     path('creator/<int:creator_id>/influence/add/',

@@ -54,7 +54,7 @@ from .creator import (    # noqa
     CreatorMembershipRevisionForm, CreatorRevisionFormSet,
     CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm,
     CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
-    CreatorSignatureRevisionForm,
+    CreatorSignatureRevisionForm, MoveCreatorNameForm,
     get_creator_art_influence_revision_form,
     get_creator_membership_revision_form, get_creator_revision_form,
     get_creator_non_comic_work_revision_form,

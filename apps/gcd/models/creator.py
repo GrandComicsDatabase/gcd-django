@@ -131,6 +131,24 @@ class CreatorNameDetail(GcdData):
     in_script = models.ForeignKey(Script, on_delete=models.CASCADE,
                                   default=Script.LATIN_PK)
 
+    def can_move_to_other_creator(self):
+        """
+        Only a plain other name can go to another creator. House, studio,
+        ghost and joint names stand for a relation between creators, and the
+        signature on a credit belongs to the creator who has the name now.
+        The same goes for relations and signatures still in the queue.
+        """
+        relation_types = [NAME_TYPES[name] for name in ('house', 'studio',
+                                                        'ghost', 'joint')]
+        return not (self.is_official_name or
+                    self.type_id in relation_types or
+                    self.creator_relation.filter(deleted=False).exists() or
+                    self.creator_relation_revisions.active_set().exists() or
+                    self.storycredit_set.filter(
+                      deleted=False, signature__isnull=False).exists() or
+                    self.storycreditrevision_set.active_set().exclude(
+                      signature__isnull=True, signed_as='').exists())
+
     def display_credit(self, credit, url=True, compare=False, search=False,
                        show_sources=False):
         co_name = ''
@@ -495,6 +513,10 @@ class Creator(GcdData):
             return True
         if self.creator_names.filter(
           issuecreditrevision__changeset__state__in=states.ACTIVE).exists():
+            return True
+        # a name of another creator on its way to this one
+        if self.name_revisions.active_set().exclude(
+          creator_name_detail__creator=self).exists():
             return True
         if self.art_influence_revisions.active_set().exists():
             return True
