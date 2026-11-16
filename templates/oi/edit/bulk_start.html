@@ -9,16 +9,21 @@ GCD :: Bulk Change
 Bulk change
 </h1>
 <p>
+{% if changeset %}
+Selection: the {{ selection }} of
+<a href="{% url 'compare' id=changeset.id %}">change {{ changeset.id }}</a>.
+{% else %}
 Selection: {{ selection }} from
 <a href="{{ source }}">this list</a>{% if deleted %};
 {{ deleted }} deleted since{% endif %}.
+{% endif %}
 </p>
 <p>
 Choose a field and press Preview to see its values.  Then choose the
 old value, the operation and the new value, and press Preview again.
 </p>
 <form action="{% url 'edit_issues_in_bulk' %}" method="GET">
-  <input type="hidden" name="token" value="{{ token }}">
+  <input type="hidden" name="{{ page_param }}" value="{{ page_value }}">
   <table class="editing">
   {{ form.as_table }}
   </table>
@@ -75,6 +80,19 @@ Changes to {{ form.field_label }}: {{ bulk_preview.changed }} of
   </ul>
 </details>
   {% endif %}
+  {% if bulk_preview.leaving %}
+<details>
+  <summary>
+  Back to their present values, so they leave this change:
+  {{ bulk_preview.leaving|length }}
+  </summary>
+  <ul class="list-disc ps-4">
+    {% for data_object in bulk_preview.leaving %}
+    <li><a href="{{ data_object.get_absolute_url }}">{{ data_object }}</a></li>
+    {% endfor %}
+  </ul>
+</details>
+  {% endif %}
   {% if bulk_preview.rows %}
 <table class="max-w-[calc(100vw-0.5rem)] border border-gray-200 max-w-full">
 <tr class="bg-blue-100 [&>th]:px-1.5">
@@ -91,18 +109,26 @@ Changes to {{ form.field_label }}: {{ bulk_preview.changed }} of
     {% endfor %}
 </table>
   {% endif %}
-  {% if bulk_preview.changed %}
-<form action="{% url 'edit_issues_in_bulk' %}?token={{ token }}" method="POST">
+  {% if bulk_preview.left_empty %}
+<p>
+That would leave this bulk change without objects. To give it up, please
+discard it.
+</p>
+  {% elif bulk_preview.changed %}
+<form action="{% url 'edit_issues_in_bulk' %}?{{ page_param }}={{ page_value }}"
+      method="POST">
   {% csrf_token %}
     {% for field in form %}
   <input type="hidden" name="{{ field.html_name }}"
          value="{{ field.value|default_if_none:'' }}">
     {% endfor %}
   <button class="btn-blue-editing inline" type="submit">Apply</button>
-  Reserves {% if bulk_preview.changed == 1 %}this {{ object_label }}
+  {% if changeset %}Changes{% else %}Reserves{% endif %}
+  {% if bulk_preview.changed == 1 %}this {{ object_label }}
   {% else %}these {{ bulk_preview.changed }} {{ objects_label }}
-  {% endif %} in one change, not yet submitted. Any {{ object_label }} that
-  fails the checks of its edit form is left out.
+  {% endif %} in {% if changeset %}this{% else %}one{% endif %} change, not
+  yet submitted. Any {{ object_label }} that fails the checks of its edit
+  form is left out.
 </form>
   {% endif %}
 {% endif %}

@@ -12,7 +12,7 @@ from django.forms import HiddenInput, MultipleHiddenInput
 import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
 from django.core import signing
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404, render, redirect
@@ -1745,6 +1745,9 @@ def process(request, id):
     if 'add_comment' in request.POST:
         return add_comments(request, id)
 
+    if 'bulk_remove' in request.POST:
+        return _bulk_remove(request, id)
+
     return render_error(
       request, 'Unknown action requested!  Please try again. '
       'If this error message persists, please contact an Editor.')
@@ -1794,16 +1797,27 @@ def _bulk_compare(request, changeset):
     """
     Show a bulk change: one row for each changed field of each changed
     object, BULK_CHANGE_MAX objects to a page, then the comments and the
-    actions of any change.
+    actions of any change.  Its author can add an operation while it is
+    open and passes the check of a submission, else the page says why in
+    place of the link, from the checks that need no edit form, as it is
+    shown at each view; the page of the operation makes the full check.
+    The author can also take objects out of it while it holds more than
+    one.
     """
     name, revisions = changeset.bulk_target()
-    context = {'changeset': changeset, 'states': states}
+    can_change = bulk.change_refusal(request.user, changeset) is None
+    context = {'changeset': changeset, 'states': states,
+               'can_change': can_change}
     if name is None:
         context['heading'] = 'no objects'
         revisions = changeset.issuerevisions.none()
     else:
         context['heading'] = bulk.compare_heading(name, revisions)
-        context['object_label'] = BULK_OBJECT_NAMES[name][0]
+        context['object_label'], context['objects_label'] = \
+            BULK_OBJECT_NAMES[name]
+        context['can_remove'] = can_change and revisions.count() > 1
+        context['no_operation'] = can_change and \
+            bulk.operation_refusal(changeset, forms=False)
     page = ResponsePaginator(revisions, vars=context,
                              per_page=settings.BULK_CHANGE_MAX) \
         .paginate(request)
@@ -1812,6 +1826,39 @@ def _bulk_compare(request, changeset):
     response['Cache-Control'] = ('no-cache, no-store, max-age=0,'
                                  ' must-revalidate')
     return response
+
+
+def _bulk_operation_page(request, rev_class, model, ids, param, value):
+    """
+    Return the form of an operation of a bulk change, its field and the
+    context of its page, for the rows of model with these ids: objects
+    or, for a change that exists, its revisions.  rev_class says which
+    fields it offers; the query parameter param with value leads back to
+    the page.
+    """
+    publisher = bulk.single_publisher(model, ids)
+    names = offered_fields(rev_class, publisher)
+    params = request.POST if request.method == 'POST' else request.GET
+    name = params.get('field')
+    if name not in names:
+        name = names[0]
+    values = bulk.distinct_values(model, ids, name)
+    data = params if params.get('shown') == name else None
+    form = BulkOperationForm(data, rev_class, name,
+                             values[:bulk.LISTED_VALUES], publisher)
+
+    # A changeset names its revisions of a class '<class>s'.
+    singular, plural = BULK_OBJECT_NAMES[rev_class._meta.model_name + 's']
+    return form, name, {
+      'form': form,
+      'page_param': param,
+      'page_value': value,
+      'selection': '%d %s' % (len(ids), singular if len(ids) == 1
+                              else plural),
+      'object_label': singular,
+      'objects_label': plural,
+      'more_values': max(0, len(values) - bulk.LISTED_VALUES),
+    }
 
 
 def _bulk_start(request, token):
@@ -1831,31 +1878,9 @@ def _bulk_start(request, token):
     if bulk.selection_applied(request.user, token):
         return render_error(request, bulk.APPLIED_ALREADY, redirect=False)
     model, ids, source = selection
-    rev_class = bulk.BULK_TARGETS[model]
-    publisher = bulk.single_publisher(model, ids)
-    names = offered_fields(rev_class, publisher)
-    params = request.POST if request.method == 'POST' else request.GET
-    name = params.get('field')
-    if name not in names:
-        name = names[0]
-    values = bulk.distinct_values(model, ids, name)
-    data = params if params.get('shown') == name else None
-    form = BulkOperationForm(data, rev_class, name,
-                             values[:bulk.LISTED_VALUES], publisher)
-
-    # A changeset names its revisions of a class '<class>s'.
-    singular, plural = BULK_OBJECT_NAMES[rev_class._meta.model_name + 's']
-    context = {
-      'form': form,
-      'token': token,
-      'source': source,
-      'selection': '%d %s' % (len(ids), singular if len(ids) == 1
-                              else plural),
-      'object_label': singular,
-      'objects_label': plural,
-      'deleted': bulk.deleted_count(model, ids),
-      'more_values': max(0, len(values) - bulk.LISTED_VALUES),
-    }
+    form, name, context = _bulk_operation_page(
+      request, bulk.BULK_TARGETS[model], model, ids, 'token', token)
+    context.update(source=source, deleted=bulk.deleted_count(model, ids))
     if form.is_bound and form.is_valid() and request.method == 'POST':
         changeset = bulk.apply(
           request.user, token, model, ids, source,
@@ -1869,6 +1894,65 @@ def _bulk_start(request, token):
           model, ids, name, form.cleaned_data['operation'],
           form.cleaned_data['old_value'], form.cleaned_data['new_value'])
     return oi_render(request, 'oi/edit/bulk_start.html', context)
+
+
+def _is_row_id(value):
+    """
+    Return whether value, as a request sent it, can be the id of a row:
+    digits, and few enough of them to be read as a number.
+    """
+    return value.isdecimal() and len(value) < 20
+
+
+def _bulk_add_operation(request, changeset_id):
+    """
+    Show the page of a further operation on the revisions of the open
+    bulk change changeset_id of the user.  As when a change starts, GET
+    previews it, writing nothing, and a POST of the previewed operation
+    applies it and shows the change again.  A change that takes no
+    further operation gets the error page, GET or POST, and nothing is
+    written.
+    """
+    if not _is_row_id(changeset_id):
+        raise Http404
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    refusal = bulk.change_refusal(request.user, changeset) or \
+        bulk.operation_refusal(changeset)
+    if refusal:
+        return render_error(request, refusal, redirect=False)
+    revisions = changeset.bulk_target()[1]
+    rev_class = revisions.model
+    form, name, context = _bulk_operation_page(
+      request, rev_class, rev_class,
+      list(revisions.values_list('id', flat=True)), 'changeset', changeset.id)
+    context['changeset'] = changeset
+    if form.is_bound and form.is_valid():
+        data = form.cleaned_data
+        if request.method == 'POST':
+            bulk.add_operation(
+              request.user, changeset,
+              bulk.Operation(name, data['operation'], data['old_value'],
+                             data['new_value']))
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'compare', kwargs={'id': changeset.id}))
+        context['bulk_preview'] = bulk.preview_of_change(
+          revisions, name, data['operation'], data['old_value'],
+          data['new_value'])
+    return oi_render(request, 'oi/edit/bulk_start.html', context)
+
+
+def _bulk_remove(request, id):
+    """
+    Take the selected objects out of the open bulk change id of the user,
+    and show the change again.  Anything but an id is left out, as no
+    page sends it.
+    """
+    bulk.remove_objects(
+      request.user, get_object_or_404(Changeset, id=id),
+      [value for value in request.POST.getlist('selected')
+       if _is_row_id(value)])
+    return HttpResponseRedirect(urlresolvers.reverse('compare',
+                                                     kwargs={'id': id}))
 
 
 def _clean_bulk_issue_change_form(form, remove_fields, items,
@@ -1908,7 +1992,8 @@ def edit_issues_in_bulk(request):
         creation and modification of credit revisions if applicable.
 
     With BULK_CHANGE_ENABLED, a request with a token shows instead the
-    page that starts a bulk change from the selection of a list.
+    page that starts a bulk change from the selection of a list, and one
+    with a changeset the page of a further operation on that change.
 
     Returns:
         HttpResponse:
@@ -1922,6 +2007,8 @@ def edit_issues_in_bulk(request):
     """
     if settings.BULK_CHANGE_ENABLED and 'token' in request.GET:
         return _bulk_start(request, request.GET['token'])
+    if settings.BULK_CHANGE_ENABLED and 'changeset' in request.GET:
+        return _bulk_add_operation(request, request.GET['changeset'])
 
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)

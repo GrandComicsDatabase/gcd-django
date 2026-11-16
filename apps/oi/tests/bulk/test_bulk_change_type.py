@@ -183,7 +183,8 @@ def test_old_bulk_change_is_discarded_not_submitted(
     changeset = bulk_change(approved_issues, IssueRevision,
                             price='0.25 USD')
     Changeset.objects.filter(id=changeset.id).update(
-      created=timezone.now() - timedelta(weeks=4))
+      created=timezone.now() - timedelta(weeks=4),
+      modified=timezone.now() - timedelta(weeks=4))
     any_approver.user_permissions.add(Permission.objects.get(
       content_type__app_label='oi', codename='change_ongoingreservation'))
     client.force_login(any_approver)

@@ -697,6 +697,7 @@ class Changeset(models.Model):
             # TODO check creators re inline
             self.inline() or
             self.change_type in [CTYPES['issue'],
+                                 CTYPES['bulk'],
                                  CTYPES['variant_add'],
                                  CTYPES['two_issues'],
                                  CTYPES['series_bond'],

@@ -6,6 +6,7 @@ event, never by timed waits.
 import threading
 import time
 from contextlib import contextmanager
+from datetime import timedelta
 
 import pytest
 
@@ -15,6 +16,7 @@ from django.db import connection, connections, transaction
 from django.test import Client
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.gcd.models import Issue, Series
 from apps.indexer.models import Indexer
@@ -125,8 +127,10 @@ def test_requests_at_the_same_moment(settings,
     it wrote another, or on a lock that it frees in a savepoint, is undone
     as a whole, gets a message and can be repeated.  Last, the approval of
     a normal and of a bulk change in the series of an Apply waits for it
-    without a deadlock, and the discard of a change that holds an object
-    of the Apply does not wait for it.
+    without a deadlock, the discard of a change that holds an object of
+    the Apply does not wait for it, and further work on a change waits for
+    the request that holds the change.  The sweep of old reservations waits
+    for a request that works on a bulk change, and leaves the change open.
     """
     settings.BULK_CHANGE_ENABLED = True
     first = _logged_in(reserving_indexer, approved_issues)
@@ -307,6 +311,28 @@ def test_requests_at_the_same_moment(settings,
     assert _open_record(reserving_indexer)['listed']['reserved'] == \
         [first.id]
 
+    # A further operation on a change waits for the request that holds the
+    # change, such as another operation or a removal, and then runs.
+    _discard_open_bulk_changes()
+    author = _logged_in(reserving_indexer, approved_issues[:2], token='turns')
+    assert author.post(reverse('edit_issues_in_bulk') + '?token=turns',
+                       _pages('32')).status_code == 302
+    changeset = Changeset.objects.get(indexer=reserving_indexer,
+                                      change_type=CTYPES['bulk'],
+                                      state=states.OPEN)
+    with _held_change(changeset):
+        operation = _started(
+          results, 'operation',
+          lambda: author.post(reverse('edit_issues_in_bulk') +
+                              '?changeset=%d' % changeset.id, _pages('40')))
+        _wait_for_lock_wait('oi_changeset')
+        # It waits before it writes anything.
+        assert _row_locks('oi_issue_revision') == 0
+    operation.join(60)
+
+    assert results['operation'].status_code == 302
+    assert len(bulk.operation_records(changeset)) == 2
+
     # A reservation in flight decides its object when it ends: reserved
     # if it commits, changed if it is undone.
     for commits, left_out in ((True, [held_issue.id]), (False, [])):
@@ -429,6 +455,32 @@ def test_requests_at_the_same_moment(settings,
     assert reviewing.state == states.REVIEWING
     assert Issue.objects.get(id=held_issue.id).rating == ''
 
+    # The sweep of old reservations chose a bulk change left alone and
+    # waits for its row, which a request that works on the change holds.
+    # That work counts: the change stays open.
+    applying = _logged_in(reserving_indexer, [first], token='swept')
+    assert _apply(applying, token='swept',
+                  data=_pages('72')).status_code == 302
+    swept = Changeset.objects.get(indexer=reserving_indexer,
+                                  change_type=CTYPES['bulk'],
+                                  state=states.OPEN)
+    long_ago = timezone.now() - timedelta(days=40)
+    Changeset.objects.filter(id=swept.id).update(created=long_ago,
+                                                 modified=long_ago)
+    any_approver.user_permissions.add(Permission.objects.get(
+      codename='change_ongoingreservation'))
+    results = {}
+    with _held_row(swept, then=lambda: Changeset.objects.filter(
+      id=swept.id).update(modified=timezone.now())):
+        thread = _started(results, 'sweep',
+                          lambda: approver.get(reverse('clear_issues')))
+        _wait_for_lock_wait('oi_changeset')
+    thread.join(90)
+
+    assert results['sweep'].status_code == 200
+    swept.refresh_from_db()
+    assert swept.state == states.OPEN
+
 
 @pytest.mark.django_db
 def test_a_lock_wait_timeout_refuses_the_whole_apply(settings, monkeypatch,
@@ -467,6 +519,12 @@ def test_a_lock_wait_timeout_refuses_the_whole_apply(settings, monkeypatch,
     assert _apply(client).status_code == 302
     assert Changeset.objects.get(change_type=CTYPES['bulk']) \
                     .issuerevisions.count() == 3
+
+
+def _pages(value):
+    """The operation that sets the page count of its objects to value."""
+    return {'field': 'page_count', 'shown': 'page_count', 'operation': 'set',
+            'new_value': value}
 
 
 def _values(issues, name):
@@ -580,6 +638,11 @@ def _held(target, *args):
         holder.join(30)
 
 
+def _held_change(changeset):
+    """Hold the row of changeset in a transaction of its own in the block."""
+    return _held(_hold_change, changeset)
+
+
 def _held_row(row, then=None):
     """
     Hold row in a transaction of its own in the block; at its end call
@@ -658,6 +721,16 @@ def _wait_for_lock_wait(table, timeout=30):
     raise AssertionError('no transaction waits for %s' % table)
 
 
+def _row_locks(table):
+    """Return how many locks on rows of table the server shows."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+          'SELECT COUNT(*) FROM performance_schema.data_locks '
+          "WHERE OBJECT_SCHEMA = DATABASE() AND OBJECT_NAME = %s "
+          "AND LOCK_TYPE = 'RECORD'", [table])
+        return cursor.fetchone()[0]
+
+
 def _lock_waits_until_done(thread, table):
     """Return how often a lock wait on table was seen while thread ran."""
     seen = 0
@@ -680,6 +753,20 @@ def _hold_row(row, then, held, release):
             release.wait(60)
             if then:
                 then()
+    finally:
+        connections.close_all()
+
+
+def _hold_change(changeset, held, release):
+    """
+    In a transaction of its own, lock the row of changeset until release,
+    as another request that works on the change does.
+    """
+    try:
+        with transaction.atomic():
+            Changeset.objects.select_for_update().get(id=changeset.id)
+            held.set()
+            release.wait(60)
     finally:
         connections.close_all()
 

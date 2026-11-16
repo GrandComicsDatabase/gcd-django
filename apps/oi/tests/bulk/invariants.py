@@ -32,19 +32,21 @@ def _check_revision(changeset, revision, locks):
     assert heads.count() == 1, revision
 
 
-def _check_operation(changeset, record):
+def _check_operation(changeset, record, first):
     """
     Check the comment of an operation: counts that add up to the objects
-    checked, one changed object for each revision that changes something,
-    listed ids of real objects (I7); and the value of each approved
-    latest revision on its object (I5).
+    checked, listed ids of real objects (I7) and the value of each
+    approved latest revision on its object (I5).  The first operation
+    made the revisions, so it counts one changed object for each revision
+    of the change that changes something.
     """
     assert sum(record['counts'].values()) == record['checked']
     name, revisions = changeset.bulk_target()
-    diff = bulk.exact_diff(revisions.model, revisions.values_list('id',
-                                                                  flat=True))
-    assert record['counts']['changed'] == \
-        sum(1 for changes in diff.values() if changes)
+    if first:
+        diff = bulk.exact_diff(revisions.model,
+                               revisions.values_list('id', flat=True))
+        assert record['counts']['changed'] == \
+            sum(1 for changes in diff.values() if changes)
     model = revisions.model._meta.get_field(
       revisions.model.source_name).related_model
     for ids in record['listed'].values():
@@ -66,9 +68,16 @@ def check_invariants():
         assert not locks or changeset.state in states.ACTIVE, changeset
         # I8: no revision of a kind that bulk changes do not make.
         assert not bulk.other_revisions(changeset), changeset
+        locked = set()
         for name in BULK_REVISION_ORDER:
             for revision in getattr(changeset, name).all():
                 _check_revision(changeset, revision, locks)
-        record = bulk.operation_record(changeset)
-        if record:
-            _check_operation(changeset, record)
+                locked.add((ContentType.objects.get_for_model(
+                  revision.source).id, revision.source.id))
+        # I2: an active change holds no lock without its revision, such
+        # as the lock of an object that left the change.
+        assert changeset.state not in states.ACTIVE or locks == locked, \
+            changeset
+        records = bulk.operation_records(changeset)
+        for position, record in enumerate(records):
+            _check_operation(changeset, record, position == 0)

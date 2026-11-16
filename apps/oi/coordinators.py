@@ -46,7 +46,11 @@ def clear_reservations_three_weeks(request=None):
     changes_overdue = list(changes.exclude(change_type__in=
                                            [CTYPES['issue'],
                                             CTYPES['two_issues'],
-                                            CTYPES['variant_add']]))
+                                            CTYPES['variant_add']])
+                           # a bulk change counts from its last work: it
+                           # may have been sent back or retracted
+                           .exclude(change_type=CTYPES['bulk'],
+                                    modified__gte=clearing_date))
     for c in changes_issue:
         # issue edits with more than two existing revisions cannot be
         # changes due to ongoing reservations (which have more time)
@@ -87,6 +91,13 @@ def clear_reservations(request=None, changes=None):
             continue
         changed = False
         if changeset.change_type == CTYPES['bulk']:
+            # The list was made before this loop, and a bulk change counts
+            # from its last work: leave one worked on since then.
+            clearing_date = timezone.now() - timedelta(
+                weeks=settings.RESERVE_ISSUE_WEEKS)
+            if Changeset.objects.filter(id=changeset.id,
+                                        modified__gte=clearing_date).exists():
+                continue
             # A bulk change is never submitted for its indexer: an old
             # one is discarded, which frees its locks.
             revision = None

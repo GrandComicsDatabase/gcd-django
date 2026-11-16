@@ -36,7 +36,7 @@ from apps.indexer.views import ErrorWithMessage, render_error
 from apps.oi import states
 from apps.oi.models import (
     BULK_OBJECT_NAMES, BULK_REVISION_ORDER, CTYPES, Changeset, IssueRevision,
-    RevisionLock, _get_revision_lock, bulk_object_name)
+    RevisionLock, _free_revision_lock, _get_revision_lock, bulk_object_name)
 from apps.oi.templatetags.compare import key_date_years_note, show_diff
 from apps.oi.validation import revision_form_messages
 
@@ -100,6 +100,8 @@ TURNED_OFF_BY = {
         'has_rating': ('rating', 'no_rating'),
     }),
 }
+# A revision holds the same parent as its object.
+TURNED_OFF_BY[IssueRevision] = TURNED_OFF_BY[Issue]
 
 # The operations, as form choices: on the objects that hold one exact old
 # value, or on all of them.  Values compare as stored: spaces and case
@@ -130,10 +132,19 @@ APPLIED_ALREADY = ('This selection was applied already, or is being '
 
 # The outcomes of an operation for each object, in the order of the
 # comment that records them, and those whose objects the comment lists.
+# An object is removed when it leaves the change after an operation has
+# changed it: its author took it out, or a later operation took it back
+# to the values of the object.
 OUTCOMES = ('changed', 'unchanged', 'turned_off', 'reserved', 'invalid',
-            'blocked')
+            'blocked', 'removed')
 LISTED_OUTCOMES = ('reserved', 'invalid', 'blocked')
 LISTED_OBJECTS = 50
+
+# Why a bulk change cannot lose all its objects, and why work on it stopped.
+LEFT_EMPTY = ('That would leave this bulk change without objects. To give '
+              'it up, please discard it.')
+CHANGE_BUSY = ('Another request was working on this change at the same '
+               'moment, so nothing was changed. Please try again.')
 
 # MySQL errors: a lock wait timeout undoes the statement only, or with
 # innodb_rollback_on_timeout the whole transaction, a deadlock always the
@@ -770,13 +781,55 @@ def preview(model, ids, name, operation, old, new):
                  .values_list('object_id', flat=True))
     reserved = [change[0] for change in changes if change[0].id in locked]
     changes = [change for change in changes if change[0].id not in locked]
+    return {'changed': len(changes), 'rows': _preview_rows(field, changes),
+            'reserved': reserved, 'turned_off': turned_off,
+            'deleted': deleted}
+
+
+def _preview_rows(field, changes):
+    """
+    Return the rows of a preview for changes of field, given as (object,
+    current value, new value): the first BULK_CHANGE_MAX, each as (object,
+    old HTML, new HTML).
+    """
     shown = changes[:settings.BULK_CHANGE_MAX]
     names = _object_names(field, [value for change in shown
                                   for value in change[1:]])
-    rows = [(data_object,) + _shown_change(field, current, value, names)
+    return [(data_object,) + _shown_change(field, current, value, names)
             for data_object, current, value in shown]
-    return {'changed': len(changes), 'rows': rows, 'reserved': reserved,
-            'turned_off': turned_off, 'deleted': deleted}
+
+
+def preview_of_change(revisions, name, operation, old, new):
+    """
+    Return what operation would do to the field name of revisions, the
+    revisions of an open bulk change, writing nothing, as preview does
+    for objects.  A revision needs no lock or check of its object, which
+    the change holds; 'leaving' are the objects that the operation takes
+    back to their own values, so that they leave the change, and
+    'left_empty' says that none would remain.
+    """
+    rev_class = revisions.model
+    field = rev_class._meta.get_field(name)
+    candidates, turned_off = [], []
+    for revision in revisions:
+        current = getattr(revision, field.attname)
+        value = new_value(current, operation, old, new)
+        if value == current:
+            continue
+        if applicable(revision, name):
+            candidates.append((revision, current, value))
+        else:
+            turned_off.append(revision.source)
+
+    diff = exact_diff(rev_class, [candidate[0].id for candidate in candidates])
+    leaving = [revision.source for revision, current, value in candidates
+               if list(diff[revision.id]) == [name] and
+               diff[revision.id][name][0] == value]
+    changes = [(revision.source, current, value)
+               for revision, current, value in candidates]
+    return {'changed': len(changes), 'rows': _preview_rows(field, changes),
+            'reserved': [], 'turned_off': turned_off, 'deleted': [],
+            'leaving': leaving, 'left_empty': len(leaving) == len(revisions)}
 
 
 class _LeftOut(Exception):
@@ -850,6 +903,20 @@ def _checked_value(revision, field, value, current, user):
             raise _LeftOut('invalid', 'Its edit form would also change %s.'
                                       % ', '.join(follows))
     return cleaned
+
+
+def _store(revision, field, value, current, user):
+    """
+    Check revision, with value in field instead of current, with the
+    rules of its edit form for user, and save value in field.  The object
+    is left out if the form would store anything else.
+    """
+    cleaned = _checked_value(revision, field, value, current, user)
+    if cleaned != value:
+        raise _LeftOut('invalid', 'Its edit form stores "%s" instead.'
+                                  % cleaned)
+    setattr(revision, field.attname, value)
+    revision.save(update_fields=[field.attname, 'modified'])
 
 
 def _locked(data_object):
@@ -934,12 +1001,7 @@ def process_item(changeset, data_object, operation, user):
 
             _hold_rows(fresh)
             revision = _clone(BULK_TARGETS[model], fresh, changeset)
-            cleaned = _checked_value(revision, field, value, current, user)
-            if cleaned != value:
-                raise _LeftOut('invalid', 'Its edit form stores "%s" '
-                                          'instead.' % cleaned)
-            setattr(revision, attname, value)
-            revision.save(update_fields=[attname, 'modified'])
+            _store(revision, field, value, current, user)
     except _LeftOut as left_out:
         return left_out.outcome, left_out.message
     except OperationalError as error:
@@ -992,6 +1054,11 @@ def _counts_text(counts):
                      for outcome in OUTCOMES)
 
 
+def _checked_text(checked, total, counts):
+    """Return the line of a record with the objects checked and counted."""
+    return 'Checked %d of %d: %s' % (checked, total, _counts_text(counts))
+
+
 def _nothing_changed(consequence, counts, listed):
     """
     Return the error message of an operation that changed no object: the
@@ -1029,8 +1096,7 @@ def operation_text(model, operation, source, total, counts, listed,
         ' '.join(json.dumps(value, default=str, ensure_ascii=False)
                  for value in values)),
       'Source: %s%s' % (settings.SITE_URL.rstrip('/'), source),
-      'Checked %d of %d: %s' % (sum(counts.values()), total,
-                                _counts_text(counts)),
+      _checked_text(sum(counts.values()), total, counts),
       'Checkpoint: %s' % checkpoint.astimezone(dt_timezone.utc)
                                    .strftime(CHECKPOINT_FORMAT),
     ]
@@ -1066,14 +1132,33 @@ def parse_operation(text):
         return None
 
 
+def _record_comments(changeset):
+    """
+    Return the comments of changeset that record its operations, oldest
+    first.  Each goes from unreserved to open, as the first comment of a
+    reservation does: a comment that anybody adds keeps the state of the
+    change, so it never counts, whatever it says.
+    """
+    return changeset.comments.filter(old_state=states.UNRESERVED,
+                                     new_state=states.OPEN).order_by('id')
+
+
+def operation_records(changeset):
+    """
+    Return the records of the operations of the bulk change changeset, in
+    their order, each as parse_operation gives it.
+    """
+    records = [parse_operation(comment.text)
+               for comment in _record_comments(changeset)]
+    return [record for record in records if record is not None]
+
+
 def operation_record(changeset):
     """
-    Return the record of the operation of the bulk change changeset, from
-    its first comment, which apply writes in the transaction that makes
-    the change; None if that comment is no such record.  Comments that
-    anybody adds later never count.
+    Return the record of the first operation of the bulk change
+    changeset, which made its revisions; None if there is no such record.
     """
-    comment = changeset.comments.order_by('id').first()
+    comment = _record_comments(changeset).first()
     return parse_operation(comment.text) if comment else None
 
 
@@ -1190,11 +1275,21 @@ def _make_change(user, model, ids, source, operation):
     if not counts['changed']:
         raise ErrorWithMessage(_nothing_changed('no change was made', counts,
                                                 listed))
-    changeset.comments.create(
-      commenter=user, old_state=states.OPEN, new_state=states.OPEN,
-      text=operation_text(model, operation, source, len(ids), counts,
-                          listed, timezone.now()))
+    _write_record(changeset, user, model, operation, source, len(ids),
+                  counts, listed)
     return changeset
+
+
+def _write_record(changeset, user, model, operation, source, total, counts,
+                  listed):
+    """
+    Add to changeset the comment that records operation on total objects
+    of model, with the time after which a revision needs a new check.
+    """
+    changeset.comments.create(
+      commenter=user, old_state=states.UNRESERVED, new_state=states.OPEN,
+      text=operation_text(model, operation, source, total, counts, listed,
+                          timezone.now()))
 
 
 @transaction.atomic
@@ -1238,31 +1333,40 @@ def other_revisions(changeset):
             if getattr(changeset, name).exists()]
 
 
-def turned_off_messages(changeset):
+def _turned_off(changeset):
     """
-    Return a message for each object of the bulk change changeset whose
-    field, the one of its operation, a flag of its parent has turned off
-    since the operation.  At approval such a value would not be written,
-    or would stay hidden in the edit form.  Only an object whose revision
-    changed the field counts.
+    Return a pair (revision, message) for each object of the bulk change
+    changeset and each field of its operations that a flag of its parent
+    has turned off since the operation.  At approval such a value would
+    not be written, or would stay hidden in the edit form.  Only an object
+    whose revision changed the field counts.
     """
-    record = operation_record(changeset)
-    if record is None:
-        return []
     revisions = changeset.bulk_target()[1]
+    if revisions is None:
+        return []
     rev_class = revisions.model
     parent = TURNED_OFF_BY.get(rev_class.source_class, (None,))[0]
     if parent is None:
         return []
-    name = record['name']
+    names = sorted({record['name'] for record in operation_records(changeset)})
     revisions = list(revisions.select_related(
       '%s__%s' % (rev_class.source_name, parent)))
     diff = exact_diff(rev_class, [revision.id for revision in revisions])
-    return ['%s: %s is turned off in its %s.' % (
-              bulk_object_name(revision), field_name(name), parent)
+    return [(revision, '%s: %s is turned off in its %s.' % (
+               bulk_object_name(revision), field_name(name), parent))
             for revision in revisions
+            for name in names
             if name in diff[revision.id]
             and not applicable(revision.source, name)]
+
+
+def turned_off_messages(changeset):
+    """
+    Return the messages of _turned_off(changeset): one for each object of
+    the bulk change changeset and each field of its operations that a
+    flag of its parent has turned off since the operation.
+    """
+    return [message for revision, message in _turned_off(changeset)]
 
 
 def approval_refusal(changeset):
@@ -1288,23 +1392,32 @@ def approval_refusal(changeset):
     if not messages:
         return None
     return 'This bulk change cannot be approved. %s Please send it back to ' \
-           'its author.' % ' '.join(messages)
+           'its author, so that they can take these objects out.' % \
+           ' '.join(messages)
 
 
-def submit_messages(changeset):
+def _submit_problems(changeset, forms=True):
     """
     Return why the bulk change changeset cannot be submitted, as a list of
-    messages, empty if it can.  Its revisions passed the rules of their
-    edit forms when its operations made them; only those changed since
-    the checkpoint of its operation record, with a second of margin, are
-    checked again, and all of them if the record has none.  It must also
-    hold no revision of a kind that bulk changes do not use, and no value
-    in a field that is turned off now, whenever that happened.
+    pairs (revision, message), empty if it can; the revision is None for
+    a message on the change as a whole.  Its revisions passed the rules
+    of their edit forms when its operations made them; only those changed
+    since the checkpoint of its latest operation record, with a second of
+    margin, are checked again, and all of them if there is no checkpoint.
+    Each operation starts with this check, so that its checkpoint hides
+    no revision that was not checked.  The change must also hold no
+    revision of a kind that bulk changes do not use, and no value in a
+    field that is turned off now, whenever that happened.  forms False
+    leaves out the edit forms and keeps the checks that need none.
     """
-    messages = ['It holds revisions that a bulk change does not make: %s.'
-                % name for name in other_revisions(changeset)]
-    messages += turned_off_messages(changeset)
-    record = operation_record(changeset)
+    problems = [(None, 'It holds revisions that a bulk change does not '
+                       'make: %s.' % name)
+                for name in other_revisions(changeset)]
+    problems += _turned_off(changeset)
+    if not forms:
+        return problems
+    records = operation_records(changeset)
+    record = records[-1] if records else None
     for name in BULK_REVISION_ORDER:
         revisions = getattr(changeset, name).all()
         if record and 'checkpoint' in record:
@@ -1313,6 +1426,219 @@ def submit_messages(changeset):
         for revision in revisions:
             for message in revision_form_messages(revision,
                                                   changeset.indexer):
-                messages.append('%s: %s' % (bulk_object_name(revision),
-                                            message))
-    return messages
+                problems.append((revision, '%s: %s' % (
+                  bulk_object_name(revision), message)))
+    return problems
+
+
+def submit_messages(changeset):
+    """
+    Return why the bulk change changeset cannot be submitted, as a list of
+    messages, empty if it can: those of _submit_problems, edit forms
+    included.
+    """
+    return [message for revision, message in _submit_problems(changeset)]
+
+
+def change_refusal(user, changeset):
+    """
+    Return why user may not work on the bulk change changeset, by a
+    further operation or by taking objects out of it, or None if they
+    may: bulk changes are on, it is theirs, it is open, and it holds
+    objects.
+    """
+    if not settings.BULK_CHANGE_ENABLED:
+        return 'Bulk changes are turned off.'
+    if changeset.change_type != CTYPES['bulk'] or \
+       changeset.indexer != user:
+        return 'Only the author of a bulk change may work on it.'
+    if changeset.state != states.OPEN:
+        return 'Only an open bulk change can be changed.'
+    if changeset.bulk_target()[0] is None:
+        return 'This bulk change holds no objects.'
+    return None
+
+
+@contextmanager
+def _work_on_change(user, changeset):
+    """
+    Run the block in a transaction, with changeset read again and its row
+    locked, so that requests on it take turns, and with its revisions.
+    Raise ErrorWithMessage, with nothing written, if user may not work on
+    it, or after a deadlock or a long wait for a row.
+
+    The work counts as activity, for the sweep of old reservations, and
+    the points of the change follow it, as a change sent back can reach
+    its approval through Discuss, without another submission.
+    """
+    try:
+        with transaction.atomic():
+            changeset = Changeset.objects.select_for_update() \
+                                 .get(id=changeset.id)
+            refusal = change_refusal(user, changeset)
+            if refusal:
+                raise ErrorWithMessage(refusal)
+            yield changeset, changeset.bulk_target()[1]
+            changeset.calculate_imps()
+            changeset.save(update_fields=['imps', 'modified'])
+    except OperationalError as error:
+        if error.args[0] not in (DEADLOCK, LOCK_WAIT_TIMEOUT):
+            raise
+        raise ErrorWithMessage(CHANGE_BUSY)
+
+
+def _change_revision(revision, field, operation, user):
+    """
+    Apply operation to revision, of a bulk change that this request holds,
+    and return the outcome and a message, as process_item does.  The
+    object is locked by this change already, so nothing is locked here.
+    """
+    current = getattr(revision, field.attname)
+    value = new_value(current, operation.operation, operation.old,
+                      operation.new)
+    if value == current:
+        return 'unchanged', ''
+    if not applicable(revision, operation.name):
+        return 'turned_off', ''
+    try:
+        _store(revision, field, value, current, user)
+    except _LeftOut as left_out:
+        return left_out.outcome, left_out.message
+    return 'changed', ''
+
+
+def _drop(revisions):
+    """Delete revisions of a bulk change and free the lock of each object."""
+    for revision in revisions:
+        source = revision.source
+        revision.delete()
+        _free_revision_lock(source)
+
+
+def _count_removed(changeset, removed):
+    """
+    Move removed objects from changed to removed in the record of the
+    first operation of changeset, which made all its revisions; the record
+    then counts the revisions that remain.
+    """
+    comment = _record_comments(changeset).first()
+    record = parse_operation(comment.text) if comment else None
+    if record is None:
+        raise ErrorWithMessage('This bulk change has no record of its '
+                               'operations.')
+    counts = record['counts']
+    counts['changed'] -= removed
+    counts['removed'] += removed
+    comment.text = '\n'.join(
+      _checked_text(record['checked'], record['total'], counts)
+      if CHECKED_LINE.match(line) else line
+      for line in comment.text.split('\n'))
+    comment.save(update_fields=['text'])
+
+
+# Why a bulk change takes no further operation while the check of a
+# submission fails: the messages, then the way out, which is to take out
+# the objects they name or, if they name all of them, to discard it.
+FURTHER_REFUSED = 'This bulk change cannot take another operation. %s %s'
+REMOVE_OR_DISCARD = ('Please remove these %s from this change, or discard '
+                     'it.')
+ONLY_DISCARD = 'Please discard this change: it holds no other %s.'
+
+
+def operation_refusal(changeset, forms=True):
+    """
+    Return why the bulk change changeset takes no further operation now,
+    or None if it does.  An operation starts with the check of a
+    submission, so that its checkpoint hides no revision that was not
+    checked; while that check fails, as when a flag of a parent has
+    turned off a field that the change holds, the way out is to remove
+    the objects it names or, if it names every object of the change, to
+    discard it.  forms False leaves out the edit forms, as in
+    _submit_problems.
+    """
+    problems = _submit_problems(changeset, forms)
+    if not problems:
+        return None
+    name, revisions = changeset.bulk_target()
+    singular, plural = BULK_OBJECT_NAMES[name]
+    # Only the objects of the change count, not the anchors beside them.
+    named = {revision.id for revision, message in problems
+             if isinstance(revision, revisions.model)}
+    if named and len(named) == revisions.count():
+        way_out = ONLY_DISCARD % singular
+    else:
+        way_out = REMOVE_OR_DISCARD % plural
+    return FURTHER_REFUSED % (
+      ' '.join(message for revision, message in problems), way_out)
+
+
+def add_operation(user, changeset, operation):
+    """
+    Apply operation to the revisions of the open bulk change changeset of
+    user, and record it in a comment of its own.
+
+    A revision that the operation takes back to the values of its object
+    no longer changes anything, so it leaves the change and its object is
+    free again.  Raise ErrorWithMessage, with nothing written, if a
+    revision no longer passes its checks, if no revision changes, or if
+    none would remain.
+    """
+    with _work_on_change(user, changeset) as (changeset, revisions):
+        _apply_to_revisions(changeset, revisions, operation, user)
+
+
+def _apply_to_revisions(changeset, revisions, operation, user):
+    """Do the work of add_operation, in its transaction."""
+    refusal = operation_refusal(changeset)
+    if refusal:
+        raise ErrorWithMessage(refusal)
+    rev_class = revisions.model
+    field = rev_class._meta.get_field(operation.name)
+    revisions = list(revisions)
+    counts = dict.fromkeys(OUTCOMES, 0)
+    listed = {outcome: [] for outcome in LISTED_OUTCOMES}
+    changed = []
+    for revision in revisions:
+        outcome, message = _change_revision(revision, field, operation, user)
+        counts[outcome] += 1
+        if outcome in listed:
+            listed[outcome].append((revision.source, message))
+        if outcome == 'changed':
+            changed.append(revision)
+    if not changed:
+        raise ErrorWithMessage(_nothing_changed('no operation was added',
+                                                counts, listed))
+
+    diff = exact_diff(rev_class, [revision.id for revision in changed])
+    back = [revision for revision in changed if not diff[revision.id]]
+    if len(back) == len(revisions):
+        raise ErrorWithMessage(LEFT_EMPTY)
+    # Comments never attach to the revisions of a bulk change, as their
+    # edit pages refuse them, so deleting a revision loses no comment.
+    _drop(back)
+    counts['changed'] -= len(back)
+    counts['removed'] = len(back)
+    _write_record(changeset, user, rev_class.source_class, operation,
+                  urlresolvers.reverse('compare',
+                                       kwargs={'id': changeset.id}),
+                  len(revisions), counts, listed)
+    if back:
+        _count_removed(changeset, len(back))
+
+
+def remove_objects(user, changeset, revision_ids):
+    """
+    Take the revisions with these ids out of the open bulk change
+    changeset of user, free their objects and count them in its record.
+    Ids of other revisions are ignored.  A bulk change keeps at least one
+    object: raise ErrorWithMessage if it would lose them all, or if no id
+    is one of its revisions.
+    """
+    with _work_on_change(user, changeset) as (changeset, revisions):
+        chosen = list(revisions.filter(id__in=revision_ids))
+        if not chosen:
+            raise ErrorWithMessage('Please select the objects to remove.')
+        if len(chosen) == revisions.count():
+            raise ErrorWithMessage(LEFT_EMPTY)
+        _drop(chosen)
+        _count_removed(changeset, len(chosen))

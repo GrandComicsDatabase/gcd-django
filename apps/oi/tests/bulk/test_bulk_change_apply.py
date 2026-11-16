@@ -165,7 +165,7 @@ def test_apply_makes_one_open_change(client, selection, reserving_indexer):
     assert (record['checked'], record['total']) == (3, 3)
     assert record['counts'] == {'changed': 3, 'unchanged': 0,
                                 'turned_off': 0, 'reserved': 0,
-                                'invalid': 0, 'blocked': 0}
+                                'invalid': 0, 'blocked': 0, 'removed': 0}
 
 
 @pytest.mark.django_db
@@ -756,19 +756,19 @@ def test_operation_comment_reads_back(approved_issues):
     """The comment keeps exact values, counts, checkpoint and ids."""
     text = ' Two  "quoted" words' + chr(233) + ' '
     operation = bulk.Operation('notes', 'replace_exact', text, None)
-    counts = dict(zip(bulk.OUTCOMES, range(6)))
+    counts = dict(zip(bulk.OUTCOMES, range(7)))
     listed = {'reserved': [], 'invalid': [(approved_issues[0], 'Why.')],
               'blocked': [(approved_issues[1], '')] * 51}
     checkpoint = datetime(2026, 11, 7, 18, 30, 5, 999999,
                           tzinfo=timezone.utc)
 
-    comment = bulk.operation_text(Issue, operation, SOURCE, 20, counts,
+    comment = bulk.operation_text(Issue, operation, SOURCE, 25, counts,
                                   listed, checkpoint)
     record = bulk.parse_operation(comment)
 
     assert record['values'] == [text, None]
     assert record['counts'] == counts
-    assert (record['checked'], record['total']) == (15, 20)
+    assert (record['checked'], record['total']) == (21, 25)
     assert record['checkpoint'] == checkpoint.replace(microsecond=0)
     assert record['listed'] == {'reserved': [],
                                 'invalid': [approved_issues[0].id],
@@ -1246,7 +1246,8 @@ def test_flag_off_refuses_approval(client, selection, any_approver, params,
     page = unescape(response.content.decode())
     assert 'This bulk change cannot be approved.' in page
     assert 'is turned off in its series.' in page
-    assert 'Please send it back to its author.' in page
+    assert 'Please send it back to its author, so that they can take these ' \
+           'objects out.' in page
     changeset.refresh_from_db()
     assert changeset.state == states.REVIEWING
     assert list(Issue.objects.filter(id__in=[i.id for i in selection])
@@ -1274,7 +1275,7 @@ def _add_record(changeset, model, name, changed):
     counts = dict.fromkeys(bulk.OUTCOMES, 0)
     counts['changed'] = changed
     changeset.comments.create(
-      commenter=changeset.indexer, old_state=states.OPEN,
+      commenter=changeset.indexer, old_state=states.UNRESERVED,
       new_state=states.OPEN, text=bulk.operation_text(
         model, bulk.Operation(name, 'set', None, 'New'), SOURCE, changed,
         counts, {outcome: [] for outcome in bulk.LISTED_OUTCOMES},
@@ -1314,6 +1315,16 @@ def test_turned_off_without_flags(sequence_change, approved_stories):
     _add_record(sequences, Story, 'genre', changed=1)
 
     assert bulk.turned_off_messages(sequences) == []
+
+
+@pytest.mark.django_db
+def test_turned_off_of_a_change_without_revisions(any_indexer):
+    """A bulk change without revisions has no field turned off."""
+    changeset = Changeset.objects.create(indexer=any_indexer,
+                                         state=states.OPEN,
+                                         change_type=CTYPES['bulk'])
+
+    assert bulk.turned_off_messages(changeset) == []
 
 
 @pytest.mark.django_db
