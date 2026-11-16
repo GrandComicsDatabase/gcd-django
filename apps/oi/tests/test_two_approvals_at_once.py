@@ -83,17 +83,44 @@ def _wait_for_lock_wait(table, timeout=30):
     raise AssertionError('no transaction waits for %s' % table)
 
 
+def _started(target, name):
+    """
+    Start target in a daemon thread, which has a connection of its own.
+    Once _stop gives up waiting for the thread, each of its queries fails
+    before it reaches the server: a thread that outlives its test cannot
+    write in the database, even on a new connection.
+    """
+    stopped = threading.Event()
+
+    def refuse_once_stopped(execute, sql, params, many, context):
+        """Send the query, unless the test has stopped the thread."""
+        if stopped.is_set():
+            raise OperationalError('the test has stopped this thread')
+        return execute(sql, params, many, context)
+
+    def run():
+        """Run target with each of its queries checked."""
+        with connection.execute_wrapper(refuse_once_stopped):
+            target()
+
+    thread = threading.Thread(target=run, name=name, daemon=True)
+    thread.stopped = stopped
+    thread.start()
+    return thread
+
+
 def _stop(thread):
     """
     Wait until thread has ended, before the test database is emptied. If
-    it still runs after a minute, end the other connections to the test
-    database, so that a wait there stops with an error, until the thread
-    has ended and the server has closed them all, for at most 30 s; then
-    fail.
+    it still runs after a minute, refuse its queries from then on, and end
+    the other connections to the test database, so that a wait there
+    stops with an error, until the thread has ended and the server has
+    closed them all, for at most 30 s; then fail.
     """
     thread.join(60)
     if not thread.is_alive():
         return
+    thread.stopped.set()
     end = time.monotonic() + 30
     with connection.cursor() as cursor:
         while True:
@@ -141,8 +168,7 @@ def _held(work):
         finally:
             connections.close_all()
 
-    holder = threading.Thread(target=hold, name='holder', daemon=True)
-    holder.start()
+    holder = _started(hold, 'holder')
     try:
         assert held.wait(30) and not failures, failures
         yield
@@ -168,9 +194,7 @@ def _approval_started(client, changeset):
         finally:
             connections.close_all()
 
-    thread = threading.Thread(target=run, name='approval', daemon=True)
-    thread.start()
-    return thread, result
+    return _started(run, 'approval'), result
 
 
 def _added_after(issue, indexer, issue_add_values):
