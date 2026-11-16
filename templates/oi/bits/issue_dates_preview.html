@@ -1,0 +1,58 @@
+{% comment %}
+The list of the dates of the new issues, the last row of the add form.
+Each row: the day, the issue on it (none when ticked No issue) and the
+two dates as they will be saved.
+{% endcomment %}
+{% if formset %}
+<tr id="dates-preview">
+  <td colspan="2">
+    {{ formset.management_form }}
+    <input type="hidden" name="dates_basis" value="{{ dates_basis }}">
+    <p class="mt-2 mb-2">
+      {{ dates_summary.count }} issue{{ dates_summary.count|pluralize }},
+      from {{ dates_summary.first|date:"Y-m-d" }}
+      to {{ dates_summary.last|date:"Y-m-d" }}.
+      Check the dates: they are saved as shown here. Correct a date in its
+      box. Tick No issue for a date without an issue, then select Preview
+      Dates again.
+    </p>
+    {% if dates_summary.no_day %}
+    <p class="mb-2">
+      These dates have no day: issues of the same month, or of the same
+      year, get the same text and key date.
+    </p>
+    {% endif %}
+    {{ formset.non_form_errors }}
+    <table class="w-full">
+      {# td, not th: the th rule of the form would right-align them. #}
+      <tr class="bg-blue-100">
+        <td class="px-1">Date</td>
+        <td class="px-1">Volume</td>
+        <td class="px-1">Number</td>
+        <td class="px-1">Publication date</td>
+        <td class="px-1">Keydate</td>
+        <td class="px-1 text-center">No issue</td>
+      </tr>
+      {% for row, day, revision in dates_rows %}
+      <tr>
+        <td class="px-1 align-top">{{ row.day }}{{ day|date:"D Y-m-d" }}</td>
+        <td class="px-1 align-top">
+          {% if revision %}{{ revision.volume }}{% endif %}
+        </td>
+        <td class="px-1 align-top">
+          {% if revision %}{{ revision.number }}{% endif %}
+        </td>
+        <td class="px-1 align-top">
+          {{ row.non_field_errors }}{{ row.publication_date.errors }}
+          {{ row.publication_date }}
+        </td>
+        <td class="px-1 align-top">
+          {{ row.key_date.errors }}{{ row.key_date }}
+        </td>
+        <td class="px-1 align-top text-center">{{ row.skip }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </td>
+</tr>
+{% endif %}

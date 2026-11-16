@@ -22,7 +22,9 @@ the following issues (links open in new windows):
 <tr>
   <th> Volume </th>
   <th> Issue Number</th>
-  <th> Display Number </th>
+  <th> Display Number </th>{% if dated_issues %}
+  <th> Publication Date </th>
+  <th> Key Date </th>{% endif %}
   <th> Preview </th>
   {% if changeset.state == states.APPROVED %}
   <th> Next Change </th>
@@ -33,7 +35,9 @@ the following issues (links open in new windows):
 <tr>
   <td> {{ issue.volume }}
   <td> {{ issue.number }}
-  <td> {{ issue.display_number }}
+  <td> {{ issue.display_number }}{% if dated_issues %}
+  <td> {{ issue.publication_date }}
+  <td> {{ issue.key_date }}{% endif %}
   <td> <a class="new_window" href="{% url "preview_revision" model_name=model_name id=issue.id %}" target=_blank>Preview</a>
     {% if changeset.state == states.APPROVED %}
   <td> {% if issue.posterior %}<a href="{% url "compare" id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.modified|date:"Y-m-d" }}) {% endif %} </a>
@@ -44,8 +48,9 @@ the following issues (links open in new windows):
 
 <p>
 The following fields are set for all issues in the issue range.  Keep in mind
-that publication date, key date and notes will always be blank.
-</p>
+{% if dated_issues %}that notes will always be blank.
+{% else %}that publication date, key date and notes will always be blank.
+{% endif %}</p>
 {% else %}
 the following issue:
 <a class="new_window" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview</a>

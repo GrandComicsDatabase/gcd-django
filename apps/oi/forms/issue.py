@@ -27,6 +27,20 @@ from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
 from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType, \
                             CreatorNameDetail, IndiciaPrinter
 
+from datetime import date
+
+from django.utils import translation
+from django.utils.dates import MONTHS as MONTH_NAMES
+
+from apps.stddata import frequency, gcddates
+
+# With dates, at most this many issues are added at a time; the list of
+# their dates has at most this many rows, the dates left out included.
+MAX_DATED_ISSUES = 400
+MAX_DATE_ROWS = 800
+
+WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
 
 def _common_clean(cd, data):
     if 'volume' in cd and cd['volume'] != "" and cd['no_volume']:
@@ -679,6 +693,17 @@ class IssueRevisionForm(KeywordBaseForm):
         label='')
 
 
+def _month_names(language_code):
+    """
+    Return the twelve month names of Django's catalog in a language.
+
+    January comes first. A language that Django does not know gives the
+    English names.
+    """
+    with translation.override(language_code):
+        return [str(MONTH_NAMES[month]) for month in range(1, 13)]
+
+
 def get_bulk_issue_revision_form(series, method, user=None):
     if method == 'number':
         base = WholeNumberIssueRevisionForm
@@ -715,6 +740,9 @@ def get_bulk_issue_revision_form(series, method, user=None):
             self.fields['indicia_publisher'].queryset = indicia_publishers
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
+            if 'date_month_names' in self.fields:
+                self.fields['date_month_names'].initial = ', '.join(
+                  _month_names(series.language.code))
 
         if method != 'bulk_edit':
             if not series.has_indicia_frequency:
@@ -785,6 +813,45 @@ class BulkIssueRevisionForm(forms.ModelForm):
         min_value=1,
         widget=forms.TextInput(attrs={'autofocus': ''}))
 
+    dates_help = forms.CharField(
+        widget=HiddenInputWithHelp, required=False, label='Dates',
+        help_text='Optional. To give each new issue a publication date and '
+                  'a key date, enter the date of the first issue and how '
+                  'often the series comes out. Leave the first date empty '
+                  'to add the issues without dates.')
+    first_date = forms.DateField(
+        required=False, input_formats=['%Y-%m-%d'], label='First date',
+        help_text='The date of the first new issue, as YYYY-MM-DD.')
+    date_interval = forms.IntegerField(
+        required=False, min_value=1, initial=1, label='Repeat every')
+    date_unit = forms.ChoiceField(
+        required=False, initial=frequency.MONTHS, label='',
+        choices=[(unit, unit) for unit in frequency.UNITS],
+        help_text='For weeks, tick the weekdays below.')
+    date_weekdays = forms.MultipleChoiceField(
+        required=False, label='On weekdays',
+        choices=list(enumerate(WEEKDAYS)),
+        widget=forms.CheckboxSelectMultiple,
+        help_text='Only for weeks. With none ticked, the weekday of the '
+                  'first date is used.')
+    date_pattern = forms.CharField(
+        required=False, max_length=100, initial='{month} {year}',
+        label='Written as',
+        widget=forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+        help_text='How the publication date is printed. {day}, {month} and '
+                  '{year} are replaced, the rest is kept: {month} {year}, '
+                  '{day} {month} {year}, {month} {day}, {year}. Without '
+                  '{day} the key date ends in 00.')
+    date_month_names = forms.CharField(
+        required=False, max_length=400, label='Month names',
+        widget=forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+        help_text='The twelve month names as printed, January first, '
+                  'separated by commas.')
+
+    # The fields of the block of the dates, in their order.
+    date_keys = ['dates_help', 'first_date', 'date_interval', 'date_unit',
+                 'date_weekdays', 'date_pattern', 'date_month_names']
+
     brand_emblem = forms.ModelMultipleChoiceField(
         queryset=Brand.objects.all(),
         label=ISSUE_LABELS['brand_emblem'],
@@ -834,7 +901,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
     def _shared_key_order(self):
         # A series without an end year has no year_ended field.
         year_ended = ['year_ended'] if 'year_ended' in self.fields else []
-        return ['indicia_publisher', 'indicia_pub_not_printed',
+        return self.date_keys + [
+                'indicia_publisher', 'indicia_pub_not_printed',
                 'brand_emblem', 'no_brand',
                 'indicia_frequency', 'no_indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
@@ -862,12 +930,15 @@ class BulkIssueRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credit_start:]])
+        field_list.append(Formset('dates_formset',
+                                  template='oi/bits/issue_dates_preview.html'))
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = ISSUE_HELP_LINKS
 
     def clean(self):
         cd = self.cleaned_data
 
+        self._ignore_empty_dates()
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
@@ -881,10 +952,63 @@ class BulkIssueRevisionForm(forms.ModelForm):
 
         cd = _common_clean(cd, self.data)
 
+        cd = self._clean_dates(cd)
+
+        return cd
+
+    def _ignore_empty_dates(self):
+        """
+        Leave the block of the dates out when its first date is empty.
+
+        Nothing else of the block is looked at then: the errors of its
+        other fields are dropped and those fields keep their defaults.
+        """
+        if self.cleaned_data.get('first_date') or \
+           'first_date' in self._errors:
+            return
+        for name in self.date_keys:
+            if self._errors.pop(name, None):
+                self.cleaned_data[name] = self.fields[name].initial
+
+    def _clean_dates(self, cd):
+        """
+        Check the block of the dates, when it has a first date.
+
+        Each error goes to its field. The month names and the weekdays go
+        back in cd as lists: the twelve names, the weekday numbers.
+        """
+        first_date = cd.get('first_date')
+        if not first_date:
+            return cd
+        if not gcddates.FIRST_YEAR <= first_date.year <= gcddates.LAST_YEAR:
+            self.add_error('first_date',
+                           'The first date must be in the years %d to %d.'
+                           % (gcddates.FIRST_YEAR, gcddates.LAST_YEAR))
+        for name in ('date_interval', 'date_unit'):
+            if not cd.get(name):
+                self.add_error(
+                  name, forms.Field.default_error_messages['required'])
+        pattern_error = gcddates.pattern_error(cd['date_pattern'])
+        if pattern_error:
+            self.add_error('date_pattern', pattern_error)
+        names = [name.strip() for name in cd['date_month_names'].split(',')]
+        if len(names) == 12 and all(names):
+            cd['date_month_names'] = names
+        else:
+            self.add_error('date_month_names', 'Enter the twelve month '
+                           'names, separated by commas.')
+        if cd['number_of_issues'] > MAX_DATED_ISSUES:
+            self.add_error('number_of_issues', 'With dates, at most %d '
+                           'issues can be added at a time.'
+                           % MAX_DATED_ISSUES)
+        cd['date_weekdays'] = [int(day) for day in cd['date_weekdays']]
         return cd
 
 
 class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
+    # The bulk edit changes issues that have their own dates.
+    date_keys = []
+
     def __init__(self, *args, **kwargs):
         super(BulkEditIssueRevisionForm, self).__init__(*args, **kwargs)
         ordering = ['no_title', 'volume', 'display_volume_with_number',
@@ -1139,3 +1263,51 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
                 cd['first_volume'] = 1
 
         return cd
+
+
+class IssueDateRowForm(forms.Form):
+    """
+    A row of the list of the dates of new issues.
+
+    The day comes from the rule of the add form; the two dates of its
+    issue can be corrected; "No issue" leaves the day out.
+    """
+
+    day = forms.CharField(widget=forms.HiddenInput)
+    publication_date = forms.CharField(
+        max_length=255, required=False,
+        widget=forms.TextInput(attrs={'class': 'w-full'}))
+    key_date = forms.CharField(
+        required=False,
+        validators=IssueRevision._meta.get_field('key_date').validators)
+    skip = forms.BooleanField(required=False, label='No issue')
+
+    def clean_day(self):
+        """Return the day of the row, sent as YYYY-MM-DD."""
+        try:
+            return date.fromisoformat(self.cleaned_data['day'])
+        except ValueError:
+            raise forms.ValidationError('Enter a valid date.')
+
+    def clean_key_date(self):
+        """Turn dots into dashes, as the form of an issue does."""
+        return self.cleaned_data['key_date'].replace('.', '-')
+
+    def clean(self):
+        """
+        Refuse a publication date without a key date, as the form of an
+        issue does. The texts of a row ticked "No issue" are not saved,
+        so they are not checked.
+        """
+        cd = super().clean()
+        if cd.get('skip'):
+            self._errors.pop('publication_date', None)
+            self._errors.pop('key_date', None)
+        elif cd.get('publication_date') and cd.get('key_date') == '':
+            raise forms.ValidationError(
+              'Dates are present, but the key date is empty.')
+        return cd
+
+
+IssueDateRowFormSet = forms.formset_factory(
+    IssueDateRowForm, extra=0, max_num=MAX_DATE_ROWS, validate_max=True)
