@@ -408,6 +408,56 @@ def test_first_submit_with_dates_shows_the_list(
     assert _counts() == before
 
 
+class _LabelReader(HTMLParser):
+    """Read the labels of a page and the ids of its controls."""
+
+    def __init__(self):
+        """Start with no label and no control."""
+        super().__init__(convert_charrefs=True)
+        self.labels = {}
+        self.ids = {}
+        self.label = None
+
+    def handle_starttag(self, tag, attrs):
+        """Note a control by name, or open a label."""
+        attrs = dict(attrs)
+        if tag == 'input' and attrs.get('name'):
+            self.ids[attrs['name']] = attrs.get('id')
+        elif tag == 'label':
+            self.label = attrs.get('for')
+            self.labels[self.label] = ''
+
+    def handle_endtag(self, tag):
+        """Close a label."""
+        if tag == 'label':
+            self.label = None
+
+    def handle_data(self, data):
+        """Take the text of a label."""
+        if self.label is not None:
+            self.labels[self.label] += data
+
+
+@pytest.mark.django_db
+def test_each_control_of_the_list_has_a_label(
+      adding_client, any_added_series, add_values):
+    """Each box and tick of the list has a label with its purpose and day,
+    for a screen reader."""
+    page = _list(adding_client, any_added_series, add_values)
+    reader = _LabelReader()
+    reader.feed(page.content.decode())
+
+    for row, month in enumerate(range(1, 13)):
+        day = '1990-%02d-15' % month
+        for name, words in [('publication_date', 'Publication date of'),
+                            ('key_date', 'Keydate of'),
+                            ('skip', 'No issue on')]:
+            control = reader.ids['dates-%d-%s' % (row, name)]
+            assert control
+            assert ' '.join(reader.labels.get(control, '').split()) == \
+                '%s %s' % (words, day)
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize('method', METHODS)
 def test_list_posted_as_rendered_saves_its_dates(

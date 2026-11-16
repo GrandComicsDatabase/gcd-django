@@ -44,12 +44,21 @@ two dates as they will be saved.
         </td>
         <td class="px-1 align-top">
           {{ row.non_field_errors }}{{ row.publication_date.errors }}
+          <label class="sr-only" for="{{ row.publication_date.id_for_label }}">
+            Publication date of {{ day|date:"Y-m-d" }}</label>
           {{ row.publication_date }}
         </td>
         <td class="px-1 align-top">
-          {{ row.key_date.errors }}{{ row.key_date }}
+          {{ row.key_date.errors }}
+          <label class="sr-only" for="{{ row.key_date.id_for_label }}">
+            Keydate of {{ day|date:"Y-m-d" }}</label>
+          {{ row.key_date }}
         </td>
-        <td class="px-1 align-top text-center">{{ row.skip }}</td>
+        <td class="px-1 align-top text-center">
+          <label class="sr-only" for="{{ row.skip.id_for_label }}">
+            No issue on {{ day|date:"Y-m-d" }}</label>
+          {{ row.skip }}
+        </td>
       </tr>
       {% endfor %}
     </table>
