@@ -30,7 +30,7 @@ from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
 
-from apps.gcd.models import Issue, Publisher
+from apps.gcd.models import Issue, Publisher, Series
 from apps.gcd.templatetags.credits import format_page_count
 from apps.gcd.templatetags.display import field_name
 from apps.indexer.models import Indexer
@@ -38,7 +38,8 @@ from apps.indexer.views import ErrorWithMessage, render_error
 from apps.oi import states
 from apps.oi.models import (
     BULK_OBJECT_NAMES, BULK_REVISION_ORDER, CTYPES, Changeset, IssueRevision,
-    RevisionLock, _free_revision_lock, _get_revision_lock, bulk_object_name)
+    RevisionLock, SeriesRevision, _free_revision_lock, _get_revision_lock,
+    bulk_object_name)
 from apps.oi.templatetags.compare import key_date_years_note, show_diff
 from apps.oi.validation import revision_form_messages
 
@@ -51,7 +52,7 @@ NO_BREAK_SPACE = '\u00a0'
 HIDDEN_SPACES = re.compile(r'\s{2,}|[^\S ]')
 
 # The models that a bulk change can change, with their revision classes.
-BULK_TARGETS = {Issue: IssueRevision}
+BULK_TARGETS = {Issue: IssueRevision, Series: SeriesRevision}
 
 # The fields that a bulk change can change, by their nature in the field
 # census: T transcribed as printed, F in a prescribed format, L a link to
@@ -68,6 +69,10 @@ FIELD_POLICY = {
                  'indicia_printer_not_printed', 'no_isbn', 'no_barcode',
                  'no_rating'),
     },
+    SeriesRevision: {
+        'F': ('color', 'dimensions', 'paper_stock', 'binding',
+              'publishing_format'),
+    },
 }
 
 # The fields that a bulk change leaves alone, by reason.  With the fields
@@ -83,6 +88,26 @@ EXCLUDED = {
         'later: credits, keywords and links to many objects': (
             'editing', 'no_editing', 'keywords', 'brand_emblem',
             'indicia_printer', 'indicia_printer_sourced_by'),
+    },
+    SeriesRevision: {
+        'transcribed, of each series; later, with the text operations': (
+            'name', 'leading_article'),
+        'free text of each series; later, with the text operations': (
+            'notes', 'tracking_notes'),
+        'facts of each series, on which the lists of its issues depend': (
+            'year_began', 'year_ended', 'year_began_uncertain',
+            'year_ended_uncertain'),
+        'later: links to closed lists, each with checks of its own': (
+            'publication_type', 'country', 'language'),
+        'each does more than change its own value': (
+            'is_current', 'is_singleton', 'is_comics_publication'),
+        'they turn fields of the issues on and off, which GCD decides': (
+            'has_barcode', 'has_indicia_frequency', 'has_indicia_printer',
+            'has_isbn', 'has_issue_title', 'has_volume', 'has_rating',
+            'has_publisher_code_number', 'has_about_comics'),
+        'later: keywords, with the links': ('keywords',),
+        'a parent, changed by its own move': ('publisher',),
+        'old fields, not in the edit form': ('format', 'imprint'),
     },
 }
 
@@ -219,7 +244,18 @@ NOWAIT_REFUSED = 3572
 # table.
 HELD_PARENTS = {
     Issue: ('series', 'indicia_publisher', 'brand_emblem', 'indicia_printer'),
+    Series: ('publisher',),
 }
+
+# What a bulk change of each model names when a row of HELD_PARENTS stays
+# busy beyond the server's wait.
+HELD_NAMES = {Issue: 'series of these objects',
+              Series: 'publishers of these series'}
+
+# The models whose rows the approval of a bulk change locks first, in id
+# order: each commit saves the whole row, and would put back a count that
+# an approval of issues wrote after it read the row.
+LOCKED_AT_APPROVAL = (Series,)
 
 # The revision sets that an edit of issues or sequences by hand adds, as
 # in an issue change, and that a bulk change never makes.
@@ -780,8 +816,12 @@ def single_publisher(model, ids):
     Return the publisher of all the objects of model with these ids, or
     None if they have several: an issue has the publisher of its series.
     A link field, such as the indicia publisher, is offered only with one
-    publisher, whose records the edit form lists.
+    publisher, whose records the edit form lists.  model may also be a
+    revision class; for one whose fields hold no link, such as a series,
+    the answer is None.
     """
+    if 'L' not in FIELD_POLICY[BULK_TARGETS.get(model, model)]:
+        return None
     publisher_ids = set()
     for chunk in _chunks(ids):
         publisher_ids.update(model.objects.filter(id__in=chunk,
@@ -1428,9 +1468,9 @@ def _hold_links(model, ids, new_values):
     except OperationalError as error:
         if error.args[0] != LOCK_WAIT_TIMEOUT:
             raise
-        raise ErrorWithMessage('The series of these objects are being saved '
-                               'at this moment, so nothing was changed. '
-                               'Please apply again.')
+        raise ErrorWithMessage('The %s are being saved at this moment, so '
+                               'nothing was changed. Please apply again.'
+                               % HELD_NAMES[model])
 
 
 def _take_turn(user):
@@ -1556,13 +1596,23 @@ def turned_off_messages(changeset):
     return [message for revision, message in _turned_off(changeset)]
 
 
+def _lock_in_order(model, ids):
+    """
+    Lock the rows of model with these ids, in id order, until the
+    transaction ends.
+    """
+    list(model.objects.select_for_update().filter(id__in=ids)
+         .order_by('id').values_list('id', flat=True))
+
+
 def approval_refusal(changeset):
     """
     Return why the bulk change changeset cannot be approved, or None if it
     can.  The parents of its objects are locked first, in id order and
     until the approval ends: a flag read here then stays as it is until
     the values are written, and an approval in the series of an Apply
-    waits for the Apply before it writes anything.
+    waits for the Apply before it writes anything.  So are the objects of
+    a model of LOCKED_AT_APPROVAL, before any of them is read.
     """
     target, revisions = changeset.bulk_target()
     if target is None:
@@ -1570,11 +1620,14 @@ def approval_refusal(changeset):
     rev_class = revisions.model
     parent = TURNED_OFF_BY.get(rev_class.source_class, (None,))[0]
     if parent:
-        parents = rev_class.source_class._meta.get_field(parent).related_model
-        ids = set(revisions.values_list('%s__%s' % (rev_class.source_name,
-                                                    parent), flat=True))
-        list(parents.objects.select_for_update().filter(id__in=ids)
-             .order_by('id').values_list('id', flat=True))
+        _lock_in_order(
+          rev_class.source_class._meta.get_field(parent).related_model,
+          set(revisions.values_list('%s__%s' % (rev_class.source_name,
+                                                parent), flat=True)))
+    if rev_class.source_class in LOCKED_AT_APPROVAL:
+        _lock_in_order(rev_class.source_class,
+                       set(revisions.order_by().values_list(
+                         rev_class.source_name, flat=True)))
     messages = turned_off_messages(changeset)
     if not messages:
         return None

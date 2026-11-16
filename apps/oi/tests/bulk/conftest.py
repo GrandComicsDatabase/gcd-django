@@ -3,12 +3,13 @@ import pytest
 
 from django.contrib.auth.models import Permission, User
 
-from apps.gcd.models import StoryType
+from apps.gcd.models import SeriesPublicationType, StoryType
 from apps.indexer.models import Indexer
 from apps.mycomics.models import Collector, ConditionGradeScale
 from apps.oi import states
 from apps.oi.models import (
-    Changeset, IssueRevision, StoryRevision, CTYPES, _get_revision_lock)
+    Changeset, IssueRevision, SeriesRevision, StoryRevision, CTYPES,
+    _get_revision_lock)
 
 
 @pytest.fixture
@@ -87,6 +88,31 @@ def approved_issues(any_added_issue, any_adding_changeset):
         revision.commit_to_display()
         issues.append(revision.issue)
     return issues
+
+
+@pytest.fixture
+def approved_series(any_added_publisher, any_adding_changeset, any_country,
+                    any_language):
+    """
+    Three approved series of one publisher, in id order, with the same
+    format fields; the name of the second has a leading article.
+    """
+    series = []
+    for name in ('Series One', 'The Series Two', 'Series Three'):
+        revision = SeriesRevision(
+          changeset=any_adding_changeset, name=name,
+          leading_article=name.startswith('The '), year_began=1990,
+          publication_type=SeriesPublicationType.objects.get_or_create(
+            name='magazine')[0],
+          is_comics_publication=True, country=any_country,
+          language=any_language, publisher=any_added_publisher,
+          color='four colors', dimensions='standard Modern Age US',
+          paper_stock='glossy', binding='Saddle-stitched',
+          publishing_format='ongoing series')
+        revision.save()
+        revision.commit_to_display()
+        series.append(revision.series)
+    return series
 
 
 @pytest.fixture

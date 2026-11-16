@@ -177,7 +177,9 @@ def test_entry_needs_a_list_of_issues(settings, reserving_indexer,
 
     assert bulk.entry_allowed(reserving_indexer,
                               Issue.objects.all()) is allowed
-    assert not bulk.entry_allowed(reserving_indexer, Series.objects.all())
+    assert bulk.entry_allowed(reserving_indexer,
+                              Series.objects.all()) is allowed
+    assert not bulk.entry_allowed(reserving_indexer, Publisher.objects.all())
     assert not bulk.entry_allowed(reserving_indexer, SearchQuerySet())
     assert not bulk.entry_allowed(AnonymousUser(), Issue.objects.all())
 

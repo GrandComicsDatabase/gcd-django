@@ -13,6 +13,7 @@ import pytest
 from django.contrib.auth.models import Permission, User
 from django.core.cache import cache
 from django.db import connection, connections, transaction
+from django.db.models import F
 from django.test import Client
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -23,9 +24,10 @@ from apps.indexer.models import Indexer
 from apps.mycomics.models import Collector, ConditionGradeScale
 from apps.oi import bulk, states
 from apps.oi.models import (
-    Changeset, IndiciaPublisherRevision, IssueRevision, RevisionLock, CTYPES,
-    _get_revision_lock)
+    Changeset, IndiciaPublisherRevision, IssueRevision, RevisionLock,
+    SeriesRevision, CTYPES, _get_revision_lock)
 from apps.oi.tests.bulk.invariants import check_invariants
+from apps.stats.models import CountStats
 from apps.stddata.models import Country
 
 TOKEN = 'race-token'
@@ -36,6 +38,9 @@ RATING = {'field': 'rating', 'shown': 'rating', 'operation': 'replace_exact',
 FREQUENCY = {'field': 'indicia_frequency', 'shown': 'indicia_frequency',
              'operation': 'replace_exact', 'old_value': '=monthly',
              'new_value': 'quarterly'}
+BINDING = {'field': 'binding', 'shown': 'binding',
+           'operation': 'replace_exact', 'old_value': '=Saddle-stitched',
+           'new_value': 'saddle-stitched'}
 
 
 @pytest.fixture(autouse=True)
@@ -641,6 +646,231 @@ def test_a_lock_wait_timeout_refuses_the_whole_apply(settings, monkeypatch,
     assert _apply(client).status_code == 302
     assert Changeset.objects.get(change_type=CTYPES['bulk']) \
                     .issuerevisions.count() == 3
+
+
+@pytest.fixture
+def statistics(transactional_db):
+    """
+    Make again the totals of the statistics that the session made: an
+    earlier transactional test emptied the database when it ended, and a
+    commit to the display updates them.
+    """
+    CountStats.objects.init_stats()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_series_requests_at_the_same_moment(statistics, settings,
+                                            reserving_indexer,
+                                            second_indexer, any_approver,
+                                            approved_series):
+    """
+    Bulk changes of series against other requests that commit.  A series
+    whose row another request is writing is left out at once; an Apply
+    waits for the publisher that another request is writing, before it
+    writes anything, then changes all; two Applies of lists that overlap
+    give each series to one change only; a reservation in flight decides
+    its series when it ends; a revert leaves out at once a series whose
+    row another request is writing.
+    """
+    settings.BULK_CHANGE_ENABLED = True
+    first, second, third = approved_series
+
+    applying = _series_client(reserving_indexer, approved_series, 'rows')
+    results = {}
+    with _held_row(second):
+        thread = _started(results, 'apply', lambda: _apply(
+          applying, token='rows', data=BINDING))
+        waits = _lock_waits_until_done(thread, 'gcd_series')
+    thread.join(90)
+
+    assert waits == 0
+    assert results['apply'].status_code == 302
+    record = _open_record(reserving_indexer)
+    assert record['listed']['reserved'] == [second.id]
+    assert record['counts']['changed'] == 2
+
+    _discard_open_bulk_changes()
+    applying = _series_client(reserving_indexer, approved_series, 'parent')
+    results = {}
+    with _held_row(first.publisher):
+        thread = _started(results, 'apply', lambda: _apply(
+          applying, token='parent', data=BINDING))
+        _wait_for_lock_wait('gcd_publisher')
+        # It waits before it writes anything.
+        assert _row_locks('oi_series_revision') == 0
+    thread.join(90)
+
+    assert results['apply'].status_code == 302
+    assert _open_record(reserving_indexer)['counts']['changed'] == 3
+
+    _discard_open_bulk_changes()
+    one = _series_client(reserving_indexer, approved_series[:2], 'one')
+    other = _series_client(second_indexer, approved_series[1:], 'other')
+
+    results = _together(lambda: _apply(one, token='one', data=BINDING),
+                        lambda: _apply(other, token='other', data=BINDING))
+
+    assert [result.status_code for result in results] == [302, 302]
+    revisions = SeriesRevision.objects.filter(
+      changeset__change_type=CTYPES['bulk'], changeset__state=states.OPEN)
+    assert sorted(revisions.values_list('series_id', flat=True)) == \
+        [first.id, second.id, third.id]
+    for revision in revisions:
+        assert RevisionLock.objects.get(
+          content_type__model='series', object_id=revision.series_id) \
+                                   .changeset_id == revision.changeset_id
+
+    for commits, left_out in ((True, [second.id]), (False, [])):
+        _discard_open_bulk_changes()
+        token = 'flight%s' % commits
+        applying = _series_client(reserving_indexer, approved_series, token)
+        results, threads = {}, []
+        try:
+            with _held_lock(second, commit=commits):
+                threads.append(_started(results, 'apply', lambda: _apply(
+                  applying, token=token, data=BINDING)))
+                _wait_for_lock_wait('oi_revision_lock')
+        finally:
+            for thread in threads:
+                thread.join(90)
+
+        assert results['apply'].status_code == 302
+        assert _open_record(reserving_indexer)['listed']['reserved'] == \
+            left_out
+        RevisionLock.objects.filter(changeset=None,
+                                    object_id=second.id).delete()
+
+    _discard_open_bulk_changes()
+    applying = _series_client(reserving_indexer, approved_series, 'revert')
+    assert _apply(applying, token='revert', data=BINDING).status_code == 302
+    changeset = Changeset.objects.get(indexer=reserving_indexer,
+                                      change_type=CTYPES['bulk'],
+                                      state=states.OPEN)
+    changeset.submit()
+    changeset.assign(any_approver)
+    _approve(changeset.id)
+    results = {}
+    with _held_row(second):
+        thread = _started(results, 'revert', lambda: applying.post(
+          _revert_url(changeset)))
+        waits = _lock_waits_until_done(thread, 'gcd_series')
+    thread.join(90)
+
+    assert waits == 0
+    assert results['revert'].status_code == 302
+    record = _open_record(reserving_indexer)
+    assert record['listed']['reserved'] == [second.id]
+    assert record['counts']['changed'] == 2
+
+
+@pytest.mark.django_db(transaction=True)
+def test_series_approval_waits_for_an_apply_of_its_issues(
+      statistics, settings, second_indexer, any_approver, approved_issues,
+      approved_series, bulk_change):
+    """
+    The approval of a bulk change of series locks its series first.
+    While an Apply of issues holds the row of their series, the approval
+    of a change of that series waits for it before it writes anything,
+    and both end.
+    """
+    settings.BULK_CHANGE_ENABLED = True
+    held_issue = approved_issues[1]
+    issue_series = held_issue.series
+    reviewing = bulk_change([issue_series, approved_series[0]],
+                            SeriesRevision, binding='perfect bound')
+    reviewing.submit()
+    reviewing.assign(any_approver)
+    applying = _logged_in(second_indexer, approved_issues, token='issues')
+    results, threads = {}, []
+    try:
+        with _held_lock(held_issue):
+            threads.append(_started(results, 'apply', lambda: _apply(
+              applying, token='issues')))
+            _wait_for_lock_wait('oi_revision_lock')
+            threads.append(_started(results, 'approve', lambda: _approve(
+              reviewing.id)))
+            _wait_for_lock_wait('gcd_series')
+            # It waits before it writes anything.
+            assert _tables_of_the_waiter('gcd_series') <= \
+                {'oi_changeset', 'gcd_series'}
+    finally:
+        for thread in threads:
+            thread.join(90)
+
+    assert results['approve'] is None, results['approve']
+    assert results['apply'].status_code == 302
+    reviewing.refresh_from_db()
+    assert reviewing.state == states.APPROVED
+    assert Series.objects.get(id=issue_series.id).binding == 'perfect bound'
+    assert _open_record(second_indexer)['counts']['changed'] == 3
+
+
+@pytest.mark.django_db(transaction=True)
+def test_series_approval_keeps_a_count_written_meanwhile(
+      statistics, any_approver, approved_series, bulk_change):
+    """
+    While the approval of a bulk change of series runs, an update of the
+    count of issues of one of its series, as the approval of an added
+    issue makes, waits for it and then lands: the series keeps both the
+    new binding and the new count.
+    """
+    counted = approved_series[2]
+    reviewing = bulk_change(approved_series[1:], SeriesRevision,
+                            binding='perfect bound')
+    reviewing.submit()
+    reviewing.assign(any_approver)
+    count = Series.objects.get(id=counted.id).issue_count
+    first_lock, second_lock = RevisionLock.objects.filter(changeset=reviewing)
+    results, threads = {}, []
+    try:
+        # The approval stops at the first lock that it frees.
+        with _held_row(first_lock), _held_row(second_lock):
+            threads.append(_started(results, 'approve', lambda: _approve(
+              reviewing.id)))
+            _wait_for_lock_wait('oi_revision_lock')
+            threads.append(_started(results, 'count', lambda: Series.objects
+                                    .filter(id=counted.id).update(
+                                      issue_count=F('issue_count') + 1)))
+            _wait_for_lock_wait('gcd_series')
+    finally:
+        for thread in threads:
+            thread.join(90)
+
+    assert results['approve'] is None, results['approve']
+    assert results['count'] == 1
+    counted.refresh_from_db()
+    assert (counted.binding, counted.issue_count) == \
+        ('perfect bound', count + 1)
+
+
+def _series_client(user, series, token):
+    """A client of user with series as the selection of token."""
+    client = _logged_in(user, series, token=token)
+    session = client.session
+    session[bulk.SELECTION_KEY] = dict(session[bulk.SELECTION_KEY],
+                                       model='series')
+    session.save()
+    return client
+
+
+def _tables_of_the_waiter(table):
+    """
+    Return the tables on which the transaction that waits for a row of
+    table holds or asks for locks.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute(
+          'SELECT DISTINCT held.OBJECT_NAME '
+          'FROM performance_schema.data_lock_waits w '
+          'JOIN performance_schema.data_locks asked '
+          'ON asked.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID '
+          'JOIN performance_schema.data_locks held '
+          'ON held.ENGINE_TRANSACTION_ID = '
+          'w.REQUESTING_ENGINE_TRANSACTION_ID '
+          'WHERE asked.OBJECT_SCHEMA = DATABASE() '
+          'AND asked.OBJECT_NAME = %s AND held.OBJECT_SCHEMA = DATABASE()',
+          [table])
+        return {row[0] for row in cursor.fetchall()}
 
 
 def _pages(value):

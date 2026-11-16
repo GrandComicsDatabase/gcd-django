@@ -9,11 +9,13 @@ from django.db import models
 from apps.gcd.templatetags.display import field_name
 from apps.oi import bulk
 from apps.oi.forms.issue import IssueRevisionForm
-from apps.oi.models import IssueRevision
+from apps.oi.forms.series import SeriesRevisionForm
+from apps.oi.models import IssueRevision, SeriesRevision
 
 # The edit form of each revision class: the order of the fields and the
 # field of the new value.
-REVISION_FORMS = {IssueRevision: IssueRevisionForm}
+REVISION_FORMS = {IssueRevision: IssueRevisionForm,
+                  SeriesRevision: SeriesRevisionForm}
 
 
 def offered_fields(rev_class, publisher):
