@@ -174,8 +174,11 @@ def test_an_edit_approved_during_an_add_keeps_the_new_last_issue(
         statistics, any_added_issue, issue_add_values, any_indexer, editor):
     """
     An edit of an issue approved while the add of a later issue of its
-    series commits: the series keeps the added issue as its last one.
+    series commits: the series keeps the added issue as its last one and
+    in its issue count.
     """
+    issue_count = Series.objects.get(
+        id=any_added_issue.series_id).issue_count
     added = _added_after(any_added_issue, any_indexer, issue_add_values)
     edit = _change(any_indexer, any_added_issue, IssueRevision,
                    CTYPES['issue'])
@@ -190,6 +193,7 @@ def test_an_edit_approved_during_an_add_keeps_the_new_last_issue(
     added.refresh_from_db()
     series = Series.objects.get(id=any_added_issue.series_id)
     assert series.last_issue_id == added.issue_id
+    assert series.issue_count == issue_count + 1
 
 
 @pytest.mark.django_db(transaction=True)
