@@ -91,5 +91,19 @@ Changes to {{ form.field_label }}: {{ bulk_preview.changed }} of
     {% endfor %}
 </table>
   {% endif %}
+  {% if bulk_preview.changed %}
+<form action="{% url 'edit_issues_in_bulk' %}?token={{ token }}" method="POST">
+  {% csrf_token %}
+    {% for field in form %}
+  <input type="hidden" name="{{ field.html_name }}"
+         value="{{ field.value|default_if_none:'' }}">
+    {% endfor %}
+  <button class="btn-blue-editing inline" type="submit">Apply</button>
+  Reserves {% if bulk_preview.changed == 1 %}this {{ object_label }}
+  {% else %}these {{ bulk_preview.changed }} {{ objects_label }}
+  {% endif %} in one change, not yet submitted. Any {{ object_label }} that
+  fails the checks of its edit form is left out.
+</form>
+  {% endif %}
 {% endif %}
 {% endblock %}

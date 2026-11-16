@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 import pytest
 
-from django.contrib.auth.models import AnonymousUser, Permission
+from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 from django.urls import reverse
 from django.utils.html import strip_tags
@@ -17,7 +17,6 @@ from apps.gcd.models.issue import IssuePublisherTable
 from apps.gcd.views.details import (
     TW_SORT_TABLE_TEMPLATE, generic_sortable_list)
 from apps.indexer.models import Error
-from apps.mycomics.models import Collector, ConditionGradeScale
 from apps.oi import bulk, states
 from apps.oi.forms.bulk import REVISION_FORMS, offered_fields
 from apps.oi.forms.issue import (
@@ -31,24 +30,6 @@ from apps.select.views import store_select_data
 SEARCH = {'target': 'issue', 'method': 'iexact', 'logic': 'False',
           'series': 'Series for Issues'}
 LINK = 'Use all objects of this list for a'
-
-
-@pytest.fixture
-def indexer(any_indexer, any_language):
-    """An indexer with the collector that a confirmed account gets."""
-    Collector.objects.create_collector(
-      any_indexer,
-      grade_system=ConditionGradeScale.objects.create(name='Test scale'),
-      default_language=any_language)
-    return any_indexer
-
-
-@pytest.fixture
-def reserving_indexer(indexer):
-    """An indexer who may reserve changes."""
-    indexer.user_permissions.add(Permission.objects.get(
-      codename='can_reserve', content_type__app_label='indexer'))
-    return indexer
 
 
 @pytest.fixture
@@ -253,6 +234,7 @@ def test_selection_has_distinct_ids_without_deleted(settings,
                                                     reserving_indexer,
                                                     approved_issues):
     """Each object counts once, in id order; deleted ones are left out."""
+    settings.BULK_CHANGE_ENABLED = True
     approved_issues[0].deleted = True
     approved_issues[0].save()
     request = RequestFactory().get('/list/', {'_export': 'bulk'})
@@ -337,10 +319,16 @@ def test_pages_write_nothing(client, settings, reserving_indexer,
                              approved_issues, open_changes):
     """
     The list, the page and the preview write no change, lock or error,
-    also for an indexer who holds all the open changes allowed.
+    also for an indexer who has reached the limit of open changes since
+    the start.
     """
     settings.BULK_CHANGE_ENABLED = True
     client.force_login(reserving_indexer)
+    counts = _counts()
+
+    start = client.get(reverse('process_advanced_search'),
+                       dict(SEARCH, _export='bulk'))
+    url, token = start['Location'].split('?token=')
     for count in range(open_changes):
         Changeset.objects.create(indexer=reserving_indexer,
                                  state=states.OPEN,
@@ -348,13 +336,9 @@ def test_pages_write_nothing(client, settings, reserving_indexer,
     if open_changes:
         reserving_indexer.indexer.max_reservations = open_changes
         reserving_indexer.indexer.save()
+        counts[0] += open_changes
     allowed = reserving_indexer.indexer.can_reserve_another()
     assert allowed is (not open_changes)
-    counts = _counts()
-
-    start = client.get(reverse('process_advanced_search'),
-                       dict(SEARCH, _export='bulk'))
-    url, token = start['Location'].split('?token=')
     page = client.get(url, {'token': token, 'field': 'price',
                             'shown': 'price', 'old_value': '=0.10 USD',
                             'operation': 'replace_exact',

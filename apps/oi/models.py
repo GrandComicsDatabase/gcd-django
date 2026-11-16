@@ -711,6 +711,15 @@ class Changeset(models.Model):
             )
         ) and not self.deleted()
 
+    def refuse_manual_edit(self):
+        """
+        Refuse, for a bulk change, an edit of its revisions by hand or the
+        addition of other revisions: only its operations change it.
+        """
+        if self.change_type == CTYPES['bulk']:
+            raise ErrorWithMessage('A bulk change is changed only by its '
+                                   'operations.')
+
     def ordered_issue_revisions(self):
         """
         Used in the display.  Natural revision order must be by timestamp.
@@ -812,6 +821,19 @@ class Changeset(models.Model):
             new_state = states.REVIEWING
         return new_state
 
+    def _refuse_unready_bulk(self, action):
+        """
+        Raise ErrorWithMessage if this is a bulk change that its author
+        cannot hand on yet, saying why; action says what cannot be done.
+        """
+        if self.change_type == CTYPES['bulk']:
+            # imported here, as apps.oi.bulk imports this module
+            from apps.oi.bulk import submit_messages
+            messages = submit_messages(self)
+            if messages:
+                raise ErrorWithMessage('This bulk change cannot be %s. %s' %
+                                       (action, ' '.join(messages)))
+
     def submit(self, notes='', delete=False):
         """
         Submit changes for approval.
@@ -825,6 +847,7 @@ class Changeset(models.Model):
            not (delete and self.state == states.UNRESERVED):
             raise ErrorWithMessage(
                   "Only OPEN changes can be submitted for approval.")
+        self._refuse_unready_bulk('submitted')
 
         new_state = self._check_approver()
 
@@ -938,6 +961,8 @@ class Changeset(models.Model):
            self.approver is None:
             raise ErrorWithMessage(
                   "Only changes with an approver may be discussed.")
+        if self.state == states.OPEN:
+            self._refuse_unready_bulk('discussed')
 
         self.comments.create(commenter=commenter,
                              text=notes,
@@ -967,6 +992,13 @@ class Changeset(models.Model):
            self.approver is None:
             raise ErrorWithMessage(
                   "Only REVIEWING changes with an approver can be approved.")
+
+        if self.change_type == CTYPES['bulk']:
+            # imported here, as apps.oi.bulk imports this module
+            from apps.oi.bulk import approval_refusal
+            refusal = approval_refusal(self)
+            if refusal:
+                raise ErrorWithMessage(refusal)
 
         for revision in self.revisions:
             # TODO rethink the depency handling during committing

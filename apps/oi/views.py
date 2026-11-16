@@ -5,20 +5,18 @@ import re
 from uuid import UUID, uuid4
 import sys
 import glob
-from copy import copy
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
-from django.forms import (CheckboxInput, FileField, HiddenInput,
-                          ModelChoiceField, MultipleHiddenInput)
+from django.forms import HiddenInput, MultipleHiddenInput
 import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
-from django.http import HttpResponseBadRequest, HttpResponseRedirect, QueryDict
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.core import signing
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404, render, redirect
-from django.db import transaction, IntegrityError
+from django.db import transaction, IntegrityError, OperationalError
 from django.db.models import Min, Max, Count, F, Q
 from django.db.models.fields import Field
 from django.utils.html import (mark_safe, conditional_escape as esc,
@@ -34,7 +32,8 @@ from django_filters import FilterSet, MultipleChoiceFilter
 from apps.stddata.models import Country
 
 from apps.indexer.models import Indexer
-from apps.indexer.views import ViewTerminationError, render_error
+from apps.indexer.views import (
+    ErrorWithMessage, ViewTerminationError, render_error)
 
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
@@ -137,6 +136,10 @@ from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
 from apps.oi import bulk, states
+from apps.oi.validation import revision_form_messages
+# Moved to apps.oi.validation, which the bulk change uses without the
+# views; tests build POST data with them from here.
+from apps.oi.validation import _add_form_data, _add_formset_data  # noqa: F401
 from apps.oi.templatetags.editing import is_locked
 
 REVISION_CLASSES = {
@@ -247,114 +250,18 @@ INTERNAL_REPRINT_SELECT_HELP = \
 ##############################################################################
 
 
-def _value_for_post(value):
-    if hasattr(value, 'pk'):
-        return value.pk
-    return value
-
-
-def _add_form_data(data, form):
-    """Serialize an unbound form's current values as browser-like POST data."""
-    for name, field in form.fields.items():
-        if isinstance(field, FileField):
-            # Omitting a file input preserves the file already on the instance.
-            continue
-
-        key = form.add_prefix(name)
-        value = form[name].value()
-
-        # A select without an empty choice submits its first option even when
-        # the unbound BoundField has no explicit initial value.
-        if value is None and isinstance(field, ModelChoiceField) and \
-           not getattr(field.widget, 'allow_multiple_selected', False) and \
-           field.empty_label is None:
-            first_choice = field.queryset.first()
-            if first_choice is not None:
-                value = first_choice.pk
-
-        if getattr(field.widget, 'allow_multiple_selected', False) or \
-           isinstance(value, (list, tuple)) or hasattr(value, 'all'):
-            # An empty multi-select is omitted from browser POST data; posting
-            # one empty value makes Django reject it as an invalid choice.
-            if value is None or value == '':
-                values = []
-            elif hasattr(value, 'all'):
-                values = value.all()
-            elif isinstance(value, (list, tuple)):
-                values = value
-            else:
-                values = [value]
-            data.setlist(key, [str(_value_for_post(item))
-                               for item in values])
-        elif isinstance(field.widget, CheckboxInput):
-            if value:
-                data[key] = 'on'
-        else:
-            value = _value_for_post(value)
-            data[key] = '' if value is None else str(value)
-
-
-def _add_formset_data(data, formset):
-    prefix = formset.prefix
-    data['%s-TOTAL_FORMS' % prefix] = str(formset.total_form_count())
-    data['%s-INITIAL_FORMS' % prefix] = str(formset.initial_form_count())
-    data['%s-MIN_NUM_FORMS' % prefix] = str(formset.min_num)
-    data['%s-MAX_NUM_FORMS' % prefix] = str(formset.max_num)
-    for form in formset.forms:
-        _add_form_data(data, form)
-
-
-def _validation_messages(form, extra_forms):
-    messages = []
-    for errors in form.errors.values():
-        messages.extend(str(error) for error in errors)
-    for formset in extra_forms.values():
-        if formset is None:
-            continue
-        for errors in formset.errors:
-            for field_errors in errors.values():
-                messages.extend(str(error) for error in field_errors)
-        messages.extend(str(error) for error in formset.non_form_errors())
-    return list(dict.fromkeys(messages))
-
-
 def validate_revision_for_transition(revision, request):
     """Run the editing form and formset validators against saved values."""
-    # extra_forms() reads request.POST, so use request copies rather than
-    # replacing the data submitted to the workflow action itself.
-    unbound_request = copy(request)
-    unbound_request.POST = QueryDict()
-
-    form_class = get_revision_form(revision, user=request.user)
-    unbound_form = form_class(instance=revision)
-    unbound_extra_forms = revision.extra_forms(unbound_request)
-
-    data = QueryDict('', mutable=True)
-    _add_form_data(data, unbound_form)
-    for formset in unbound_extra_forms.values():
-        if formset is not None:
-            _add_formset_data(data, formset)
-
-    bound_request = copy(request)
-    bound_request.POST = data
-    form = form_class(data, instance=revision)
-    extra_forms = revision.extra_forms(bound_request)
-
-    # Evaluate every formset even if the main form fails so the indexer sees
-    # all persisted-data errors in one pass.
-    valid = form.is_valid()
-    for formset in extra_forms.values():
-        if formset is not None:
-            if not formset.is_valid():
-                valid = False
-
-    if valid:
-        return []
-    return _validation_messages(form, extra_forms)
+    return revision_form_messages(revision, request.user)
 
 
 def validate_changeset_revisions(changeset, request):
-    """Return invalid changed issue/story revisions and their errors."""
+    """
+    Return invalid changed issue/story revisions and their errors.  A bulk
+    change checks its own revisions in Changeset.submit().
+    """
+    if changeset.change_type == CTYPES['bulk']:
+        return []
     invalid = []
     revisions = list(changeset.issuerevisions.filter(deleted=False))
     revisions.extend(changeset.storyrevisions.filter(deleted=False))
@@ -658,6 +565,7 @@ def reserve_other_issue(changeset, revision, issue_one):
 @permission_required('indexer.can_reserve')
 def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+    revision.changeset.refuse_manual_edit()
     form_class = get_revision_form(revision, user=request.user)
     form = form_class(instance=revision)
     extra_forms = revision.extra_forms(request)
@@ -1459,7 +1367,16 @@ def approve(request, id):
     # editing forms cannot express. Validate at submission, not approval.
 
     comment_text = request.POST['comments'].strip()
-    changeset.approve(notes=comment_text)
+    try:
+        changeset.approve(notes=comment_text)
+    except OperationalError as error:
+        # The approval lost a lock conflict and is undone as a whole, so it
+        # can be repeated.
+        if error.args[0] not in (bulk.DEADLOCK, bulk.LOCK_WAIT_TIMEOUT):
+            raise
+        raise ErrorWithMessage('Another change was being saved at the same '
+                               'moment, so this change was not approved. '
+                               'Please approve it again.')
     email_comments = '.'
     postscript = ''
     if comment_text:
@@ -1852,6 +1769,7 @@ def process_revision(request, id, model_name):
        or 'edit_importance_order' in request.POST \
        or 'create_importance_order' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+        revision.changeset.refuse_manual_edit()
         if request.user != revision.changeset.indexer:
             return oi_render(
               request, 'indexer/error.html',
@@ -1900,7 +1818,9 @@ def _bulk_start(request, token):
     """
     Show the page that starts a bulk change, for the selection that a list
     kept under token.  With GET the indexer chooses a field, sees its
-    values and previews an operation; nothing is written.
+    values and previews an operation; nothing is written.  A POST of the
+    previewed operation applies it and shows the new change; the page of
+    a selection applied already asks to start again from the list.
     """
     selection = bulk.stored_selection(request, token)
     if selection is None:
@@ -1908,15 +1828,18 @@ def _bulk_start(request, token):
           request,
           'This selection for a bulk change is no longer available. Please '
           'start again from the list.', redirect=False)
+    if bulk.selection_applied(request.user, token):
+        return render_error(request, bulk.APPLIED_ALREADY, redirect=False)
     model, ids, source = selection
     rev_class = bulk.BULK_TARGETS[model]
     publisher = bulk.single_publisher(model, ids)
     names = offered_fields(rev_class, publisher)
-    name = request.GET.get('field')
+    params = request.POST if request.method == 'POST' else request.GET
+    name = params.get('field')
     if name not in names:
         name = names[0]
     values = bulk.distinct_values(model, ids, name)
-    data = request.GET if request.GET.get('shown') == name else None
+    data = params if params.get('shown') == name else None
     form = BulkOperationForm(data, rev_class, name,
                              values[:bulk.LISTED_VALUES], publisher)
 
@@ -1929,9 +1852,18 @@ def _bulk_start(request, token):
       'selection': '%d %s' % (len(ids), singular if len(ids) == 1
                               else plural),
       'object_label': singular,
+      'objects_label': plural,
       'deleted': bulk.deleted_count(model, ids),
       'more_values': max(0, len(values) - bulk.LISTED_VALUES),
     }
+    if form.is_bound and form.is_valid() and request.method == 'POST':
+        changeset = bulk.apply(
+          request.user, token, model, ids, source,
+          bulk.Operation(name, form.cleaned_data['operation'],
+                         form.cleaned_data['old_value'],
+                         form.cleaned_data['new_value']))
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'compare', kwargs={'id': changeset.id}))
     if form.is_bound and form.is_valid():
         context['bulk_preview'] = bulk.preview(
           model, ids, name, form.cleaned_data['operation'],
@@ -2853,6 +2785,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     """
 
     changeset = get_object_or_404(Changeset, id=changeset_id)
+    changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may add variants.')
@@ -3321,6 +3254,7 @@ def _display_bulk_issue_form(request, series, form, credits_formset,
 @permission_required('indexer.can_reserve')
 def compare_issues_copy(request, issue_revision_id, issue_id):
     revision = get_object_or_404(IssueRevision, id=issue_revision_id)
+    revision.changeset.refuse_manual_edit()
     issue = get_object_or_404(Issue, id=issue_id)
     compare_revision = issue.revisions.filter(
       changeset__state=5,
@@ -3833,6 +3767,7 @@ def add_story(request, issue_revision_id, changeset_id):
     if request.user != changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may add stories.')
+    changeset.refuse_manual_edit()
     # check if this is a request to add a copy of a sequence
     if 'copy' in request.GET or 'copy_cover' in request.GET:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
@@ -4032,6 +3967,7 @@ def copy_story_revision(request, issue_revision_id, changeset_id=None,
                         story_revision_id=None):
     if request.method != 'POST':
         changeset = get_object_or_404(Changeset, id=changeset_id)
+        changeset.refuse_manual_edit()
         issue_revision = changeset.issuerevisions.get()
         if issue_revision.id != int(issue_revision_id):
             raise ViewTerminationError(render_error(
@@ -4041,6 +3977,7 @@ def copy_story_revision(request, issue_revision_id, changeset_id=None,
     else:
         issue_revision = IssueRevision.objects.get(id=issue_revision_id)
         changeset = issue_revision.changeset
+        changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         raise ViewTerminationError(
           render_error(request,
@@ -4088,6 +4025,7 @@ def copy_story_revision(request, issue_revision_id, changeset_id=None,
 @permission_required('indexer.can_reserve')
 def story_select_compare(request, story_revision_id):
     revision = get_object_or_404(StoryRevision, id=story_revision_id)
+    revision.changeset.refuse_manual_edit()
     if request.user != revision.changeset.indexer:
         return render_error(
           request,
@@ -4149,6 +4087,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
           source when copying
     """
     revision = get_object_or_404(StoryRevision, id=story_revision_id)
+    revision.changeset.refuse_manual_edit()
     if request.user != revision.changeset.indexer:
         return render_error(
           request,
@@ -4368,6 +4307,7 @@ def edit_character_order_revision(request, story_revision_id, type_id):
     if request.user != changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may edit character orders.')
+    changeset.refuse_manual_edit()
     type = get_object_or_404(CharacterOrderType, id=type_id)
     if not story_revision.character_order_revisions.filter(type=type).exists():
         return render_error(
@@ -4387,6 +4327,7 @@ def create_character_order_revision(request, story_revision_id, type_id):
     if request.user != changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may create character orders.')
+    changeset.refuse_manual_edit()
     type = get_object_or_404(CharacterOrderType, id=type_id)
     if story_revision.character_order_revisions.filter(type=type).exists():
         return render_error(
@@ -4640,6 +4581,7 @@ def reserve_reprint(request, changeset_id, reprint_id):
         return render_error(
           request,
           'Only the reservation holder may access this page.')
+    changeset.refuse_manual_edit()
     if 'edit_origin' in request.POST:
         which_side = 'origin'
     elif 'edit_origin_internal' in request.POST:
@@ -4952,6 +4894,7 @@ def add_reprint(request, changeset_id,
         issue = get_object_or_404(IssueRevision, id=issue_id,
                                   changeset__id=changeset_id)
         exclude_issue_id = issue.issue_id
+    get_object_or_404(Changeset, id=changeset_id).refuse_manual_edit()
     # the button of a sequence without notes sends a space
     note = unquote(reprint_note).strip()
     if note:
@@ -5102,6 +5045,7 @@ def copy_cached_sequences(request, data, select_key):
         id=data['issue_revision_id'])
     changeset = Changeset.objects.select_for_update().get(
         id=issue_revision.changeset_id)
+    changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         return render_error(
             request, 'Only the reservation holder may copy stories.')
@@ -5339,6 +5283,7 @@ def copy_sequence(request, issue_revision_id, story_id=None,
         IssueRevision.objects.select_for_update(), id=issue_revision_id)
     changeset = Changeset.objects.select_for_update().get(
         id=issue_revision.changeset_id)
+    changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         return render_error(
           request,
@@ -5622,6 +5567,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         revision = None
 
     changeset = get_object_or_404(Changeset, id=changeset_id)
+    changeset.refuse_manual_edit()
 
     origin = None
     origin_revision = None
@@ -5815,6 +5761,7 @@ def remove_reprint_revision(request, id):
 def move_series(request, series_revision_id, publisher_id):
     series_revision = get_object_or_404(SeriesRevision, id=series_revision_id,
                                         deleted=False)
+    series_revision.changeset.refuse_manual_edit()
     if request.user != series_revision.changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may move series.')
@@ -5939,6 +5886,7 @@ def move_issue(request, issue_revision_id, series_id):
     """ move issue to series """
     issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id,
                                        deleted=False)
+    issue_revision.changeset.refuse_manual_edit()
     if request.user != issue_revision.changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may move issues.')
@@ -6034,6 +5982,7 @@ def move_story_revision(request, id):
     if request.user != story.changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may move stories.')
+    story.changeset.refuse_manual_edit()
 
     if story.changeset.issuerevisions.count() != 2:
         return render_error(
@@ -6138,6 +6087,7 @@ def move_story_revision(request, id):
 def move_cover(request, id, cover_id=None):
     """ move cover between two issue revisions """
     changeset = get_object_or_404(Changeset, id=id)
+    changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         return render_error(
           request,
@@ -6192,6 +6142,7 @@ def move_cover(request, id, cover_id=None):
 @permission_required('indexer.can_reserve')
 def undo_move_cover(request, id, cover_id):
     changeset = get_object_or_404(Changeset, id=id)
+    changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         return render_error(
           request,
@@ -6220,6 +6171,7 @@ def remove_story_revision(request, id):
         return render_error(
           request,
           'Only the reservation holder may remove stories.')
+    story.changeset.refuse_manual_edit()
 
     # if user manually tries to permanently remove a sequence revision
     # that came from a pre-existing sequence, toggle the deleted flag
@@ -6270,6 +6222,7 @@ def toggle_delete_story_revision(request, id):
         return render_error(
           request,
           'Only the reservation holder may delete or restore stories.')
+    story.changeset.refuse_manual_edit()
 
     story.toggle_deleted()
     return HttpResponseRedirect(urlresolvers.reverse('edit',
@@ -6492,6 +6445,7 @@ def reorder_stories(request, issue_id, changeset_id):
         return render_error(
           request,
           'Only the reservation holder may reorder stories.')
+    changeset.refuse_manual_edit()
 
     # At this time, only existing issues can have their stories reordered.
     # This is analogous to issues needing to exist before stories can be added.
@@ -8157,6 +8111,7 @@ def migrate_story_revision(request, id):
     if request.user != story.changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may migrate stories.')
+    story.changeset.refuse_manual_edit()
 
     if request.method != 'POST':
         return _cant_get(request)
@@ -8178,6 +8133,7 @@ def migrate_issue_revision(request, id):
     if request.user != issue.changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may migrate issues.')
+    issue.changeset.refuse_manual_edit()
 
     if request.method != 'POST':
         return _cant_get(request)

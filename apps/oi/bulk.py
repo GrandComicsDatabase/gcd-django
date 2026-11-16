@@ -5,17 +5,25 @@ Most of this module needs no request, so that views, tests and scripts
 share it; only the start from a list keeps its selection in the session.
 It must not import apps.oi.views.
 """
+import copy
+import json
 import re
 import secrets
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 
 from diff_match_patch import diff_match_patch
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.cache import cache
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.db import OperationalError, connection, transaction
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
 from django.template.defaultfilters import yesno
+from django.utils import timezone
 from django.utils.encoding import escape_uri_path
 from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
@@ -23,11 +31,14 @@ import django.urls as urlresolvers
 from apps.gcd.models import Issue, Publisher
 from apps.gcd.templatetags.credits import format_page_count
 from apps.gcd.templatetags.display import field_name
-from apps.indexer.views import render_error
+from apps.indexer.models import Indexer
+from apps.indexer.views import ErrorWithMessage, render_error
 from apps.oi import states
 from apps.oi.models import (
-    BULK_OBJECT_NAMES, IssueRevision, RevisionLock, bulk_object_name)
+    BULK_OBJECT_NAMES, BULK_REVISION_ORDER, CTYPES, Changeset, IssueRevision,
+    RevisionLock, _get_revision_lock, bulk_object_name)
 from apps.oi.templatetags.compare import key_date_years_note, show_diff
+from apps.oi.validation import revision_form_messages
 
 # A space, a tab or a line break that is all of a changed part would
 # vanish in HTML; a no-break space of the same length shows it.
@@ -105,6 +116,55 @@ LISTED_VALUES = 100
 
 # The session key of the selection that start_from_list keeps.
 SELECTION_KEY = 'bulk_selection'
+
+# The cache key that marks the selection of a user and a token as
+# applied, and for how long: as long as a session keeps the selection,
+# so that a token is applied once.
+APPLIED_KEY = 'bulk_applied_%d_%s'
+APPLIED_SECONDS = settings.SESSION_COOKIE_AGE
+
+# Why a selection cannot be applied again.
+APPLIED_ALREADY = ('This selection was applied already, or is being '
+                   'applied. Please look for its change in your editing '
+                   'queue, or start again from the list.')
+
+# The outcomes of an operation for each object, in the order of the
+# comment that records them, and those whose objects the comment lists.
+OUTCOMES = ('changed', 'unchanged', 'turned_off', 'reserved', 'invalid',
+            'blocked')
+LISTED_OUTCOMES = ('reserved', 'invalid', 'blocked')
+LISTED_OBJECTS = 50
+
+# MySQL errors: a lock wait timeout undoes the statement only, or with
+# innodb_rollback_on_timeout the whole transaction, a deadlock always the
+# whole transaction.  A query with NOWAIT that finds a row held fails at
+# once, with the third error.
+LOCK_WAIT_TIMEOUT = 1205
+DEADLOCK = 1213
+NOWAIT_REFUSED = 3572
+
+# The fields of a model that link it to the rows its new revisions point
+# to, in the order in which a bulk change holds these rows, table by
+# table.
+HELD_PARENTS = {
+    Issue: ('series', 'indicia_publisher', 'brand_emblem', 'indicia_printer'),
+}
+
+# The revision sets that an edit of issues or sequences by hand adds, as
+# in an issue change, and that a bulk change never makes.
+OTHER_REVISION_SETS = (
+    'issuecreditrevisions', 'storycreditrevisions', 'storycharacterrevisions',
+    'storygrouprevisions', 'coverrevisions', 'reprintrevisions',
+    'publishercodenumberrevisions', 'externallinkrevisions',
+    'characterorderrevisions')
+
+# The time of a checkpoint in the comment of an operation, in UTC.
+CHECKPOINT_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+# One operation of a bulk change: on the field name, the operation of
+# OPERATIONS with the old value that replace_exact looks for and the new
+# value, as stored.
+Operation = namedtuple('Operation', 'name operation old new')
 
 
 def _compared_fields(rev_class):
@@ -448,12 +508,41 @@ def entry_allowed(user, items):
             bulk_model(items) is not None)
 
 
+def can_start_bulk(user, count):
+    """
+    Return why user may not start a bulk change of count objects, or None
+    if they may: bulk changes are on, the user may reserve another
+    change, has fewer active bulk changes than BULK_CHANGE_MAX_ACTIVE,
+    and count is within BULK_CHANGE_MAX, or BULK_CHANGE_MAX_NEW for a new
+    indexer.
+    """
+    if not settings.BULK_CHANGE_ENABLED:
+        return 'Bulk changes are turned off.'
+    if not user.indexer.can_reserve_another():
+        return ('You have reached your limit of open changes. Please submit'
+                ' or discard one of them first.')
+    active = Changeset.objects.filter(indexer=user,
+                                      change_type=CTYPES['bulk'],
+                                      state__in=states.ACTIVE).count()
+    if active >= settings.BULK_CHANGE_MAX_ACTIVE:
+        return ('You already have %d active bulk change%s, the most allowed.'
+                ' Each must be approved or discarded before you start'
+                ' another.' % (active, '' if active == 1 else 's'))
+    limit = settings.BULK_CHANGE_MAX_NEW if user.indexer.is_new \
+        else settings.BULK_CHANGE_MAX
+    if count > limit:
+        return ('A bulk change can hold at most %d objects, and this list'
+                ' has %d. Please narrow the list first, for example with a'
+                ' filter.' % (limit, count))
+    return None
+
+
 def start_from_list(request, items):
     """
     Start a bulk change from the list items: keep the sorted ids of its
     objects, deleted ones left out, in the session, and go to the bulk
-    change page.  An empty list, or one with more than BULK_CHANGE_MAX
-    objects, gives an error page.  Only the session is written.
+    change page.  An empty list, or one that can_start_bulk refuses,
+    gives an error page.  Only the session is written.
 
     The address of the list is kept escaped, as get_full_path gives it,
     so that it stays one line of the record of the bulk change and a
@@ -465,12 +554,9 @@ def start_from_list(request, items):
     if not count:
         return render_error(request, 'This list has no objects for a bulk '
                                      'change.', redirect=False)
-    if count > settings.BULK_CHANGE_MAX:
-        return render_error(
-          request,
-          'A bulk change can hold at most %d objects, and this list has %d.'
-          ' Please narrow the list first, for example with a filter.'
-          % (settings.BULK_CHANGE_MAX, count), redirect=False)
+    refusal = can_start_bulk(request.user, count)
+    if refusal:
+        return render_error(request, refusal, redirect=False)
     query = request.GET.copy()
     query.pop('_export')
     source = escape_uri_path(request.path)
@@ -499,6 +585,15 @@ def stored_selection(request, token):
     models = {model._meta.model_name: model for model in BULK_TARGETS}
     return (models[selection['model']], selection['ids'],
             selection['source'])
+
+
+def selection_applied(user, token):
+    """
+    Return whether user applied the selection of token, or is applying
+    it: its page then asks to start again from the list.  The session is
+    left alone, as another tab may have stored a newer selection.
+    """
+    return cache.get(APPLIED_KEY % (user.id, token)) is not None
 
 
 def policy_fields(rev_class):
@@ -682,3 +777,542 @@ def preview(model, ids, name, operation, old, new):
             for data_object, current, value in shown]
     return {'changed': len(changes), 'rows': rows, 'reserved': reserved,
             'turned_off': turned_off, 'deleted': deleted}
+
+
+class _LeftOut(Exception):
+    """
+    Ends the work on one object of a bulk change and undoes it: the
+    outcome and a message for the comment of the operation.
+    """
+
+    def __init__(self, outcome, message=''):
+        super().__init__(outcome)
+        self.outcome = outcome
+        self.message = message
+
+
+def _clone(rev_class, data_object, changeset):
+    """
+    Return a new revision of data_object in changeset.  An object that
+    has not exactly one latest approved revision gives an outcome: it is
+    reserved if a change holds a revision of it, else invalid.
+    """
+    try:
+        return rev_class.clone(data_object, changeset)
+    except (ObjectDoesNotExist, MultipleObjectsReturned):
+        if rev_class.objects.active_set().filter(
+             **{rev_class.source_name: data_object}).exists():
+            raise _LeftOut('reserved')
+        raise _LeftOut('invalid', 'It has no single approved revision.')
+
+
+def _values(revision, fields):
+    """Return the values of fields on revision, in order."""
+    return [getattr(revision, field.attname) for field in fields]
+
+
+def _checked_value(revision, field, value, current, user):
+    """
+    Check revision, with value in field instead of current, with the rules
+    of its edit form for user, and return the value that the form cleans
+    for field.  The object is left out if the check gives a message, as
+    invalid if it passes without the change and as blocked if it fails
+    already, or if the form would also change another field, which the
+    preview did not show.
+
+    The edit form takes its choices from the revision as it was before
+    value was set, as on its edit page, where only the value that the
+    revision holds is offered beyond the rules of the choices.
+    """
+    others = [other for other in type(revision)._meta.concrete_fields
+              if other.attname != field.attname]
+    stored = _values(revision, others)
+    original = copy.copy(revision)
+    setattr(revision, field.attname, value)
+    messages = revision_form_messages(revision, user, original=original)
+    cleaned = getattr(revision, field.attname)
+    after = _values(revision, others)
+    if messages or after != stored:
+        # The check of the object as it is tells apart what the change
+        # does from what the object holds already.
+        for other, old in zip(others, stored):
+            setattr(revision, other.attname, old)
+        setattr(revision, field.attname, current)
+        before = revision_form_messages(revision, user)
+        if messages:
+            if before:
+                raise _LeftOut('blocked', before[0])
+            raise _LeftOut('invalid', messages[0])
+        follows = [field_name(other.name) for other, old, new
+                   in zip(others, _values(revision, others), after)
+                   if old != new]
+        if follows:
+            raise _LeftOut('invalid', 'Its edit form would also change %s.'
+                                      % ', '.join(follows))
+    return cleaned
+
+
+def _locked(data_object):
+    """
+    Return whether a change holds the lock of data_object.  A lock that
+    an approval is freeing counts until the approval ends: the approval
+    then waits for the bulk change, which holds the parent, so a wait for
+    that lock would be a deadlock.
+    """
+    return RevisionLock.objects.filter(
+      content_type=ContentType.objects.get_for_model(data_object),
+      object_id=data_object.id).exists()
+
+
+def _share_rows(table, ids, suffix=''):
+    """
+    Hold the rows of table with these ids with a shared lock, by primary
+    key and in id order, until the transaction ends; suffix goes at the
+    end of the query.
+    """
+    sql = 'SELECT id FROM %s WHERE id IN (%s) ORDER BY id FOR SHARE%s' % (
+      table, ', '.join(['%s'] * len(ids)), suffix)
+    with connection.cursor() as cursor:
+        cursor.execute(sql, sorted(ids))
+
+
+def _hold_rows(data_object):
+    """
+    Hold the row of data_object and, for a variant, the row of its base
+    with a shared lock, which its new revision needs anyway; if a
+    transaction is writing one of them the query fails at once.  An
+    approval writes an issue before its series, and the series waits for
+    this bulk change, so a wait for that row would be a deadlock.
+    """
+    ids = {data_object.id}
+    base = getattr(data_object, 'variant_of_id', None)
+    if base:
+        ids.add(base)
+    _share_rows(type(data_object)._meta.db_table, ids, ' NOWAIT')
+
+
+def process_item(changeset, data_object, operation, user):
+    """
+    Change one object for a bulk change, in changeset, and return its
+    outcome and a message, as (outcome, message).
+
+    An object that another change holds is left out as reserved without
+    a wait, and so is one whose row, or the row of whose base, another
+    transaction is writing.  Else in a savepoint the object is locked,
+    read again, changed only if the operation still changes it and its
+    field is on, and its new revision is checked with the rules of its
+    edit form for user.  The revision keeps the values of the object, but
+    for the field, which gets the value of the operation, as the preview
+    showed it; an object for which the form would store anything else is
+    left out, and all its work is undone.  The lock of an object that a
+    reservation in flight is taking waits for its end; a wait beyond the
+    server's limit stops the whole Apply.
+    """
+    model = type(data_object)
+    field = model._meta.get_field(operation.name)
+    attname = field.attname
+    parent = TURNED_OFF_BY.get(model, (None,))[0]
+    if _locked(data_object):
+        return 'reserved', ''
+    try:
+        with transaction.atomic():
+            if _get_revision_lock(data_object, changeset) is None:
+                raise _LeftOut('reserved')
+            objects = model.objects.filter(id=data_object.id, deleted=False)
+            if parent:
+                objects = objects.select_related(parent)
+            fresh = objects.first()
+            if fresh is None:
+                raise _LeftOut('invalid', 'It was deleted.')
+            current = getattr(fresh, attname)
+            value = new_value(current, operation.operation, operation.old,
+                              operation.new)
+            if value == current:
+                raise _LeftOut('unchanged')
+            if not applicable(fresh, operation.name):
+                raise _LeftOut('turned_off')
+
+            _hold_rows(fresh)
+            revision = _clone(BULK_TARGETS[model], fresh, changeset)
+            cleaned = _checked_value(revision, field, value, current, user)
+            if cleaned != value:
+                raise _LeftOut('invalid', 'Its edit form stores "%s" '
+                                          'instead.' % cleaned)
+            setattr(revision, attname, value)
+            revision.save(update_fields=[attname, 'modified'])
+    except _LeftOut as left_out:
+        return left_out.outcome, left_out.message
+    except OperationalError as error:
+        # Another transaction is writing a row that the new revision needs.
+        if error.args[0] != NOWAIT_REFUSED:
+            raise
+        return 'reserved', ''
+    return 'changed', ''
+
+
+def _apply_to_objects(changeset, model, ids, operation, user):
+    """
+    Apply operation to the objects of model with these ids, in id order,
+    in changeset.  Return the count of each outcome and, for the outcomes
+    of LISTED_OUTCOMES, the objects with their messages.  An object
+    whose value the operation leaves as it is, or whose field is off, is
+    not locked.
+    """
+    counts = dict.fromkeys(OUTCOMES, 0)
+    listed = {outcome: [] for outcome in LISTED_OUTCOMES}
+    attname = model._meta.get_field(operation.name).attname
+    parent = TURNED_OFF_BY.get(model, (None,))[0]
+    for chunk in _chunks(sorted(ids)):
+        objects = model.objects.filter(id__in=chunk).order_by('id')
+        if parent:
+            objects = objects.select_related(parent)
+        found = 0
+        for data_object in objects:
+            found += 1
+            current = getattr(data_object, attname)
+            if new_value(current, operation.operation, operation.old,
+                         operation.new) == current:
+                outcome, message = 'unchanged', ''
+            elif not applicable(data_object, operation.name):
+                outcome, message = 'turned_off', ''
+            else:
+                outcome, message = process_item(changeset, data_object,
+                                                operation, user)
+            counts[outcome] += 1
+            if outcome in listed:
+                listed[outcome].append((data_object, message))
+        # Objects are deleted by a flag; a missing row is invalid.
+        counts['invalid'] += len(chunk) - found
+    return counts, listed
+
+
+def _counts_text(counts):
+    """Return the counts of the outcomes, as the comment shows them."""
+    return ', '.join('%s %d' % (outcome.replace('_', ' '), counts[outcome])
+                     for outcome in OUTCOMES)
+
+
+def _nothing_changed(consequence, counts, listed):
+    """
+    Return the error message of an operation that changed no object: the
+    counts and, so that the author learns why, each different reason for
+    leaving an object out, at most LISTED_OBJECTS, with the first object
+    it applies to.
+    """
+    reasons = {}
+    for outcome in LISTED_OUTCOMES:
+        for data_object, message in listed[outcome]:
+            if message:
+                reasons.setdefault(message, data_object)
+    lines = ['Nothing was changed, so %s: %s.' % (consequence,
+                                                  _counts_text(counts))]
+    lines += ['%s: %s' % (data_object, message) for message, data_object
+              in list(reasons.items())[:LISTED_OBJECTS]]
+    return ' '.join(lines)
+
+
+def operation_text(model, operation, source, total, counts, listed,
+                   checkpoint):
+    """
+    Return the comment that records an operation of a bulk change on
+    total objects of model: a first line for machines, with the values
+    in JSON, the list it came from, the counts of the outcomes, the time
+    after which a revision must be checked again, and a line for each
+    object left out, at most LISTED_OBJECTS for each outcome.
+    """
+    values = [operation.new]
+    if operation.operation == 'replace_exact':
+        values.insert(0, operation.old)
+    lines = [
+      'Operation: %s.%s %s %s' % (
+        model._meta.model_name, operation.name, operation.operation,
+        ' '.join(json.dumps(value, default=str, ensure_ascii=False)
+                 for value in values)),
+      'Source: %s%s' % (settings.SITE_URL.rstrip('/'), source),
+      'Checked %d of %d: %s' % (sum(counts.values()), total,
+                                _counts_text(counts)),
+      'Checkpoint: %s' % checkpoint.astimezone(dt_timezone.utc)
+                                   .strftime(CHECKPOINT_FORMAT),
+    ]
+    for outcome in LISTED_OUTCOMES:
+        label = outcome.capitalize()
+        for data_object, message in listed[outcome][:LISTED_OBJECTS]:
+            lines.append(('%s: %s%s %s' % (
+              label, settings.SITE_URL.rstrip('/'),
+              data_object.get_absolute_url(), message)).rstrip())
+        more = len(listed[outcome]) - LISTED_OBJECTS
+        if more > 0:
+            lines.append('%s: and %d more' % (label, more))
+    return '\n'.join(lines)
+
+
+OPERATION_LINE = re.compile(r'Operation: (\w+)\.(\w+) (\w+) (.*)$')
+CHECKED_LINE = re.compile(r'Checked (\d+) of (\d+): (.*)$')
+LISTED_LINE = re.compile(r'(%s): \S*?(\d+)/(?: |$)' % '|'.join(
+  outcome.capitalize() for outcome in LISTED_OUTCOMES))
+
+
+def parse_operation(text):
+    """
+    Read a comment that operation_text wrote, and return a dict with the
+    model name, field name, operation and values of its first line, the
+    source, the number checked, the total, the counts, the checkpoint and
+    the ids listed for each outcome.  Return None for any other text,
+    even one that only starts like such a comment.
+    """
+    try:
+        return _parsed_operation(text)
+    except (ValueError, RecursionError):
+        return None
+
+
+def operation_record(changeset):
+    """
+    Return the record of the operation of the bulk change changeset, from
+    its first comment, which apply writes in the transaction that makes
+    the change; None if that comment is no such record.  Comments that
+    anybody adds later never count.
+    """
+    comment = changeset.comments.order_by('id').first()
+    return parse_operation(comment.text) if comment else None
+
+
+def _parsed_operation(text):
+    """
+    Return the record of parse_operation, or None if the first line is
+    not that of an operation; a value that does not parse raises
+    ValueError.
+    """
+    lines = text.split('\n')
+    match = OPERATION_LINE.match(lines[0])
+    if match is None:
+        return None
+    record = dict(zip(('model', 'name', 'operation'), match.groups()))
+    decoder = json.JSONDecoder()
+    values, rest = [], match.group(4)
+    while rest:
+        value, end = decoder.raw_decode(rest)
+        values.append(value)
+        rest = rest[end:].lstrip(' ')
+    record['values'] = values
+    record['listed'] = {outcome: [] for outcome in LISTED_OUTCOMES}
+    for line in lines[1:]:
+        label, _, value = line.partition(': ')
+        checked = CHECKED_LINE.match(line)
+        listed = LISTED_LINE.match(line)
+        if label == 'Source':
+            record['source'] = value
+        elif label == 'Checkpoint':
+            record['checkpoint'] = datetime.strptime(
+              value, CHECKPOINT_FORMAT).replace(tzinfo=dt_timezone.utc)
+        elif checked:
+            record['checked'] = int(checked.group(1))
+            record['total'] = int(checked.group(2))
+            record['counts'] = {
+              outcome.replace(' ', '_'): int(count)
+              for outcome, count in re.findall(r'([a-z ]+?) (\d+)(?:, |$)',
+                                               checked.group(3))}
+        elif listed:
+            record['listed'][listed.group(1).lower()].append(
+              int(listed.group(2)))
+    return record
+
+
+@contextmanager
+def _deadlock_refused():
+    """
+    Turn a lock conflict in the block, a deadlock or a wait beyond the
+    server's limit, into ErrorWithMessage.  The refusal undoes the whole
+    transaction, so that nothing is left half done.
+    """
+    try:
+        yield
+    except OperationalError as error:
+        if error.args[0] not in (DEADLOCK, LOCK_WAIT_TIMEOUT):
+            raise
+        raise ErrorWithMessage('Another change was using some of the same '
+                               'records at the same moment, so nothing was '
+                               'changed. Please apply again.')
+
+
+def _hold_parents(model, ids, operation):
+    """
+    Hold with a shared lock the rows that the new revisions of the objects
+    of model with these ids will point to, and the new value of operation
+    if it is a link, table by table in the order of HELD_PARENTS.  Each
+    row that another transaction writes is waited for, each wait with its
+    own limit of the server, and the waits add up.  Afterwards an object
+    whose row another transaction writes is left out at once.  A wait
+    beyond that limit raises ErrorWithMessage.
+    """
+    try:
+        for name in HELD_PARENTS.get(model, ()):
+            parents = set(model.objects.filter(id__in=ids)
+                               .values_list(name, flat=True))
+            parents.discard(None)
+            if operation.name == name and operation.new:
+                parents.add(operation.new)
+            if parents:
+                _share_rows(model._meta.get_field(name)
+                            .related_model._meta.db_table, parents)
+    except OperationalError as error:
+        if error.args[0] != LOCK_WAIT_TIMEOUT:
+            raise
+        raise ErrorWithMessage('The series of these objects are being saved '
+                               'at this moment, so nothing was changed. '
+                               'Please apply again.')
+
+
+def _take_turn(user):
+    """
+    Lock the indexer row of user, so that two requests of one user that
+    make a bulk change take turns; a wait beyond the server's limit raises
+    ErrorWithMessage.
+    """
+    try:
+        Indexer.objects.select_for_update().get(user=user)
+    except OperationalError as error:
+        if error.args[0] != LOCK_WAIT_TIMEOUT:
+            raise
+        raise ErrorWithMessage('Another request of yours is applying a bulk'
+                               ' change. Please wait until it ends, then'
+                               ' look in your editing queue.')
+
+
+def _make_change(user, model, ids, source, operation):
+    """
+    Create the bulk change of apply, apply operation and record it in a
+    comment; raise ErrorWithMessage if no object changed.
+    """
+    changeset = Changeset.objects.create(indexer=user, state=states.OPEN,
+                                         change_type=CTYPES['bulk'])
+    counts, listed = _apply_to_objects(changeset, model, ids, operation, user)
+    if not counts['changed']:
+        raise ErrorWithMessage(_nothing_changed('no change was made', counts,
+                                                listed))
+    changeset.comments.create(
+      commenter=user, old_state=states.OPEN, new_state=states.OPEN,
+      text=operation_text(model, operation, source, len(ids), counts,
+                          listed, timezone.now()))
+    return changeset
+
+
+@transaction.atomic
+def apply(user, token, model, ids, source, operation):
+    """
+    Make one bulk change of user: apply operation to the objects of model
+    with these ids, which the list at source gave under token, and return
+    the changeset, OPEN, with the comment that records the operation.
+
+    The rows that the new revisions will point to are held first, then
+    the indexer row is locked, so that two requests of one user take
+    turns.  An Apply may wait on each of these rows and on each object
+    that a reservation in flight is taking; each wait has its own limit
+    of the server, and their sum has no limit.  A refusal of
+    can_start_bulk, a token already applied, a wait beyond the server's
+    limit, a deadlock or no changed object raise ErrorWithMessage.  On
+    any error nothing is written, and the selection may be applied again.
+    """
+    with _deadlock_refused():
+        _hold_parents(model, ids, operation)
+        _take_turn(user)
+        refusal = can_start_bulk(user, len(ids))
+        if refusal:
+            raise ErrorWithMessage(refusal)
+        key = APPLIED_KEY % (user.id, token)
+        if not cache.add(key, True, APPLIED_SECONDS):
+            raise ErrorWithMessage(APPLIED_ALREADY)
+        try:
+            return _make_change(user, model, ids, source, operation)
+        except BaseException:
+            cache.delete(key)
+            raise
+
+
+def other_revisions(changeset):
+    """
+    Return the names of the sets of OTHER_REVISION_SETS that hold
+    revisions in changeset.
+    """
+    return [name for name in OTHER_REVISION_SETS
+            if getattr(changeset, name).exists()]
+
+
+def turned_off_messages(changeset):
+    """
+    Return a message for each object of the bulk change changeset whose
+    field, the one of its operation, a flag of its parent has turned off
+    since the operation.  At approval such a value would not be written,
+    or would stay hidden in the edit form.  Only an object whose revision
+    changed the field counts.
+    """
+    record = operation_record(changeset)
+    if record is None:
+        return []
+    revisions = changeset.bulk_target()[1]
+    rev_class = revisions.model
+    parent = TURNED_OFF_BY.get(rev_class.source_class, (None,))[0]
+    if parent is None:
+        return []
+    name = record['name']
+    revisions = list(revisions.select_related(
+      '%s__%s' % (rev_class.source_name, parent)))
+    diff = exact_diff(rev_class, [revision.id for revision in revisions])
+    return ['%s: %s is turned off in its %s.' % (
+              bulk_object_name(revision), field_name(name), parent)
+            for revision in revisions
+            if name in diff[revision.id]
+            and not applicable(revision.source, name)]
+
+
+def approval_refusal(changeset):
+    """
+    Return why the bulk change changeset cannot be approved, or None if it
+    can.  The parents of its objects are locked first, in id order and
+    until the approval ends: a flag read here then stays as it is until
+    the values are written, and an approval in the series of an Apply
+    waits for the Apply before it writes anything.
+    """
+    target, revisions = changeset.bulk_target()
+    if target is None:
+        return None
+    rev_class = revisions.model
+    parent = TURNED_OFF_BY.get(rev_class.source_class, (None,))[0]
+    if parent:
+        parents = rev_class.source_class._meta.get_field(parent).related_model
+        ids = set(revisions.values_list('%s__%s' % (rev_class.source_name,
+                                                    parent), flat=True))
+        list(parents.objects.select_for_update().filter(id__in=ids)
+             .order_by('id').values_list('id', flat=True))
+    messages = turned_off_messages(changeset)
+    if not messages:
+        return None
+    return 'This bulk change cannot be approved. %s Please send it back to ' \
+           'its author.' % ' '.join(messages)
+
+
+def submit_messages(changeset):
+    """
+    Return why the bulk change changeset cannot be submitted, as a list of
+    messages, empty if it can.  Its revisions passed the rules of their
+    edit forms when its operations made them; only those changed since
+    the checkpoint of its operation record, with a second of margin, are
+    checked again, and all of them if the record has none.  It must also
+    hold no revision of a kind that bulk changes do not use, and no value
+    in a field that is turned off now, whenever that happened.
+    """
+    messages = ['It holds revisions that a bulk change does not make: %s.'
+                % name for name in other_revisions(changeset)]
+    messages += turned_off_messages(changeset)
+    record = operation_record(changeset)
+    for name in BULK_REVISION_ORDER:
+        revisions = getattr(changeset, name).all()
+        if record and 'checkpoint' in record:
+            revisions = revisions.filter(
+              modified__gte=record['checkpoint'] - timedelta(seconds=1))
+        for revision in revisions:
+            for message in revision_form_messages(revision,
+                                                  changeset.indexer):
+                messages.append('%s: %s' % (bulk_object_name(revision),
+                                            message))
+    return messages

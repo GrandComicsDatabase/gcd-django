@@ -31,8 +31,8 @@ def many_approved_issues(approved_issues, any_adding_changeset):
           changeset=any_adding_changeset, number=str(len(issues) + 42),
           after=issues[-1], series=first.series, no_title=True,
           no_volume=True, indicia_publisher=first.indicia_publisher,
-          publication_date='January 1947', price='0.10 USD',
-          indicia_frequency='monthly')
+          publication_date='January 1947', key_date='1947-01-00',
+          price='0.10 USD', indicia_frequency='monthly')
         revision.save()
         revision.commit_to_display()
         issues.append(revision.issue)

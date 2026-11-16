@@ -5,6 +5,7 @@ from django.contrib.auth.models import Permission, User
 
 from apps.gcd.models import StoryType
 from apps.indexer.models import Indexer
+from apps.mycomics.models import Collector, ConditionGradeScale
 from apps.oi import states
 from apps.oi.models import (
     Changeset, IssueRevision, StoryRevision, CTYPES, _get_revision_lock)
@@ -63,6 +64,15 @@ def approve_change(any_approver):
 
 
 @pytest.fixture
+def indicia_publisher_add_values(indicia_publisher_add_values):
+    """
+    The values of the shared fixture with years that cover 1947, the key
+    date of the approved issues, so that their edit form offers it.
+    """
+    return dict(indicia_publisher_add_values, year_began=1940)
+
+
+@pytest.fixture
 def approved_issues(any_added_issue, any_adding_changeset):
     """Three approved issues of one series."""
     issues = [any_added_issue]
@@ -71,12 +81,28 @@ def approved_issues(any_added_issue, any_adding_changeset):
           changeset=any_adding_changeset, number=number, after=issues[-1],
           series=any_added_issue.series, no_title=True, no_volume=True,
           indicia_publisher=any_added_issue.indicia_publisher,
-          publication_date='January 1947', price='0.10 USD',
-          indicia_frequency='monthly')
+          publication_date='January 1947', key_date='1947-01-00',
+          price='0.10 USD', indicia_frequency='monthly')
         revision.save()
         revision.commit_to_display()
         issues.append(revision.issue)
     return issues
+
+
+@pytest.fixture
+def approved_variant(approved_issues, any_adding_changeset):
+    """An approved variant of the last of the approved issues."""
+    base = approved_issues[-1]
+    revision = IssueRevision(
+      changeset=any_adding_changeset, number=base.number, after=base,
+      series=base.series, variant_of=base, variant_name='Direct',
+      no_title=True, no_volume=True,
+      indicia_publisher=base.indicia_publisher,
+      publication_date='January 1947', key_date='1947-01-00',
+      price='0.10 USD', indicia_frequency='monthly')
+    revision.save()
+    revision.commit_to_display()
+    return revision.issue
 
 
 @pytest.fixture
@@ -111,3 +137,21 @@ def any_approver(any_country):
       content_type__app_label='indexer',
       codename__in=['can_reserve', 'can_approve']))
     return user
+
+
+@pytest.fixture
+def indexer(any_indexer, any_language):
+    """An indexer with the collector that a confirmed account gets."""
+    Collector.objects.create_collector(
+      any_indexer,
+      grade_system=ConditionGradeScale.objects.create(name='Test scale'),
+      default_language=any_language)
+    return any_indexer
+
+
+@pytest.fixture
+def reserving_indexer(indexer):
+    """An indexer who may reserve changes."""
+    indexer.user_permissions.add(Permission.objects.get(
+      codename='can_reserve', content_type__app_label='indexer'))
+    return indexer

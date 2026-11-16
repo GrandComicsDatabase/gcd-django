@@ -248,9 +248,13 @@ DATETIME_FORMAT = 'Y-m-d H:i:s'
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 5120
 
 # Bulk changes, apps/oi/bulk.py: one change of many objects, off unless a
-# settings_local.py turns it on; and the most objects that one can hold.
+# settings_local.py turns it on; the most objects that one can hold, for
+# any indexer and for a new indexer; and the most active bulk changes of
+# one indexer.
 BULK_CHANGE_ENABLED = False
 BULK_CHANGE_MAX = 100
+BULK_CHANGE_MAX_NEW = 100
+BULK_CHANGE_MAX_ACTIVE = 1
 
 # type of implicitly generated primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
