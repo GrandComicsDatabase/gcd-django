@@ -1,25 +1,110 @@
 """
 Bulk changes: one changeset of type 'bulk' that changes many objects.
 
-This module holds the parts that need no request, so that views, tests
-and scripts share them.  It must not import apps.oi.views.
+Most of this module needs no request, so that views, tests and scripts
+share it; only the start from a list keeps its selection in the session.
+It must not import apps.oi.views.
 """
-from collections import defaultdict
+import re
+import secrets
+from collections import Counter, defaultdict
 from decimal import Decimal
 
 from diff_match_patch import diff_match_patch
+from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import QuerySet
+from django.http import HttpResponseRedirect
 from django.template.defaultfilters import yesno
+from django.utils.encoding import escape_uri_path
 from django.utils.safestring import mark_safe
+import django.urls as urlresolvers
 
+from apps.gcd.models import Issue, Publisher
 from apps.gcd.templatetags.credits import format_page_count
 from apps.gcd.templatetags.display import field_name
+from apps.indexer.views import render_error
 from apps.oi import states
-from apps.oi.models import BULK_OBJECT_NAMES, bulk_object_name
+from apps.oi.models import (
+    BULK_OBJECT_NAMES, IssueRevision, RevisionLock, bulk_object_name)
 from apps.oi.templatetags.compare import key_date_years_note, show_diff
 
 # A space, a tab or a line break that is all of a changed part would
 # vanish in HTML; a no-break space of the same length shows it.
 NO_BREAK_SPACE = '\u00a0'
+
+# Spaces that HTML would merge or hide: a run of two or more, or a tab or
+# a line break.
+HIDDEN_SPACES = re.compile(r'\s{2,}|[^\S ]')
+
+# The models that a bulk change can change, with their revision classes.
+BULK_TARGETS = {Issue: IssueRevision}
+
+# The fields that a bulk change can change, by their nature in the field
+# census: T transcribed as printed, F in a prescribed format, L a link to
+# another record, flag a yes or no.
+FIELD_POLICY = {
+    IssueRevision: {
+        'T': ('rating',),
+        'T+F': ('publication_date', 'indicia_frequency'),
+        'F': ('volume', 'key_date', 'price', 'page_count'),
+        'L': ('indicia_publisher',),
+        'flag': ('no_title', 'no_volume', 'volume_not_printed',
+                 'display_volume_with_number', 'indicia_pub_not_printed',
+                 'no_brand', 'no_indicia_frequency', 'page_count_uncertain',
+                 'indicia_printer_not_printed', 'no_isbn', 'no_barcode',
+                 'no_rating'),
+    },
+}
+
+# The fields that a bulk change leaves alone, by reason.  With the fields
+# of FIELD_POLICY they are all the fields of the edit form.
+EXCLUDED = {
+    IssueRevision: {
+        'unique to each issue': ('number', 'isbn', 'barcode'),
+        'a parent, changed by its own move': ('series', 'variant_of'),
+        'left out, as in the issue bulk change': (
+            'title', 'notes', 'year_on_sale', 'month_on_sale', 'day_on_sale',
+            'on_sale_date_uncertain'),
+        'set for each variant': ('variant_name', 'variant_cover_status'),
+        'later: credits, keywords and links to many objects': (
+            'editing', 'no_editing', 'keywords', 'brand_emblem',
+            'indicia_printer', 'indicia_printer_sourced_by'),
+    },
+}
+
+# Fields that a flag of the parent turns off, as the edit forms do:
+# {model: (parent, {flag: fields})}.  Where a field is off, a bulk
+# change leaves it alone.
+TURNED_OFF_BY = {
+    Issue: ('series', {
+        'has_issue_title': ('no_title',),
+        'has_volume': ('volume', 'no_volume', 'volume_not_printed',
+                       'display_volume_with_number'),
+        'has_indicia_frequency': ('indicia_frequency',
+                                  'no_indicia_frequency'),
+        'has_indicia_printer': ('indicia_printer_not_printed',),
+        'has_isbn': ('no_isbn',),
+        'has_barcode': ('no_barcode',),
+        'has_rating': ('rating', 'no_rating'),
+    }),
+}
+
+# The operations, as form choices: on the objects that hold one exact old
+# value, or on all of them.  Values compare as stored: spaces and case
+# count.
+OPERATIONS = (('replace_exact', 'Replace the old value'),
+              ('set', 'Set all to the new value'))
+
+# Fields of a date, which belongs to each object: a bulk change never
+# sets one for all objects, never empties one, never fills an empty one.
+NOT_EMPTY = ('publication_date', 'key_date')
+
+# The most values that the form lists.
+LISTED_VALUES = 100
+
+# The session key of the selection that start_from_list keeps.
+SELECTION_KEY = 'bulk_selection'
 
 
 def _compared_fields(rev_class):
@@ -339,3 +424,261 @@ def compare_rows(revisions):
         if fields:
             rows.append((revision, bulk_object_name(revision), fields))
     return rows
+
+
+def bulk_model(items):
+    """
+    Return the model of the list items if a bulk change can change it,
+    else None.  Only a Django QuerySet qualifies, which a view may also
+    build from the ids of search engine hits; a SearchQuerySet does not.
+    """
+    if isinstance(items, QuerySet) and items.model in BULK_TARGETS:
+        return items.model
+    return None
+
+
+def entry_allowed(user, items):
+    """
+    Return whether user may start a bulk change from the list items:
+    bulk changes are on, the site edits data, the user may reserve and a
+    bulk change can change the objects of the list.
+    """
+    return (settings.BULK_CHANGE_ENABLED and not settings.MYCOMICS and
+            not settings.NO_OI and user.has_perm('indexer.can_reserve') and
+            bulk_model(items) is not None)
+
+
+def start_from_list(request, items):
+    """
+    Start a bulk change from the list items: keep the sorted ids of its
+    objects, deleted ones left out, in the session, and go to the bulk
+    change page.  An empty list, or one with more than BULK_CHANGE_MAX
+    objects, gives an error page.  Only the session is written.
+
+    The address of the list is kept escaped, as get_full_path gives it,
+    so that it stays one line of the record of the bulk change and a
+    valid link.
+    """
+    ids = items.filter(deleted=False).order_by() \
+               .values_list('id', flat=True).distinct()
+    count = ids.count()
+    if not count:
+        return render_error(request, 'This list has no objects for a bulk '
+                                     'change.', redirect=False)
+    if count > settings.BULK_CHANGE_MAX:
+        return render_error(
+          request,
+          'A bulk change can hold at most %d objects, and this list has %d.'
+          ' Please narrow the list first, for example with a filter.'
+          % (settings.BULK_CHANGE_MAX, count), redirect=False)
+    query = request.GET.copy()
+    query.pop('_export')
+    source = escape_uri_path(request.path)
+    if query:
+        source += '?' + query.urlencode()
+    token = secrets.token_urlsafe(8)
+    request.session[SELECTION_KEY] = {
+        'token': token,
+        'model': items.model._meta.model_name,
+        'ids': sorted(ids),
+        'source': source,
+    }
+    return HttpResponseRedirect(
+      urlresolvers.reverse('edit_issues_in_bulk') + '?token=' + token)
+
+
+def stored_selection(request, token):
+    """
+    Return the selection that start_from_list kept for token, as (model,
+    ids, url of the list), or None if the session no longer holds it: it
+    expired, or a newer selection took its place.
+    """
+    selection = request.session.get(SELECTION_KEY)
+    if not selection or selection['token'] != token:
+        return None
+    models = {model._meta.model_name: model for model in BULK_TARGETS}
+    return (models[selection['model']], selection['ids'],
+            selection['source'])
+
+
+def policy_fields(rev_class):
+    """Return {field name: nature} for the fields of FIELD_POLICY."""
+    return {name: nature
+            for nature, names in FIELD_POLICY[rev_class].items()
+            for name in names}
+
+
+def operations(name, nature):
+    """
+    Return the operations, as form choices, for the field name of this
+    nature: a transcribed value or a date is replaced one exact value at
+    a time, never set for all objects at once.
+    """
+    if 'T' in nature or 'D' in nature or name in NOT_EMPTY:
+        return OPERATIONS[:1]
+    return OPERATIONS
+
+
+def applicable(data_object, name):
+    """
+    Return whether the field name is on for data_object: a flag of its
+    parent, such as has_volume of the series of an issue, can turn it
+    off, as in the edit form.
+    """
+    parent, flags = TURNED_OFF_BY.get(type(data_object), (None, {}))
+    for flag, names in flags.items():
+        if name in names:
+            return getattr(getattr(data_object, parent), flag)
+    return True
+
+
+def _chunks(ids, size=1000):
+    """Yield the list ids in slices of at most size ids."""
+    for start in range(0, len(ids), size):
+        yield ids[start:start + size]
+
+
+def single_publisher(model, ids):
+    """
+    Return the publisher of all the objects of model with these ids, or
+    None if they have several: an issue has the publisher of its series.
+    A link field, such as the indicia publisher, is offered only with one
+    publisher, whose records the edit form lists.
+    """
+    publisher_ids = set()
+    for chunk in _chunks(ids):
+        publisher_ids.update(model.objects.filter(id__in=chunk,
+                                                  deleted=False)
+                                  .values_list('series__publisher',
+                                               flat=True))
+    if len(publisher_ids) != 1:
+        return None
+    return Publisher.objects.get(id=publisher_ids.pop())
+
+
+def deleted_count(model, ids):
+    """
+    Return how many of the objects of model with these ids were deleted
+    since the list was chosen.
+    """
+    return sum(model.objects.filter(id__in=chunk, deleted=True).count()
+               for chunk in _chunks(ids))
+
+
+def distinct_values(model, ids, name):
+    """
+    Return the values of the field name among the objects of model with
+    these ids, as (value, count) pairs, the most frequent first.  Values
+    are counted in Python, so that spaces and case count, and None and ''
+    stay apart, whatever the collation of the column.
+    """
+    attname = model._meta.get_field(name).attname
+    counts = Counter()
+    for chunk in _chunks(ids):
+        counts.update(model.objects.filter(id__in=chunk, deleted=False)
+                           .values_list(attname, flat=True))
+    return sorted(counts.items(),
+                  key=lambda item: (-item[1], value_key(item[0])))
+
+
+def value_key(value):
+    """
+    Return the text that stands for a stored value in a form choice:
+    'None' for None, else '=' and the value, so that no value, the empty
+    text included, looks like no choice.
+    """
+    return 'None' if value is None else '=' + str(value)
+
+
+def _object_names(field, values):
+    """
+    Return {id: name} for the objects that the relation field links to
+    with these values, and {} for any other field.
+    """
+    if not field.is_relation:
+        return {}
+    return {pk: str(data_object) for pk, data_object in
+            field.related_model.objects
+                 .in_bulk([value for value in values if value is not None])
+                 .items()}
+
+
+def value_choices(field, values):
+    """
+    Return form choices for values, the (value, count) pairs of one
+    field: the key of each value and a label with its count.  A text is
+    in quotes, with the spaces that HTML would hide as no-break spaces; a
+    link shows the name of its object.
+    """
+    names = _object_names(field, [value for value, count in values])
+    choices = []
+    for value, count in values:
+        if value is None or value == '':
+            label = '(empty)'
+        elif isinstance(value, str):
+            label = '"%s"' % HIDDEN_SPACES.sub(
+              lambda match: NO_BREAK_SPACE * len(match.group()), value)
+        else:
+            label = _shown_value(field, value, names)
+        choices.append((value_key(value), '%s (%d)' % (label, count)))
+    return choices
+
+
+def new_value(current, operation, old, new):
+    """
+    Return the value that operation gives to a field that holds current:
+    'set' gives new; 'replace_exact' gives new where current is exactly
+    old, as stored, and keeps current elsewhere.
+    """
+    if operation == 'set':
+        return new
+    if operation == 'replace_exact':
+        return new if current == old else current
+    raise ValueError('Unknown bulk change operation %r.' % operation)
+
+
+def preview(model, ids, name, operation, old, new):
+    """
+    Return what operation would do to the field name of the objects of
+    model with these ids, writing nothing.  The objects whose value would
+    change are split four ways: 'deleted' since the list was chosen,
+    'turned_off' where a flag of the parent turns the field off,
+    'reserved' where another change reserves them, and the others,
+    counted in 'changed'.  'rows' shows the first BULK_CHANGE_MAX of
+    these, so all of them for a selection within the limit, each as
+    (object, old HTML, new HTML).  Each thousand objects comes in the
+    order of the model.
+    """
+    field = model._meta.get_field(name)
+    parent = TURNED_OFF_BY.get(model, (None,))[0]
+    changes, turned_off, deleted = [], [], []
+    for chunk in _chunks(ids):
+        objects = model.objects.filter(id__in=chunk)
+        if parent:
+            objects = objects.select_related(parent)
+        for data_object in objects:
+            current = getattr(data_object, field.attname)
+            value = new_value(current, operation, old, new)
+            if value == current:
+                continue
+            if data_object.deleted:
+                deleted.append(data_object)
+            elif applicable(data_object, name):
+                changes.append((data_object, current, value))
+            else:
+                turned_off.append(data_object)
+
+    locked = set(RevisionLock.objects
+                 .filter(content_type=ContentType.objects
+                                                 .get_for_model(model),
+                         object_id__in=[change[0].id for change in changes])
+                 .values_list('object_id', flat=True))
+    reserved = [change[0] for change in changes if change[0].id in locked]
+    changes = [change for change in changes if change[0].id not in locked]
+    shown = changes[:settings.BULK_CHANGE_MAX]
+    names = _object_names(field, [value for change in shown
+                                  for value in change[1:]])
+    rows = [(data_object,) + _shown_change(field, current, value, names)
+            for data_object, current, value in shown]
+    return {'changed': len(changes), 'rows': rows, 'reserved': reserved,
+            'turned_off': turned_off, 'deleted': deleted}

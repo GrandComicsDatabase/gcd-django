@@ -133,6 +133,17 @@ def test_related_objects_and_flags_by_name(client, bulk_change,
 
 
 @pytest.mark.django_db
+def test_page_follows_the_limit(client, settings, bulk_change,
+                                approved_issues):
+    """A page holds BULK_CHANGE_MAX objects, the most that a change has."""
+    settings.BULK_CHANGE_MAX = 2
+    changeset = bulk_change(approved_issues, IssueRevision, price='0.25 USD')
+    client.force_login(changeset.indexer)
+
+    assert len(client.get(compare_url(changeset)).context['rows']) == 2
+
+
+@pytest.mark.django_db
 def test_second_page_after_100_objects(client, bulk_change,
                                        many_approved_issues):
     """The page holds 100 objects; the next ones are on page 2."""

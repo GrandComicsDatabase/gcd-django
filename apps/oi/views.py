@@ -129,6 +129,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            CreatorDegreeRevisionForm,
                            CreatorSignatureRevisionForm,
                            DateRevisionForm)
+from apps.oi.forms.bulk import BulkOperationForm, offered_fields
 from apps.oi.forms.support import CREATOR_HELP_LINKS
 
 from apps.oi.covers import get_preview_image_tag, \
@@ -1880,8 +1881,8 @@ def process_revision(request, id, model_name):
 def _bulk_compare(request, changeset):
     """
     Show a bulk change: one row for each changed field of each changed
-    object, 100 objects to a page, then the comments and the actions of
-    any change.
+    object, BULK_CHANGE_MAX objects to a page, then the comments and the
+    actions of any change.
     """
     name, revisions = changeset.bulk_target()
     context = {'changeset': changeset, 'states': states}
@@ -1891,12 +1892,57 @@ def _bulk_compare(request, changeset):
     else:
         context['heading'] = bulk.compare_heading(name, revisions)
         context['object_label'] = BULK_OBJECT_NAMES[name][0]
-    page = ResponsePaginator(revisions, vars=context).paginate(request)
+    page = ResponsePaginator(revisions, vars=context,
+                             per_page=settings.BULK_CHANGE_MAX) \
+        .paginate(request)
     context['rows'] = bulk.compare_rows(page.object_list)
     response = oi_render(request, 'oi/edit/compare_bulk.html', context)
     response['Cache-Control'] = ('no-cache, no-store, max-age=0,'
                                  ' must-revalidate')
     return response
+
+
+def _bulk_start(request, token):
+    """
+    Show the page that starts a bulk change, for the selection that a list
+    kept under token.  With GET the indexer chooses a field, sees its
+    values and previews an operation; nothing is written.
+    """
+    selection = bulk.stored_selection(request, token)
+    if selection is None:
+        return render_error(
+          request,
+          'This selection for a bulk change is no longer available. Please '
+          'start again from the list.', redirect=False)
+    model, ids, source = selection
+    rev_class = bulk.BULK_TARGETS[model]
+    publisher = bulk.single_publisher(model, ids)
+    names = offered_fields(rev_class, publisher)
+    name = request.GET.get('field')
+    if name not in names:
+        name = names[0]
+    values = bulk.distinct_values(model, ids, name)
+    data = request.GET if request.GET.get('shown') == name else None
+    form = BulkOperationForm(data, rev_class, name,
+                             values[:bulk.LISTED_VALUES], publisher)
+
+    # A changeset names its revisions of a class '<class>s'.
+    singular, plural = BULK_OBJECT_NAMES[rev_class._meta.model_name + 's']
+    context = {
+      'form': form,
+      'token': token,
+      'source': source,
+      'selection': '%d %s' % (len(ids), singular if len(ids) == 1
+                              else plural),
+      'object_label': singular,
+      'deleted': bulk.deleted_count(model, ids),
+      'more_values': max(0, len(values) - bulk.LISTED_VALUES),
+    }
+    if form.is_bound and form.is_valid():
+        context['bulk_preview'] = bulk.preview(
+          model, ids, name, form.cleaned_data['operation'],
+          form.cleaned_data['old_value'], form.cleaned_data['new_value'])
+    return oi_render(request, 'oi/edit/bulk_start.html', context)
 
 
 def _clean_bulk_issue_change_form(form, remove_fields, items,
@@ -1935,6 +1981,9 @@ def edit_issues_in_bulk(request):
         an IssueRevision, applying the submitted changes. It also handles the
         creation and modification of credit revisions if applicable.
 
+    With BULK_CHANGE_ENABLED, a request with a token shows instead the
+    page that starts a bulk change from the selection of a list.
+
     Returns:
         HttpResponse:
         - Renders the bulk edit form on a GET request.
@@ -1945,6 +1994,9 @@ def edit_issues_in_bulk(request):
         - Redirects to the submit page upon successful creation of the
           bulk change revisions.
     """
+    if settings.BULK_CHANGE_ENABLED and 'token' in request.GET:
+        return _bulk_start(request, request.GET['token'])
+
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
