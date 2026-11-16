@@ -93,15 +93,17 @@ def _validation_messages(form, extra_forms):
     return list(dict.fromkeys(messages))
 
 
-def revision_form_messages(revision, user, original=None):
+def revision_form_messages(revision, user, dependents=True, original=None):
     """
     Return the error messages that the edit form of revision and its
     formsets give for the values of revision, as if user saved its edit
     page unchanged; an empty list if it passes.
 
     The values are those of the instance, saved or not, and of its saved
-    dependent revisions.  As with any model form, the check sets the
-    cleaned values of the form fields on revision, without saving them.
+    dependent revisions.  With dependents False the formsets are left
+    out, which is how a new revision without dependents is checked.  As
+    with any model form, the check sets the cleaned values of the form
+    fields on revision, without saving them.
 
     original, when given, is revision as it was before the values under
     check were set on it.  The edit form then takes its choices from
@@ -111,8 +113,10 @@ def revision_form_messages(revision, user, original=None):
     form_class = get_revision_form(
       revision if original is None else original, user=user)
     unbound_form = form_class(instance=revision)
-    unbound_extra_forms = revision.extra_forms(
-      _FormRequest(user, QueryDict()))
+    unbound_extra_forms = {}
+    if dependents:
+        unbound_extra_forms = revision.extra_forms(
+          _FormRequest(user, QueryDict()))
 
     data = QueryDict('', mutable=True)
     _add_form_data(data, unbound_form)
@@ -121,7 +125,9 @@ def revision_form_messages(revision, user, original=None):
             _add_formset_data(data, formset)
 
     form = form_class(data, instance=revision)
-    extra_forms = revision.extra_forms(_FormRequest(user, data))
+    extra_forms = {}
+    if dependents:
+        extra_forms = revision.extra_forms(_FormRequest(user, data))
 
     # Evaluate every formset even if the main form fails so the indexer sees
     # all persisted-data errors in one pass.

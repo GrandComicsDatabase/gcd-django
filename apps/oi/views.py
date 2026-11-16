@@ -1798,11 +1798,14 @@ def _bulk_compare(request, changeset):
     Show a bulk change: one row for each changed field of each changed
     object, BULK_CHANGE_MAX objects to a page, then the comments and the
     actions of any change.  Its author can add an operation while it is
-    open and passes the check of a submission, else the page says why in
-    place of the link, from the checks that need no edit form, as it is
-    shown at each view; the page of the operation makes the full check.
-    The author can also take objects out of it while it holds more than
-    one.
+    open, unless it is a revert or fails the check of a submission, when
+    the page says why in place of the link, from the checks that need no
+    edit form, as it is shown at each view; the page of the operation
+    makes the full check.  The author can also take objects out of it
+    while it holds more than one.  A revert says which change it reverts
+    and what it left out; an approved change, with bulk changes on, says
+    how far it was reverted and links to a revert while the reader may
+    start one.
     """
     name, revisions = changeset.bulk_target()
     can_change = bulk.change_refusal(request.user, changeset) is None
@@ -1818,6 +1821,12 @@ def _bulk_compare(request, changeset):
         context['can_remove'] = can_change and revisions.count() > 1
         context['no_operation'] = can_change and \
             bulk.operation_refusal(changeset, forms=False)
+        may_reserve = request.user.has_perm('indexer.can_reserve')
+        context['reverts'] = bulk.revert_summary(changeset, may_reserve)
+        if changeset.state == states.APPROVED and \
+           settings.BULK_CHANGE_ENABLED:
+            context['revert_status'] = bulk.revert_status(changeset,
+                                                          may_reserve)
     page = ResponsePaginator(revisions, vars=context,
                              per_page=settings.BULK_CHANGE_MAX) \
         .paginate(request)
@@ -1880,7 +1889,10 @@ def _bulk_start(request, token):
     model, ids, source = selection
     form, name, context = _bulk_operation_page(
       request, bulk.BULK_TARGETS[model], model, ids, 'token', token)
-    context.update(source=source, deleted=bulk.deleted_count(model, ids))
+    change = bulk.selection_change(request)
+    context.update(
+      source=source, deleted=bulk.deleted_count(model, ids),
+      source_label='change %d' % change if change else 'this list')
     if form.is_bound and form.is_valid() and request.method == 'POST':
         changeset = bulk.apply(
           request.user, token, model, ids, source,
@@ -1941,6 +1953,45 @@ def _bulk_add_operation(request, changeset_id):
     return oi_render(request, 'oi/edit/bulk_start.html', context)
 
 
+def _bulk_revert(request, changeset_id):
+    """
+    Show what a revert of the approved bulk change changeset_id would do,
+    writing nothing; a POST applies it and shows the new change.  A
+    change of the older kind has no record to revert from, so its issues
+    become the selection of a bulk change, where the indexer puts a field
+    back with an operation.
+    """
+    if not _is_row_id(changeset_id):
+        raise Http404
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    if settings.BULK_CHANGE_ENABLED and \
+       changeset.change_type == CTYPES['issue_bulk'] and \
+       changeset.state == states.APPROVED:
+        return bulk.start_from_change(request, changeset)
+    refusal = bulk.revert_refusal(changeset)
+    if refusal:
+        return render_error(request, refusal, redirect=False)
+    if request.method == 'POST':
+        revert = bulk.apply_revert(request.user, changeset)
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'compare', kwargs={'id': revert.id}))
+    plan = bulk.revert_plan(changeset, request.user)
+    if plan['values'] and not plan['active']:
+        refusal = bulk.can_start_bulk(request.user, plan['objects'],
+                                      bulk.IN_REVERT)
+        if refusal:
+            return render_error(request, refusal, redirect=False)
+    name = changeset.bulk_target()[0]
+    return oi_render(request, 'oi/edit/bulk_revert.html', {
+      'changeset': changeset,
+      'plan': plan,
+      'rows': plan['rows'],
+      'can_remove': False,
+      'object_label': BULK_OBJECT_NAMES[name][0],
+      'objects_label': BULK_OBJECT_NAMES[name][1],
+    })
+
+
 def _bulk_remove(request, id):
     """
     Take the selected objects out of the open bulk change id of the user,
@@ -1992,8 +2043,9 @@ def edit_issues_in_bulk(request):
         creation and modification of credit revisions if applicable.
 
     With BULK_CHANGE_ENABLED, a request with a token shows instead the
-    page that starts a bulk change from the selection of a list, and one
-    with a changeset the page of a further operation on that change.
+    page that starts a bulk change from the selection of a list, one with
+    a changeset the page of a further operation on that change, and one
+    with revert the page that reverts an approved bulk change.
 
     Returns:
         HttpResponse:
@@ -2009,6 +2061,8 @@ def edit_issues_in_bulk(request):
         return _bulk_start(request, request.GET['token'])
     if settings.BULK_CHANGE_ENABLED and 'changeset' in request.GET:
         return _bulk_add_operation(request, request.GET['changeset'])
+    if settings.BULK_CHANGE_ENABLED and 'revert' in request.GET:
+        return _bulk_revert(request, request.GET['revert'])
 
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -7310,6 +7364,16 @@ def compare(request, id):
     for revision_after in revisions_after:
         revision_after.compare_changes()
 
+    # An approved change of the older kind offers a way to put a field
+    # back to who may reserve, or says why it cannot; anybody may read it.
+    can_revert_older = (settings.BULK_CHANGE_ENABLED and
+                        changeset.change_type == CTYPES['issue_bulk'] and
+                        changeset.state == states.APPROVED and
+                        request.user.has_perm('indexer.can_reserve'))
+    older_refusal = None
+    if can_revert_older:
+        older_refusal = bulk.older_selection(request.user, changeset)[1]
+
     response = oi_render(request, template,
                          {'changeset': changeset,
                           'revision': revision,
@@ -7324,6 +7388,8 @@ def compare(request, id):
                           'sourced_fields': sourced_fields,
                           'group_sourced_fields': group_sourced_fields,
                           'moved_issues': moved_issues,
+                          'can_revert_older': can_revert_older,
+                          'older_refusal': older_refusal,
                           'source_fields': ['source_description',
                                             'source_type'],
                           'CTYPES': CTYPES},

@@ -34,29 +34,44 @@ def _check_revision(changeset, revision, locks):
 
 def _check_operation(changeset, record, first):
     """
-    Check the comment of an operation: counts that add up to the objects
-    checked, listed ids of real objects (I7) and the value of each
+    Check the comment of an operation: counts that add up to the objects,
+    or for a revert the values, checked, listed ids of real objects and,
+    in a revert, each outcome of REVERT_LISTED listed if and only if it is
+    counted (I7), and the value of each field of the record of each
     approved latest revision on its object (I5).  The first operation
     made the revisions, so it counts one changed object for each revision
-    of the change that changes something.
+    of the change that changes something, or for a revert one changed
+    value for each of their logical fields among those of the record.
     """
     assert sum(record['counts'].values()) == record['checked']
     name, revisions = changeset.bulk_target()
     if first:
         diff = bulk.exact_diff(revisions.model,
                                revisions.values_list('id', flat=True))
-        assert record['counts']['changed'] == \
-            sum(1 for changes in diff.values() if changes)
+        if record['operation'] == 'restore':
+            names = set(bulk.record_fields(record))
+            changed = sum(len(bulk._units(revisions.model, names, changes))
+                          for changes in diff.values())
+        else:
+            changed = sum(1 for changes in diff.values() if changes)
+        assert record['counts']['changed'] == changed
     model = revisions.model._meta.get_field(
       revisions.model.source_name).related_model
     for ids in record['listed'].values():
         assert model.objects.filter(id__in=ids).count() == len(set(ids))
+    if record['operation'] == 'restore':
+        # A revert lists each outcome that it counts, under a label that
+        # reads back, and nothing else.
+        for outcome in bulk.REVERT_LISTED:
+            assert bool(record['counts'].get(outcome)) == \
+                bool(record['listed'].get(outcome)), (changeset, outcome)
     if changeset.state == states.APPROVED:
-        attname = model._meta.get_field(record['name']).attname
-        for revision in revisions.exclude(
-             next_revision__changeset__state=states.APPROVED):
-            assert getattr(revision.source, attname) == \
-                getattr(revision, attname), revision
+        for field_name in bulk.record_fields(record):
+            attname = model._meta.get_field(field_name).attname
+            for revision in revisions.exclude(
+                 next_revision__changeset__state=states.APPROVED):
+                assert getattr(revision.source, attname) == \
+                    getattr(revision, attname), revision
 
 
 def check_invariants():
@@ -79,5 +94,8 @@ def check_invariants():
         assert changeset.state not in states.ACTIVE or locks == locked, \
             changeset
         records = bulk.operation_records(changeset)
+        # A revert takes no further operation.
+        assert len(records) == 1 or not any(
+          record['operation'] == 'restore' for record in records), changeset
         for position, record in enumerate(records):
             _check_operation(changeset, record, position == 0)

@@ -1437,9 +1437,9 @@ def test_value_that_the_edit_form_stores_otherwise(client, selection,
     """
     check = bulk.revision_form_messages
 
-    def other_value(revision, user, **kwargs):
+    def other_value(revision, user, dependents=True, **kwargs):
         """Check revision, then store another price for the second."""
-        messages = check(revision, user, **kwargs)
+        messages = check(revision, user, dependents, **kwargs)
         if revision.issue_id == selection[1].id:
             revision.price = '0.13 USD'
         return messages

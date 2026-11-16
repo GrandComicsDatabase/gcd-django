@@ -23,7 +23,8 @@ from apps.indexer.models import Indexer
 from apps.mycomics.models import Collector, ConditionGradeScale
 from apps.oi import bulk, states
 from apps.oi.models import (
-    Changeset, IssueRevision, RevisionLock, CTYPES, _get_revision_lock)
+    Changeset, IndiciaPublisherRevision, IssueRevision, RevisionLock, CTYPES,
+    _get_revision_lock)
 from apps.oi.tests.bulk.invariants import check_invariants
 from apps.stddata.models import Country
 
@@ -107,11 +108,24 @@ def second_indexer(any_language):
     return user
 
 
+@pytest.fixture
+def second_indicia_publisher(indicia_publisher_add_values,
+                             any_adding_changeset):
+    """An approved indicia publisher besides that of the issues."""
+    revision = IndiciaPublisherRevision(
+      changeset=any_adding_changeset,
+      **dict(indicia_publisher_add_values, name='Second Publisher'))
+    revision.save()
+    revision.commit_to_display()
+    return revision.indicia_publisher
+
+
 @pytest.mark.django_db(transaction=True)
-def test_requests_at_the_same_moment(settings,
+def test_requests_at_the_same_moment(settings, monkeypatch,
                                      reserving_indexer, second_indexer,
                                      any_approver, approved_issues,
-                                     approved_variant):
+                                     approved_variant,
+                                     second_indicia_publisher):
     """
     Requests that really run at once, so each commits; the cases share one
     test, since a transactional test empties the database when it ends.
@@ -129,8 +143,13 @@ def test_requests_at_the_same_moment(settings,
     a normal and of a bulk change in the series of an Apply waits for it
     without a deadlock, the discard of a change that holds an object of
     the Apply does not wait for it, and further work on a change waits for
-    the request that holds the change.  The sweep of old reservations waits
-    for a request that works on a bulk change, and leaves the change open.
+    the request that holds the change.  A revert takes the same steps: it
+    waits for the old value of a link before it writes anything, leaves
+    out at once an object whose row another request is writing, waits for
+    a reservation in flight, whose end decides its object, and is refused
+    as a whole if a series or a reservation in flight outlasts the
+    server's wait.  The sweep of old reservations waits for a request that
+    works on a bulk change, and leaves the change open.
     """
     settings.BULK_CHANGE_ENABLED = True
     first = _logged_in(reserving_indexer, approved_issues)
@@ -432,6 +451,109 @@ def test_requests_at_the_same_moment(settings,
     assert not RevisionLock.objects.filter(changeset=changeset).exists()
     check_invariants()
 
+    # A revert waits for the old value of a link before it writes anything,
+    # though no object points to that row now, and a wait that ends
+    # refuses nothing.
+    _discard_open_bulk_changes()
+    relinked = _approved_bulk_change(
+      reserving_indexer, any_approver, [first], 'relinked',
+      {'field': 'indicia_publisher', 'shown': 'indicia_publisher',
+       'operation': 'set', 'new_value': str(second_indicia_publisher.id)})
+    old_publisher = first.indicia_publisher
+    reverting = _logged_in(reserving_indexer, [first], token='reverting')
+    results = {}
+    with _held_row(old_publisher):
+        thread = _started(results, 'revert',
+                          lambda: reverting.post(_revert_url(relinked)))
+        _wait_for_lock_wait('gcd_indicia_publisher')
+        # It waits before it writes anything.
+        assert _row_locks('oi_issue_revision') == 0
+    thread.join(90)
+
+    assert results['revert'].status_code == 302
+    assert Changeset.objects.get(indexer=reserving_indexer,
+                                 change_type=CTYPES['bulk'],
+                                 state=states.OPEN) \
+        .issuerevisions.get().indicia_publisher_id == old_publisher.id
+
+    # A series that stays busy beyond the server's wait refuses the revert
+    # before it has done anything.
+    _discard_open_bulk_changes()
+    with _held_row(first.series), _short_server_wait():
+        response = reverting.post(_revert_url(relinked))
+
+    assert b'The series of these objects are being saved at this moment' \
+        in response.content
+    assert not Changeset.objects.filter(change_type=CTYPES['bulk'],
+                                        state=states.OPEN).exists()
+
+    # A row that another request is writing costs a revert no wait: the
+    # object, and a variant of it, are left out at once.
+    counted = _approved_bulk_change(
+      reserving_indexer, any_approver, approved_issues + [approved_variant],
+      'counted', _pages('64'))
+    results = {}
+    with _held_row(reviewed):
+        thread = _started(results, 'revert',
+                          lambda: reverting.post(_revert_url(counted)))
+        waits = _lock_waits_until_done(thread, 'gcd_issue')
+    thread.join(90)
+
+    assert waits == 0
+    assert results['revert'].status_code == 302
+    assert _open_record(reserving_indexer)['listed']['reserved'] == \
+        [reviewed.id, approved_variant.id]
+
+    # A reservation in flight that outlasts the server's wait refuses the
+    # whole revert at the first timeout: with two of them held it does not
+    # go on to the second.  Nothing is written, and it can be applied again.
+    _discard_open_bulk_changes()
+    tried = []
+    reserve = bulk._get_revision_lock
+
+    def noted(data_object, changeset):
+        """Note the object whose lock the revert takes, then take it."""
+        tried.append(data_object.id)
+        return reserve(data_object, changeset)
+
+    monkeypatch.setattr(bulk, '_get_revision_lock', noted)
+    with _held_lock(first), _held_lock(held_issue), _short_server_wait():
+        response = reverting.post(_revert_url(counted))
+    monkeypatch.undo()
+
+    assert b'Another change was using some of the same records' in \
+        response.content
+    # It stopped at the first held object that it reached.
+    in_flight = {first.id, held_issue.id}
+    assert tried[-1] in in_flight and len(in_flight & set(tried)) == 1
+    assert not Changeset.objects.filter(change_type=CTYPES['bulk'],
+                                        state=states.OPEN).exists()
+    assert not RevisionLock.objects.filter(
+      object_id__in=[first.id, held_issue.id]).exists()
+    assert reverting.post(_revert_url(counted)).status_code == 302
+
+    # A reservation in flight decides the object of a revert as it does
+    # for an Apply: reserved if it commits, changed if it is undone.
+    for commits, left_out in ((True, [held_issue.id]), (False, [])):
+        _discard_open_bulk_changes()
+        results, threads = {}, []
+        try:
+            with _held_lock(held_issue, commit=commits):
+                threads.append(_started(
+                  results, 'revert',
+                  lambda: reverting.post(_revert_url(counted))))
+                _wait_for_lock_wait('oi_revision_lock')
+        finally:
+            for thread in threads:
+                thread.join(90)
+
+        assert results['revert'].status_code == 302
+        assert _open_record(reserving_indexer)['listed']['reserved'] == \
+            left_out
+        RevisionLock.objects.filter(changeset=None,
+                                    object_id=held_issue.id).delete()
+    _discard_open_bulk_changes()
+
     # A field turned off in the series while an approval waits for the
     # series is seen by the approval, which refuses and writes nothing.
     reviewing = _reviewed_change('bulk', second_indexer, any_approver,
@@ -614,6 +736,24 @@ def _reviewed_add(indexer, approver, after):
     changeset.submit()
     changeset.assign(approver)
     return changeset
+
+
+def _approved_bulk_change(indexer, approver, issues, token, data):
+    """A bulk change of issues by indexer with the operation data, approved."""
+    client = _logged_in(indexer, issues, token=token)
+    assert _apply(client, token=token, data=data).status_code == 302
+    changeset = Changeset.objects.get(indexer=indexer,
+                                      change_type=CTYPES['bulk'],
+                                      state=states.OPEN)
+    changeset.submit()
+    changeset.assign(approver)
+    _approve(changeset.id)
+    return changeset
+
+
+def _revert_url(changeset):
+    """The address of the page that reverts changeset."""
+    return reverse('edit_issues_in_bulk') + '?revert=%d' % changeset.id
 
 
 def _discard(changeset_id):

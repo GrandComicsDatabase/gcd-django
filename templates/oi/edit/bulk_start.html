@@ -14,7 +14,7 @@ Selection: the {{ selection }} of
 <a href="{% url 'compare' id=changeset.id %}">change {{ changeset.id }}</a>.
 {% else %}
 Selection: {{ selection }} from
-<a href="{{ source }}">this list</a>{% if deleted %};
+<a href="{{ source }}">{{ source_label }}</a>{% if deleted %};
 {{ deleted }} deleted since{% endif %}.
 {% endif %}
 </p>

@@ -13,6 +13,7 @@ from collections import Counter, defaultdict, namedtuple
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
+from types import SimpleNamespace
 
 from diff_match_patch import diff_match_patch
 from django.conf import settings
@@ -25,6 +26,7 @@ from django.http import HttpResponseRedirect
 from django.template.defaultfilters import yesno
 from django.utils import timezone
 from django.utils.encoding import escape_uri_path
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
 
@@ -111,6 +113,8 @@ OPERATIONS = (('replace_exact', 'Replace the old value'),
 
 # Fields of a date, which belongs to each object: a bulk change never
 # sets one for all objects, never empties one, never fills an empty one.
+# A revert may still put back the empty value that such a field held
+# before the change it reverts.
 NOT_EMPTY = ('publication_date', 'key_date')
 
 # The most values that the form lists.
@@ -139,6 +143,62 @@ OUTCOMES = ('changed', 'unchanged', 'turned_off', 'reserved', 'invalid',
             'blocked', 'removed')
 LISTED_OUTCOMES = ('reserved', 'invalid', 'blocked')
 LISTED_OBJECTS = 50
+
+# A revert has two outcomes more: an object changed since, or deleted.
+# It also lists the objects whose field is turned off, which an Apply
+# only counts: there the value that the change wrote stays, as the commit
+# would not copy the old one, so the indexer must be able to find them.
+REVERT_OUTCOMES = OUTCOMES + ('later', 'deleted')
+REVERT_LISTED = LISTED_OUTCOMES + ('later', 'turned_off', 'deleted')
+
+# The fields that make one logical field, a value and its flags, as the
+# points of an edit join them (_imps_for of the revision class).  A
+# revert puts them back together, or not at all.
+LOGICAL_FIELDS = {
+    IssueRevision: (
+        ('volume', 'no_volume', 'volume_not_printed',
+         'display_volume_with_number'),
+        ('title', 'no_title'),
+        ('indicia_publisher', 'indicia_pub_not_printed'),
+        ('indicia_frequency', 'no_indicia_frequency'),
+        ('indicia_printer', 'indicia_printer_not_printed'),
+        ('brand_emblem', 'no_brand'),
+        ('page_count', 'page_count_uncertain'),
+        ('isbn', 'no_isbn'),
+        ('barcode', 'no_barcode'),
+        ('rating', 'no_rating'),
+    ),
+}
+
+# Why a revert leaves out an old link that is deleted, is being deleted or
+# belongs to another publisher, early, before the edit form checks it; the
+# rules of the edit form, its years among them, check the other old links.
+OLD_LINK_REFUSED = ('The old value is deleted or belongs to another '
+                    'publisher.')
+
+# Why a revert takes no further operation, for its objects.
+NO_OPERATION_ON_REVERT = ('A revert only puts old values back, so it takes no '
+                          'further operation. To write a different value, '
+                          'discard this change and start a new bulk change '
+                          'on these %s.')
+
+# What would hold more objects than a bulk change can, as the refusal of
+# _over_limit ends: a list, or a revert, and what to do instead.
+IN_LIST = ('this list has %d. Please narrow the list first, for example '
+           'with a filter.')
+IN_REVERT = ('this revert would hold %d. To restore just one of them, edit '
+             'it as usual.')
+
+# Why a change of the older kind offers no way to put a field back.
+OLDER_KIND = ('This older kind of bulk change cannot be reverted '
+              'automatically.')
+OLDER_DELETED = OLDER_KIND + ' All its issues have been deleted.'
+OLDER_OVER = OLDER_KIND + (
+  ' It holds %(count)d issues, and one bulk change can hold at most '
+  '%(limit)d. To put a field back, start a bulk change from a list of at '
+  'most %(limit)d of these issues, for example a search with a filter. '
+  'Credits, brand emblems and indicia printers cannot be put back this '
+  'way.')
 
 # Why a bulk change cannot lose all its objects, and why work on it stopped.
 LEFT_EMPTY = ('That would leave this bulk change without objects. To give '
@@ -519,13 +579,13 @@ def entry_allowed(user, items):
             bulk_model(items) is not None)
 
 
-def can_start_bulk(user, count):
+def can_start_bulk(user, count, held=IN_LIST):
     """
     Return why user may not start a bulk change of count objects, or None
     if they may: bulk changes are on, the user may reserve another
     change, has fewer active bulk changes than BULK_CHANGE_MAX_ACTIVE,
-    and count is within BULK_CHANGE_MAX, or BULK_CHANGE_MAX_NEW for a new
-    indexer.
+    and count is within bulk_limit; held says, as for _over_limit, what
+    would hold them.
     """
     if not settings.BULK_CHANGE_ENABLED:
         return 'Bulk changes are turned off.'
@@ -539,12 +599,28 @@ def can_start_bulk(user, count):
         return ('You already have %d active bulk change%s, the most allowed.'
                 ' Each must be approved or discarded before you start'
                 ' another.' % (active, '' if active == 1 else 's'))
-    limit = settings.BULK_CHANGE_MAX_NEW if user.indexer.is_new \
+    return _over_limit(user, count, held)
+
+
+def bulk_limit(user):
+    """
+    Return the most objects that a bulk change of user can hold:
+    BULK_CHANGE_MAX, or BULK_CHANGE_MAX_NEW for a new indexer.
+    """
+    return settings.BULK_CHANGE_MAX_NEW if user.indexer.is_new \
         else settings.BULK_CHANGE_MAX
+
+
+def _over_limit(user, count, held=IN_LIST):
+    """
+    Return why count objects are too many for user, or None if not; held
+    says what would hold them, and what to do instead: IN_LIST or
+    IN_REVERT.
+    """
+    limit = bulk_limit(user)
     if count > limit:
-        return ('A bulk change can hold at most %d objects, and this list'
-                ' has %d. Please narrow the list first, for example with a'
-                ' filter.' % (limit, count))
+        return 'A bulk change can hold at most %d objects, and %s' % (
+          limit, held % count)
     return None
 
 
@@ -573,22 +649,77 @@ def start_from_list(request, items):
     source = escape_uri_path(request.path)
     if query:
         source += '?' + query.urlencode()
+    return _keep_selection(request, items.model, ids, source)
+
+
+def _keep_selection(request, model, ids, source, change=None):
+    """
+    Keep the sorted ids of the objects of model in the session, with the
+    address they came from and the older change, if any, and go to the
+    bulk change page.
+    """
     token = secrets.token_urlsafe(8)
     request.session[SELECTION_KEY] = {
         'token': token,
-        'model': items.model._meta.model_name,
+        'model': model._meta.model_name,
         'ids': sorted(ids),
         'source': source,
+        'change': change,
     }
     return HttpResponseRedirect(
       urlresolvers.reverse('edit_issues_in_bulk') + '?token=' + token)
 
 
+def older_selection(user, changeset):
+    """
+    Return the sorted ids of the issues of changeset, an approved change
+    of the older kind, that are not deleted, and why user cannot start a
+    bulk change on them, or None: none is left, or they are more than
+    bulk_limit.
+    """
+    ids = sorted(set(changeset.issuerevisions.filter(issue__deleted=False)
+                              .values_list('issue_id', flat=True)))
+    if not ids:
+        return ids, OLDER_DELETED
+    limit = bulk_limit(user)
+    if len(ids) > limit:
+        return ids, OLDER_OVER % {'count': len(ids), 'limit': limit}
+    return ids, None
+
+
+def start_from_change(request, changeset):
+    """
+    Start a bulk change on the issues of changeset, an approved change of
+    the older kind, which has no record to revert from: the indexer puts
+    a field back with an operation of its own.  Issues deleted since are
+    left out.  A refusal of older_selection, which the page of the change
+    shows too, or of can_start_bulk gives an error page.  Only the session
+    is written.
+    """
+    ids, refusal = older_selection(request.user, changeset)
+    refusal = refusal or can_start_bulk(request.user, len(ids))
+    if refusal:
+        return render_error(request, refusal, redirect=False)
+    return _keep_selection(
+      request, Issue, ids,
+      urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
+      changeset.id)
+
+
+def selection_change(request):
+    """
+    Return the id of the older change that the kept selection came from,
+    or None if it came from a list.
+    """
+    return request.session.get(SELECTION_KEY, {}).get('change')
+
+
 def stored_selection(request, token):
     """
-    Return the selection that start_from_list kept for token, as (model,
-    ids, url of the list), or None if the session no longer holds it: it
-    expired, or a newer selection took its place.
+    Return the selection that start_from_list or start_from_change kept
+    for token, as (model, ids, address it came from), or None if the
+    session no longer holds it: it expired, or a newer selection took its
+    place.
     """
     selection = request.session.get(SELECTION_KEY)
     if not selection or selection['token'] != token:
@@ -844,19 +975,27 @@ class _LeftOut(Exception):
         self.message = message
 
 
+def _no_single_head(rev_class, data_object):
+    """
+    Raise the outcome of an object that has not exactly one latest
+    approved revision: it is reserved if a change holds a revision of it,
+    else invalid.
+    """
+    if rev_class.objects.active_set().filter(
+         **{rev_class.source_name: data_object}).exists():
+        raise _LeftOut('reserved')
+    raise _LeftOut('invalid', 'It has no single approved revision.')
+
+
 def _clone(rev_class, data_object, changeset):
     """
-    Return a new revision of data_object in changeset.  An object that
-    has not exactly one latest approved revision gives an outcome: it is
-    reserved if a change holds a revision of it, else invalid.
+    Return a new revision of data_object in changeset, or raise the
+    outcome of _no_single_head.
     """
     try:
         return rev_class.clone(data_object, changeset)
     except (ObjectDoesNotExist, MultipleObjectsReturned):
-        if rev_class.objects.active_set().filter(
-             **{rev_class.source_name: data_object}).exists():
-            raise _LeftOut('reserved')
-        raise _LeftOut('invalid', 'It has no single approved revision.')
+        _no_single_head(rev_class, data_object)
 
 
 def _values(revision, fields):
@@ -864,34 +1003,40 @@ def _values(revision, fields):
     return [getattr(revision, field.attname) for field in fields]
 
 
-def _checked_value(revision, field, value, current, user):
+def _checked_values(revision, changes, user, dependents=True):
     """
-    Check revision, with value in field instead of current, with the rules
-    of its edit form for user, and return the value that the form cleans
-    for field.  The object is left out if the check gives a message, as
-    invalid if it passes without the change and as blocked if it fails
-    already, or if the form would also change another field, which the
-    preview did not show.
+    Check revision with the rules of its edit form for user, with changes,
+    a list of (field, value, current), and return the values that the
+    form cleans for those fields, in order; dependents goes to
+    revision_form_messages.  The changes are left out, by _LeftOut, if
+    the check gives a message, as invalid if it passes without the
+    changes and as blocked if it fails already, or if the form would also
+    change another field, which the preview did not show.
 
     The edit form takes its choices from the revision as it was before
-    value was set, as on its edit page, where only the value that the
-    revision holds is offered beyond the rules of the choices.
+    the changes were set, as on its edit page, where only the values
+    that the revision holds are offered beyond the rules of the choices.
     """
+    attnames = {field.attname for field, value, current in changes}
     others = [other for other in type(revision)._meta.concrete_fields
-              if other.attname != field.attname]
+              if other.attname not in attnames]
     stored = _values(revision, others)
     original = copy.copy(revision)
-    setattr(revision, field.attname, value)
-    messages = revision_form_messages(revision, user, original=original)
-    cleaned = getattr(revision, field.attname)
+    for field, value, current in changes:
+        setattr(revision, field.attname, value)
+    messages = revision_form_messages(revision, user, dependents,
+                                      original=original)
+    cleaned = [getattr(revision, field.attname)
+               for field, value, current in changes]
     after = _values(revision, others)
     if messages or after != stored:
         # The check of the object as it is tells apart what the change
         # does from what the object holds already.
         for other, old in zip(others, stored):
             setattr(revision, other.attname, old)
-        setattr(revision, field.attname, current)
-        before = revision_form_messages(revision, user)
+        for field, value, current in changes:
+            setattr(revision, field.attname, current)
+        before = revision_form_messages(revision, user, dependents)
         if messages:
             if before:
                 raise _LeftOut('blocked', before[0])
@@ -903,6 +1048,14 @@ def _checked_value(revision, field, value, current, user):
             raise _LeftOut('invalid', 'Its edit form would also change %s.'
                                       % ', '.join(follows))
     return cleaned
+
+
+def _checked_value(revision, field, value, current, user):
+    """
+    Check revision with value in field instead of current, as
+    _checked_values does, and return the value that the form cleans.
+    """
+    return _checked_values(revision, [(field, value, current)], user)[0]
 
 
 def _store(revision, field, value, current, user):
@@ -1050,8 +1203,8 @@ def _apply_to_objects(changeset, model, ids, operation, user):
 
 def _counts_text(counts):
     """Return the counts of the outcomes, as the comment shows them."""
-    return ', '.join('%s %d' % (outcome.replace('_', ' '), counts[outcome])
-                     for outcome in OUTCOMES)
+    return ', '.join('%s %d' % (outcome.replace('_', ' '), count)
+                     for outcome, count in counts.items())
 
 
 def _checked_text(checked, total, counts):
@@ -1067,8 +1220,8 @@ def _nothing_changed(consequence, counts, listed):
     it applies to.
     """
     reasons = {}
-    for outcome in LISTED_OUTCOMES:
-        for data_object, message in listed[outcome]:
+    for objects in listed.values():
+        for data_object, message in objects:
             if message:
                 reasons.setdefault(message, data_object)
     lines = ['Nothing was changed, so %s: %s.' % (consequence,
@@ -1078,12 +1231,26 @@ def _nothing_changed(consequence, counts, listed):
     return ' '.join(lines)
 
 
+def _label(outcome):
+    """
+    Return the label of the lines of a record that list objects of
+    outcome: its words, as the counts write them, capitalized.
+    """
+    return outcome.replace('_', ' ').capitalize()
+
+
+def _outcome(label):
+    """Return the outcome of the lines of a record with label."""
+    return label.lower().replace(' ', '_')
+
+
 def operation_text(model, operation, source, total, counts, listed,
                    checkpoint):
     """
     Return the comment that records an operation of a bulk change on
-    total objects of model: a first line for machines, with the values
-    in JSON, the list it came from, the counts of the outcomes, the time
+    total objects of model, or on total values for a revert: a first line
+    for machines, with the values in JSON, for a revert the change that it
+    reverts, the list it came from, the counts of the outcomes, the time
     after which a revision must be checked again, and a line for each
     object left out, at most LISTED_OBJECTS for each outcome.
     """
@@ -1100,31 +1267,35 @@ def operation_text(model, operation, source, total, counts, listed,
       'Checkpoint: %s' % checkpoint.astimezone(dt_timezone.utc)
                                    .strftime(CHECKPOINT_FORMAT),
     ]
-    for outcome in LISTED_OUTCOMES:
-        label = outcome.capitalize()
-        for data_object, message in listed[outcome][:LISTED_OBJECTS]:
+    if operation.operation == 'restore':
+        lines.insert(1, 'Reverts change %d' % operation.new)
+    for outcome, objects in listed.items():
+        label = _label(outcome)
+        for data_object, message in objects[:LISTED_OBJECTS]:
             lines.append(('%s: %s%s %s' % (
               label, settings.SITE_URL.rstrip('/'),
               data_object.get_absolute_url(), message)).rstrip())
-        more = len(listed[outcome]) - LISTED_OBJECTS
+        more = len(objects) - LISTED_OBJECTS
         if more > 0:
             lines.append('%s: and %d more' % (label, more))
     return '\n'.join(lines)
 
 
-OPERATION_LINE = re.compile(r'Operation: (\w+)\.(\w+) (\w+) (.*)$')
+OPERATION_LINE = re.compile(r'Operation: (\w+)\.([\w,]+) (\w+) (.*)$')
 CHECKED_LINE = re.compile(r'Checked (\d+) of (\d+): (.*)$')
-LISTED_LINE = re.compile(r'(%s): \S*?(\d+)/(?: |$)' % '|'.join(
-  outcome.capitalize() for outcome in LISTED_OUTCOMES))
+LISTED_LABELS = '|'.join(_label(outcome) for outcome in REVERT_LISTED)
+LISTED_LINE = re.compile(r'(%s): \S*?(\d+)/(?: |$)' % LISTED_LABELS)
+MORE_LINE = re.compile(r'(%s): and \d+ more$' % LISTED_LABELS)
 
 
 def parse_operation(text):
     """
     Read a comment that operation_text wrote, and return a dict with the
     model name, field name, operation and values of its first line, the
-    source, the number checked, the total, the counts, the checkpoint and
-    the ids listed for each outcome.  Return None for any other text,
-    even one that only starts like such a comment.
+    source, the number checked, the total, the counts, the checkpoint,
+    the ids listed for each outcome and, as 'more', the outcomes with more
+    objects than it lists.  Return None for any other text, even one that
+    only starts like such a comment.
     """
     try:
         return _parsed_operation(text)
@@ -1181,10 +1352,12 @@ def _parsed_operation(text):
         rest = rest[end:].lstrip(' ')
     record['values'] = values
     record['listed'] = {outcome: [] for outcome in LISTED_OUTCOMES}
+    record['more'] = []
     for line in lines[1:]:
         label, _, value = line.partition(': ')
         checked = CHECKED_LINE.match(line)
         listed = LISTED_LINE.match(line)
+        more = MORE_LINE.match(line)
         if label == 'Source':
             record['source'] = value
         elif label == 'Checkpoint':
@@ -1198,8 +1371,10 @@ def _parsed_operation(text):
               for outcome, count in re.findall(r'([a-z ]+?) (\d+)(?:, |$)',
                                                checked.group(3))}
         elif listed:
-            record['listed'][listed.group(1).lower()].append(
-              int(listed.group(2)))
+            record['listed'].setdefault(_outcome(listed.group(1)),
+                                        []).append(int(listed.group(2)))
+        elif more:
+            record['more'].append(_outcome(more.group(1)))
     return record
 
 
@@ -1222,21 +1397,31 @@ def _deadlock_refused():
 
 def _hold_parents(model, ids, operation):
     """
+    Hold the rows that the new revisions of the objects of model with
+    these ids will point to, and the new value of operation if it is a
+    link, as _hold_links does.
+    """
+    _hold_links(model, ids, {operation.name: [operation.new]})
+
+
+def _hold_links(model, ids, new_values):
+    """
     Hold with a shared lock the rows that the new revisions of the objects
-    of model with these ids will point to, and the new value of operation
-    if it is a link, table by table in the order of HELD_PARENTS.  Each
-    row that another transaction writes is waited for, each wait with its
-    own limit of the server, and the waits add up.  Afterwards an object
-    whose row another transaction writes is left out at once.  A wait
-    beyond that limit raises ErrorWithMessage.
+    of model with these ids will point to: the links that they hold now
+    and new_values, {field name: values}, whose empty values are no links,
+    table by table in the order of HELD_PARENTS.  Each row that another
+    transaction writes is waited for, each wait with its own limit of the
+    server, and the waits add up.  Afterwards an object whose row another
+    transaction writes is left out at once.  A wait beyond that limit
+    raises ErrorWithMessage.
     """
     try:
         for name in HELD_PARENTS.get(model, ()):
             parents = set(model.objects.filter(id__in=ids)
                                .values_list(name, flat=True))
             parents.discard(None)
-            if operation.name == name and operation.new:
-                parents.add(operation.new)
+            parents.update(value for value in new_values.get(name, ())
+                           if value)
             if parents:
                 _share_rows(model._meta.get_field(name)
                             .related_model._meta.db_table, parents)
@@ -1284,7 +1469,8 @@ def _write_record(changeset, user, model, operation, source, total, counts,
                   listed):
     """
     Add to changeset the comment that records operation on total objects
-    of model, with the time after which a revision needs a new check.
+    of model, or values for a revert, with the time after which a
+    revision needs a new check.
     """
     changeset.comments.create(
       commenter=user, old_state=states.UNRESERVED, new_state=states.OPEN,
@@ -1348,7 +1534,8 @@ def _turned_off(changeset):
     parent = TURNED_OFF_BY.get(rev_class.source_class, (None,))[0]
     if parent is None:
         return []
-    names = sorted({record['name'] for record in operation_records(changeset)})
+    names = sorted({name for record in operation_records(changeset)
+                    for name in record_fields(record)})
     revisions = list(revisions.select_related(
       '%s__%s' % (rev_class.source_name, parent)))
     diff = exact_diff(rev_class, [revision.id for revision in revisions])
@@ -1403,9 +1590,10 @@ def _submit_problems(changeset, forms=True):
     a message on the change as a whole.  Its revisions passed the rules
     of their edit forms when its operations made them; only those changed
     since the checkpoint of its latest operation record, with a second of
-    margin, are checked again, and all of them if there is no checkpoint.
-    Each operation starts with this check, so that its checkpoint hides
-    no revision that was not checked.  The change must also hold no
+    margin, are checked again, and all of them if there is no checkpoint
+    or if the change is a revert, whose old values face the rules of
+    today.  Each operation starts with this check, so that its checkpoint
+    hides no revision that was not checked.  The change must also hold no
     revision of a kind that bulk changes do not use, and no value in a
     field that is turned off now, whenever that happened.  forms False
     leaves out the edit forms and keeps the checks that need none.
@@ -1418,6 +1606,8 @@ def _submit_problems(changeset, forms=True):
         return problems
     records = operation_records(changeset)
     record = records[-1] if records else None
+    if records and records[0]['operation'] == 'restore':
+        record = None
     for name in BULK_REVISION_ORDER:
         revisions = getattr(changeset, name).all()
         if record and 'checkpoint' in record:
@@ -1515,11 +1705,27 @@ def _drop(revisions):
         _free_revision_lock(source)
 
 
+def _record_weights(changeset, revisions):
+    """
+    Return {revision id: how many the record of the first operation of
+    changeset counts for it}: one for each revision or, for a revert,
+    which counts values, its logical fields among those of the record.
+    """
+    record = operation_record(changeset)
+    if record is None or record['operation'] != 'restore' or not revisions:
+        return {revision.id: 1 for revision in revisions}
+    rev_class = type(revisions[0])
+    names = set(record_fields(record))
+    diff = exact_diff(rev_class, [revision.id for revision in revisions])
+    return {revision.id: len(_units(rev_class, names, diff[revision.id]))
+            for revision in revisions}
+
+
 def _count_removed(changeset, removed):
     """
-    Move removed objects from changed to removed in the record of the
-    first operation of changeset, which made all its revisions; the record
-    then counts the revisions that remain.
+    Move removed, a number of objects or, for a revert, of values, from
+    changed to removed in the record of the first operation of changeset,
+    which made all its revisions; the record then counts what remains.
     """
     comment = _record_comments(changeset).first()
     record = parse_operation(comment.text) if comment else None
@@ -1548,14 +1754,19 @@ ONLY_DISCARD = 'Please discard this change: it holds no other %s.'
 def operation_refusal(changeset, forms=True):
     """
     Return why the bulk change changeset takes no further operation now,
-    or None if it does.  An operation starts with the check of a
-    submission, so that its checkpoint hides no revision that was not
-    checked; while that check fails, as when a flag of a parent has
-    turned off a field that the change holds, the way out is to remove
-    the objects it names or, if it names every object of the change, to
-    discard it.  forms False leaves out the edit forms, as in
-    _submit_problems.
+    or None if it does.  A revert never does, as it promises only that
+    old values go back.  Any other change starts an operation with the
+    check of a submission, so that its checkpoint hides no revision that
+    was not checked; while that check fails, as when a flag of a parent
+    has turned off a field that the change holds, the way out is to
+    remove the objects it names or, if it names every object of the
+    change, to discard it.  forms False leaves out the edit forms, as in
+    _submit_problems; a revert is refused either way.
     """
+    record = operation_record(changeset)
+    if record is not None and record['operation'] == 'restore':
+        return NO_OPERATION_ON_REVERT % BULK_OBJECT_NAMES[
+          changeset.bulk_target()[0]][1]
     problems = _submit_problems(changeset, forms)
     if not problems:
         return None
@@ -1579,9 +1790,9 @@ def add_operation(user, changeset, operation):
 
     A revision that the operation takes back to the values of its object
     no longer changes anything, so it leaves the change and its object is
-    free again.  Raise ErrorWithMessage, with nothing written, if a
-    revision no longer passes its checks, if no revision changes, or if
-    none would remain.
+    free again.  Raise ErrorWithMessage, with nothing written, if the
+    change is a revert, if a revision no longer passes its checks, if no
+    revision changes, or if none would remain.
     """
     with _work_on_change(user, changeset) as (changeset, revisions):
         _apply_to_revisions(changeset, revisions, operation, user)
@@ -1629,10 +1840,10 @@ def _apply_to_revisions(changeset, revisions, operation, user):
 def remove_objects(user, changeset, revision_ids):
     """
     Take the revisions with these ids out of the open bulk change
-    changeset of user, free their objects and count them in its record.
-    Ids of other revisions are ignored.  A bulk change keeps at least one
-    object: raise ErrorWithMessage if it would lose them all, or if no id
-    is one of its revisions.
+    changeset of user, free their objects and count them, or their values
+    for a revert, in its record.  Ids of other revisions are ignored.  A
+    bulk change keeps at least one object: raise ErrorWithMessage if it
+    would lose them all, or if no id is one of its revisions.
     """
     with _work_on_change(user, changeset) as (changeset, revisions):
         chosen = list(revisions.filter(id__in=revision_ids))
@@ -1640,5 +1851,652 @@ def remove_objects(user, changeset, revision_ids):
             raise ErrorWithMessage('Please select the objects to remove.')
         if len(chosen) == revisions.count():
             raise ErrorWithMessage(LEFT_EMPTY)
+        removed = sum(_record_weights(changeset, chosen).values())
         _drop(chosen)
-        _count_removed(changeset, len(chosen))
+        _count_removed(changeset, removed)
+
+
+# One logical field that a bulk change changed on one object: those of its
+# fields that the operations name, the values before the change and the
+# values that the change wrote.
+_Unit = namedtuple('_Unit', 'fields before wrote')
+
+# What a revert does with a unit: the outcome, its message and, if the
+# unit goes back, the values as the edit form cleans them and whether
+# that lost spaces at the start or end of a text.
+_Restored = namedtuple('_Restored', 'unit outcome message values spaces')
+
+# What the page of a revert says of what it leaves out, in its order; a
+# value of a logical field changed later has a table of its own there.
+REVERT_SUMMARIES = (
+    ('invalid', 'Refused by the edit form today, so left out'),
+    ('blocked', 'Already failing the edit form, so left out'),
+    ('later', 'Changed later, so left out'),
+    ('reserved', 'Reserved by other changes, so left out'),
+    ('turned_off', 'Field turned off in their series, so left out'),
+    ('deleted', 'Deleted since that change, so left out'),
+    ('unchanged', 'Already back to the old value'),
+)
+
+# What the page of a revert says of what it left out, as (outcome, one,
+# several), in its order.
+REVERT_LEFT_OUT = (
+    ('later', 'changed later', 'changed later'),
+    ('reserved', 'reserved', 'reserved'),
+    ('invalid', 'refused', 'refused'),
+    ('blocked', 'already failing', 'already failing'),
+    ('turned_off', 'field off', 'fields off'),
+    ('deleted', 'deleted', 'deleted'),
+    ('removed', 'removed by the author', 'removed by the author'),
+)
+
+
+def record_fields(record):
+    """Return the names of the fields of the operation of record."""
+    return record['name'].split(',')
+
+
+def _units(rev_class, names, changes):
+    """
+    Return as _Unit tuples the logical fields, among the fields names, of
+    a revision of rev_class whose entry in exact_diff is changes.
+    """
+    groups = list(LOGICAL_FIELDS.get(rev_class, ()))
+    grouped = {name for group in groups for name in group}
+    groups += [(name,) for name in sorted(names - grouped)]
+    units = []
+    for group in groups:
+        changed = [name for name in group
+                   if name in names and name in changes]
+        if changed:
+            units.append(_Unit(
+              [rev_class._meta.get_field(name) for name in changed],
+              [changes[name][0] for name in changed],
+              [changes[name][1] for name in changed]))
+    return units
+
+
+def _revert_items(changeset):
+    """
+    Return what the approved bulk change changeset wrote: the model of its
+    objects, the names of the fields of its operations, and for each
+    object with a unit, in the order of its page, the pair of its id and
+    its units.
+    """
+    names = set()
+    for record in operation_records(changeset):
+        names.update(record_fields(record))
+    revisions = changeset.bulk_target()[1]
+    rev_class = revisions.model
+    source = rev_class._meta.get_field(rev_class.source_name).attname
+    pairs = list(revisions.values_list('id', source))
+    diff = exact_diff(rev_class, [pair[0] for pair in pairs])
+    items = []
+    for revision_id, object_id in pairs:
+        units = _units(rev_class, names, diff[revision_id])
+        if units:
+            items.append((object_id, units))
+    return rev_class.source_class, names, items
+
+
+def _old_values(items):
+    """
+    Return the values that the units of items, as _revert_items gives them,
+    put back, as {field name: set of values}.
+    """
+    values = defaultdict(set)
+    for object_id, units in items:
+        for unit in units:
+            for field, value in zip(unit.fields, unit.before):
+                values[field.name].add(value)
+    return values
+
+
+def _left(unit, outcome, message=''):
+    """Return the _Restored tuple of a unit that stays as it is."""
+    return _Restored(unit, outcome, message, None, False)
+
+
+def _old_link_allowed(data_object, value):
+    """
+    Return whether value, an old link of data_object, is an indicia
+    publisher of the publisher of its series that is neither deleted nor
+    being deleted.  One that is not is refused early, before the object
+    is locked; the rules of the edit form, its years among them, check
+    the others when their unit is checked, after the units without a
+    link.  It knows only the indicia publisher, the one link of
+    FIELD_POLICY; a new link there needs its own check here.
+    """
+    return data_object.series.publisher \
+                      .active_indicia_publishers_no_pending() \
+                      .filter(id=value).exists()
+
+
+def _without_spaces(values):
+    """Return values, each text without spaces at its start or end."""
+    return [value.strip() if isinstance(value, str) else value
+            for value in values]
+
+
+def _split_units(data_object, units):
+    """
+    Split units as the present values of data_object say: return those
+    that stay as they are, as _Restored tuples, and those that can go
+    back, which still hold what the change wrote.  A value already back
+    is unchanged also without the spaces that a revert does not restore.
+    An old link, which can only be an indicia publisher, is invalid if
+    _old_link_allowed refuses it; an empty one goes back.  The rules of
+    the edit form check the other old links later, with the other units.
+    """
+    left, pending = [], []
+    for unit in units:
+        now = _values(data_object, unit.fields)
+        if now == unit.before or now == _without_spaces(unit.before):
+            left.append(_left(unit, 'unchanged'))
+        elif now != unit.wrote:
+            left.append(_left(unit, 'later'))
+        elif not all(applicable(data_object, field.name)
+                     for field in unit.fields):
+            left.append(_left(unit, 'turned_off'))
+        elif not all(value is None or not field.is_relation or
+                     _old_link_allowed(data_object, value)
+                     for field, value in zip(unit.fields, unit.before)):
+            left.append(_left(unit, 'invalid', OLD_LINK_REFUSED))
+        else:
+            pending.append(unit)
+    return left, pending
+
+
+def _only_spaces_lost(unit, cleaned):
+    """
+    Return whether cleaned, the old values of unit as the edit form cleans
+    them, lost spaces at the start or end of a text; if the form would
+    store anything else, unit is left out.
+    """
+    spaces = False
+    for old, value in zip(unit.before, cleaned):
+        if old != value:
+            if not isinstance(old, str) or old.strip() != value:
+                raise _LeftOut('invalid', 'Its edit form stores "%s" instead.'
+                                          % value)
+            spaces = True
+    return spaces
+
+
+def _restored(revision, units, user, dependents=True):
+    """
+    Put each of units back on revision, in memory and in turn, with the
+    rules of its edit form for user, and return their _Restored tuples in
+    the order of units.  The units without a link go back first, so that
+    a link meets the values that the object keeps, as its choices depend
+    on them.  A unit that a rule refuses stays as it is, not the whole
+    object; one whose old value the form cleans into the present value is
+    unchanged.  The revert Apply and its preview both go through it.
+    """
+    results = [None] * len(units)
+    order = sorted(range(len(units)),
+                   key=lambda index: any(field.is_relation
+                                         for field in units[index].fields))
+    for index in order:
+        unit = units[index]
+        now = _values(revision, unit.fields)
+        try:
+            cleaned = _checked_values(
+              revision, list(zip(unit.fields, unit.before, now)), user,
+              dependents)
+            spaces = cleaned != now and _only_spaces_lost(unit, cleaned)
+        except _LeftOut as left_out:
+            for field, value in zip(unit.fields, now):
+                setattr(revision, field.attname, value)
+            results[index] = _left(unit, left_out.outcome, left_out.message)
+            continue
+        results[index] = _Restored(
+          unit, 'unchanged' if cleaned == now else 'changed', '', cleaned,
+          spaces)
+    return results
+
+
+def _save_restored(revision, results):
+    """Save on revision the values of the results that change it."""
+    attnames = []
+    for result in results:
+        if result.outcome == 'changed':
+            for field, value in zip(result.unit.fields, result.values):
+                setattr(revision, field.attname, value)
+                attnames.append(field.attname)
+    if attnames:
+        revision.save(update_fields=attnames + ['modified'])
+
+
+def _restore_object(changeset, data_object, units, user):
+    """
+    Put units back on data_object, in changeset, and return their
+    _Restored tuples.  As in process_item an object held by another change
+    is reserved without a wait, and so is one whose row, or the row of
+    whose base, another transaction is writing.  Else in a savepoint it is
+    locked, read again and checked; if no unit goes back all its work is
+    undone.  The lock of an object that a reservation in flight is taking
+    waits for its end; a wait beyond the server's limit stops the whole
+    revert.
+    """
+    if data_object.deleted:
+        return [_left(unit, 'deleted') for unit in units]
+    left, pending = _split_units(data_object, units)
+    if not pending:
+        return left
+    if _locked(data_object):
+        return left + [_left(unit, 'reserved') for unit in pending]
+    model = type(data_object)
+    parent = TURNED_OFF_BY.get(model, (None,))[0]
+    results = None
+    try:
+        with transaction.atomic():
+            if _get_revision_lock(data_object, changeset) is None:
+                raise _LeftOut('reserved')
+            objects = model.objects.filter(id=data_object.id, deleted=False)
+            if parent:
+                objects = objects.select_related(parent)
+            fresh = objects.first()
+            if fresh is None:
+                raise _LeftOut('deleted')
+            left, pending = _split_units(fresh, units)
+            results = left
+            if pending:
+                results = None
+                _hold_rows(fresh)
+                revision = _clone(BULK_TARGETS[model], fresh, changeset)
+                results = left + _restored(revision, pending, user)
+                _save_restored(revision, results)
+            if not any(result.outcome == 'changed' for result in results):
+                raise _LeftOut('unchanged')
+    except _LeftOut as left_out:
+        if results is not None:
+            return results
+        if left_out.outcome == 'deleted':
+            return [_left(unit, 'deleted') for unit in units]
+        return left + [_left(unit, left_out.outcome, left_out.message)
+                       for unit in pending]
+    except OperationalError as error:
+        # Another transaction is writing a row that the new revision needs.
+        if error.args[0] != NOWAIT_REFUSED:
+            raise
+        return left + [_left(unit, 'reserved') for unit in pending]
+    return results
+
+
+def _restore_objects(changeset, model, items, user):
+    """
+    Put back the units of items, as _revert_items gives them, in id
+    order, in changeset; return the count of each outcome, for each
+    unit, and the objects of the outcomes that the record lists, each
+    once for an outcome, with the different messages of its units joined
+    by a space.
+    """
+    counts = dict.fromkeys(REVERT_OUTCOMES, 0)
+    listed = {outcome: [] for outcome in REVERT_LISTED}
+    units = dict(items)
+    parent = TURNED_OFF_BY.get(model, (None,))[0]
+    for chunk in _chunks(sorted(units)):
+        objects = model.objects.filter(id__in=chunk).order_by('id')
+        if parent:
+            objects = objects.select_related(parent)
+        for data_object in objects:
+            reasons = {}
+            for result in _restore_object(changeset, data_object,
+                                          units[data_object.id], user):
+                counts[result.outcome] += 1
+                if result.outcome in listed:
+                    messages = reasons.setdefault(result.outcome, [])
+                    if result.message not in messages:
+                        messages.append(result.message)
+            for outcome, messages in reasons.items():
+                listed[outcome].append((data_object, ' '.join(messages)))
+    return counts, listed
+
+
+def reverts_of(changeset):
+    """
+    Return the bulk changes that revert the bulk change changeset, except
+    the discarded ones, oldest first, each as a pair with its record.  One
+    query finds the changes whose comments may be such a record; the
+    record of each decides.
+    """
+    candidates = (
+      Changeset.objects
+      .filter(change_type=CTYPES['bulk'], id__gt=changeset.id,
+              comments__text__contains='restore %d\n' % changeset.id)
+      .exclude(state=states.DISCARDED).distinct().order_by('id'))
+    reverts = []
+    for candidate in candidates:
+        record = operation_record(candidate)
+        if record and record['operation'] == 'restore' and \
+           record['values'] == [changeset.id]:
+            reverts.append((candidate, record))
+    return reverts
+
+
+def _active_revert(changeset):
+    """Return the revert of changeset under way, or None."""
+    return next((revert for revert, record in reverts_of(changeset)
+                 if revert.state in states.ACTIVE), None)
+
+
+def revert_refusal(changeset):
+    """
+    Return why changeset cannot be reverted, or None if it can: bulk
+    changes are on, it is a bulk change, approved, with the record of its
+    operations, which says which fields it changed.
+    """
+    if not settings.BULK_CHANGE_ENABLED:
+        return 'Bulk changes are turned off.'
+    if changeset.change_type != CTYPES['bulk']:
+        return 'Only a bulk change can be reverted.'
+    if changeset.state != states.APPROVED:
+        return 'Only an approved bulk change can be reverted.'
+    if changeset.bulk_target()[0] is None or \
+       operation_record(changeset) is None:
+        return ('This bulk change has no record of its operations, so it '
+                'cannot be reverted.')
+    return None
+
+
+def _planned(changeset, data_object, units, user, holder, active):
+    """
+    Return the _Restored tuples that a revert of changeset would give
+    units of data_object, writing nothing: holder is the change that
+    holds the lock of the object, and active the revert under way, whose
+    own objects are not left out.  The edit form checks, in memory, the
+    latest approved revision of the object as a revision of a bulk change
+    without dependents, which is what the revert would make.
+    """
+    if data_object.deleted:
+        return [_left(unit, 'deleted') for unit in units]
+    left, pending = _split_units(data_object, units)
+    if not pending or (active is not None and holder == active.id):
+        return left
+    if holder is not None:
+        return left + [_left(unit, 'reserved') for unit in pending]
+    rev_class = BULK_TARGETS[type(data_object)]
+    try:
+        try:
+            head = rev_class.objects.get(
+              next_revision=None, changeset__state=states.APPROVED,
+              **{rev_class.source_name: data_object})
+        except (ObjectDoesNotExist, MultipleObjectsReturned):
+            _no_single_head(rev_class, data_object)
+    except _LeftOut as left_out:
+        return left + [_left(unit, left_out.outcome, left_out.message)
+                       for unit in pending]
+    head.changeset = changeset
+    return left + _restored(head, pending, user, dependents=False)
+
+
+def _revert_labels(name, names):
+    """
+    Return what a revert counts, as (one, several): the objects of the
+    set name, or the changed values if the operations named several
+    fields.
+    """
+    if len(names) > 1:
+        return 'changed value', 'changed values'
+    return BULK_OBJECT_NAMES[name]
+
+
+def _part_of_change(done, total, labels):
+    """Return words such as '3 of its 6 issues', for done of total."""
+    if total == 1:
+        return 'its one %s' % labels[0]
+    if done == total:
+        return 'all %d of its %s' % (total, labels[1])
+    return '%d of its %d %s' % (done, total, labels[1])
+
+
+def _restored_rows(result):
+    """
+    Return the rows of the table of a revert for result: for each field
+    of its unit (label, old HTML, new HTML).
+    """
+    rows = []
+    for field, old, value in zip(result.unit.fields, result.unit.wrote,
+                                 result.values):
+        rows.append((field_name(field.name),) + _shown_change(
+          field, old, value, _object_names(field, [old, value])))
+    return rows
+
+
+def _later_rows(data_object, unit):
+    """
+    Return, for each field of unit, changed since on data_object, a row
+    of the object, the label of the field and the values before the
+    change, after it and now.
+    """
+    rows = []
+    for field, before, wrote in zip(unit.fields, unit.before, unit.wrote):
+        now = getattr(data_object, field.attname)
+        names = _object_names(field, [before, wrote, now])
+        rows.append((data_object, field_name(field.name),
+                     _shown_value(field, before, names),
+                     _shown_value(field, wrote, names),
+                     _shown_value(field, now, names)))
+    return rows
+
+
+def revert_plan(changeset, user):
+    """
+    Return what a revert of the approved bulk change changeset would do
+    for user, writing nothing, as a dict: 'rows' for the table of the
+    values that go back, 'objects' and 'values' that go back, 'total'
+    values of the change, 'others' that keep their present values, 'part'
+    in words, 'groups' of what does not go back, left out or already
+    back, as (summary, logical fields counted, rows, is the table of
+    later changes), 'spaces' if a value loses spaces, and 'active', the
+    revert under way.
+    """
+    model, names, items = _revert_items(changeset)
+    name = changeset.bulk_target()[0]
+    several = len(names) > 1
+    active = _active_revert(changeset)
+    holders = dict(RevisionLock.objects
+                   .filter(content_type=ContentType.objects
+                                                   .get_for_model(model),
+                           object_id__in=[item[0] for item in items])
+                   .values_list('object_id', 'changeset_id'))
+    parent = TURNED_OFF_BY.get(model, (None,))[0]
+    objects = {}
+    for chunk in _chunks([item[0] for item in items]):
+        query = model.objects.filter(id__in=chunk)
+        if parent:
+            query = query.select_related(parent)
+        objects.update(query.in_bulk())
+
+    plan = {'rows': [], 'objects': 0, 'values': 0, 'spaces': False,
+            'total': sum(len(units) for object_id, units in items),
+            'active': active}
+    left = {outcome: [] for outcome, summary in REVERT_SUMMARIES}
+    later = 0
+    for object_id, units in items:
+        data_object = objects[object_id]
+        fields = []
+        for result in _planned(changeset, data_object, units, user,
+                               holders.get(object_id), active):
+            if result.outcome == 'changed':
+                plan['values'] += 1
+                plan['spaces'] = plan['spaces'] or result.spaces
+                fields += _restored_rows(result)
+            elif result.outcome == 'later':
+                later += 1
+                left['later'] += _later_rows(data_object, result.unit)
+            else:
+                label = ', '.join(field_name(field.name)
+                                  for field in result.unit.fields)
+                left[result.outcome].append((data_object,
+                                             label if several else '',
+                                             result.message))
+        if fields:
+            plan['objects'] += 1
+            plan['rows'].append((SimpleNamespace(source=data_object),
+                                 str(data_object), fields))
+    plan['others'] = plan['total'] - plan['values']
+    plan['part'] = _part_of_change(plan['values'], plan['total'],
+                                   _revert_labels(name, names))
+    plan['groups'] = [(summary,
+                       later if outcome == 'later' else len(left[outcome]),
+                       left[outcome], outcome == 'later')
+                      for outcome, summary in REVERT_SUMMARIES
+                      if left[outcome]]
+    return plan
+
+
+@transaction.atomic
+def apply_revert(user, change):
+    """
+    Make the bulk change of user that puts back what the approved bulk
+    change change wrote, and return it, OPEN, with the comment that
+    records it.  What changed since, or is reserved or refused, is left
+    out and listed.
+
+    As in apply, the rows that the new revisions will point to, the old
+    values of their links included, are held first, then the indexer row
+    is locked, so that two requests of one user take turns.  A revert may
+    wait on each of these rows and on each object that a reservation in
+    flight is taking; each wait has its own limit of the server, and
+    their sum has no limit.  A revert under way, a refusal of
+    can_start_bulk, more objects than its limit, a wait beyond the
+    server's limit, a deadlock or nothing to put back raise
+    ErrorWithMessage, with nothing written.  The locks of the objects
+    keep two reverts from both changing an object; the second one finds
+    nothing to change.
+    """
+    with _deadlock_refused():
+        model, names, items = _revert_items(change)
+        _hold_links(model, [item[0] for item in items], _old_values(items))
+        _take_turn(user)
+        active = _active_revert(change)
+        if active is not None:
+            raise ErrorWithMessage('Change %d is already reverting this '
+                                   'change.' % active.id)
+        refusal = can_start_bulk(user, 0)
+        if refusal:
+            raise ErrorWithMessage(refusal)
+        changeset = Changeset.objects.create(indexer=user, state=states.OPEN,
+                                             change_type=CTYPES['bulk'])
+        counts, listed = _restore_objects(changeset, model, items, user)
+        if not counts['changed']:
+            raise ErrorWithMessage(_nothing_changed('no change was made',
+                                                    counts, listed))
+        refusal = _over_limit(user, changeset.bulk_target()[1].count(),
+                              IN_REVERT)
+        if refusal:
+            raise ErrorWithMessage(refusal)
+        _write_record(changeset, user, model,
+                      Operation(','.join(sorted(names)), 'restore', None,
+                                change.id),
+                      urlresolvers.reverse('compare',
+                                           kwargs={'id': change.id}),
+                      sum(len(units) for object_id, units in items), counts,
+                      listed)
+        return changeset
+
+
+def _links_to(changes):
+    """Return links to changes in words, such as 4901, 4950 and 4960."""
+    links = [format_html('<a href="{}">{}</a>',
+                         urlresolvers.reverse('compare',
+                                              kwargs={'id': change.id}),
+                         change.id)
+             for change in changes]
+    if len(links) < 2:
+        return links[0]
+    return format_html('{} and {}',
+                       format_html_join(', ', '{}',
+                                        ((link,) for link in links[:-1])),
+                       links[-1])
+
+
+def _revert_words(changeset, may_start=True):
+    """
+    Return what the page of the approved bulk change changeset says of
+    its reverts, as revert_status does, without 'in_turn' and with
+    'done', the reverts that it names as done; None without a record.
+    """
+    if operation_record(changeset) is None:
+        return None
+    reverts = reverts_of(changeset)
+    active = [revert for revert, record in reverts
+              if revert.state in states.ACTIVE]
+    if active:
+        return {'text': 'Being reverted by change%s'
+                        % ('s' if len(active) > 1 else ''),
+                'links': _links_to(active), 'can_revert': False,
+                'done': []}
+    done = [revert for revert, record in reverts]
+    if not done:
+        return {'text': '', 'links': '', 'can_revert': may_start,
+                'done': []}
+    if len(reverts) == 1 and not any(
+         reverts[0][1]['counts'].get(outcome, 0)
+         for outcome, one, several in REVERT_LEFT_OUT):
+        return {'text': 'Reverted by change', 'links': _links_to(done),
+                'can_revert': False, 'done': done}
+    return {'text': 'Partly reverted by change%s'
+                    % ('s' if len(done) > 1 else ''),
+            'links': _links_to(done), 'can_revert': may_start,
+            'done': done}
+
+
+def revert_status(changeset, may_start=True):
+    """
+    Return what the page of the approved bulk change changeset says of
+    its reverts, as a dict: 'text' and the 'links' to the changes that
+    it names, 'can_revert' for the link that starts another, if
+    may_start says the reader may, and 'in_turn', a sentence for each
+    revert named as done that a later revert puts back, in part or in
+    full, or is putting back, such as "Change 4901 is itself reverted by
+    change 4950."; one step only, as the page of each change names the
+    next.  None if it has no record, so that it cannot be reverted.
+    """
+    status = _revert_words(changeset, may_start)
+    if status is None:
+        return None
+    turns = []
+    for revert in status.pop('done'):
+        words = _revert_words(revert)
+        if words['text']:
+            turns.append(format_html('Change {} is itself {} {}.',
+                                     _links_to([revert]),
+                                     words['text'].lower(), words['links']))
+    status['in_turn'] = format_html_join(' ', '{}',
+                                         ((turn,) for turn in turns))
+    return status
+
+
+def revert_summary(changeset, may_open=True):
+    """
+    Return what the page of a bulk change that reverts another says of
+    it, as a dict: the 'change' it reverts, 'part' and 'verb' for the
+    words on the values that go back, 'left' for what stayed out,
+    'in_comments' if the comments list any of that, 'more' if they list
+    only the first 'listed' of an outcome and 'full_list' if the page
+    with all of them is open, and may_open says the reader may see it;
+    None for any other bulk change.
+    """
+    record = operation_record(changeset)
+    if record is None or record['operation'] != 'restore':
+        return None
+    counts = record['counts']
+    left = ['%d %s' % (counts[outcome], one if counts[outcome] == 1
+                       else several)
+            for outcome, one, several in REVERT_LEFT_OUT
+            if counts.get(outcome)]
+    return {'change': record['values'][0],
+            'part': _part_of_change(
+              counts['changed'], record['total'],
+              _revert_labels(changeset.bulk_target()[0],
+                             record_fields(record))),
+            'verb': 'goes' if counts['changed'] == 1 else 'go',
+            'left': ', '.join(left),
+            'listed': LISTED_OBJECTS,
+            'in_comments': any(counts.get(outcome, 0)
+                               for outcome in REVERT_LISTED),
+            'more': bool(record['more']),
+            'full_list': settings.BULK_CHANGE_ENABLED and may_open}
