@@ -990,13 +990,13 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
                     'have a whole number for the issue number (even if it '
                     'displays like "v1#1")')
 
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, the '
                     'issue after which you are inserting the new issues '
-                    'must have a volume.')
-
-            cd['first_volume'] = cd['after'].volume
+                    'must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 
@@ -1123,12 +1123,13 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         if cd['first_number'] is None and cd['after'] is not None:
             cd = self._parse_year_and_number(cd, cd['issues_per_cycle'])
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, '
                     'the issue after which you are inserting '
-                    'the new issues must have a volume.')
-            cd['first_volume'] = cd['after'].volume
+                    'the new issues must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 
