@@ -1156,6 +1156,8 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
     if feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator=creator,
+                               story__credits__credit_type__id__lt=6,
+                               story__credits__deleted=False,
                                story__feature_name__feature=feature)
         heading_addon = 'on feature %s' % (feature)
     if series_id:
@@ -2500,15 +2502,17 @@ def publisher_creators(request, publisher_id, creator_names=False):
         creators = creators.filter(
           storycredit__story__issue__series__publisher=publisher,
           storycredit__story__type__id__in=CORE_TYPES,
-          storycredit__deleted=False).distinct()\
-                                     .select_related('creator')
+          storycredit__deleted=False,
+          storycredit__credit_type__id__lt=6).distinct()\
+                                             .select_related('creator')
         creators = _annotate_creator_name_detail_list(creators)
     else:
         creators = Creator.objects.all()
         creators = creators.filter(
           creator_names__storycredit__story__issue__series__publisher=publisher,  # noqa: E501
           creator_names__storycredit__story__type__id__in=CORE_TYPES,
-          creator_names__storycredit__deleted=False).distinct()
+          creator_names__storycredit__deleted=False,
+          creator_names__storycredit__credit_type__id__lt=6).distinct()
         creators = _annotate_creator_list(creators)
 
     context = {
@@ -2538,15 +2542,17 @@ def series_creators(request, series_id, creator_names=False):
         creators = CreatorNameDetail.objects.all()
         creators = creators.filter(storycredit__story__issue__series=series,
                                    storycredit__story__type__id__in=CORE_TYPES,
-                                   storycredit__deleted=False).distinct()\
-                           .select_related('creator')
+                                   storycredit__deleted=False,
+                                   storycredit__credit_type__id__lt=6)\
+                           .distinct().select_related('creator')
         creators = _annotate_creator_name_detail_list(creators)
     else:
         creators = Creator.objects.all()
         creators = creators.filter(
           creator_names__storycredit__story__issue__series=series,
           creator_names__storycredit__story__type__id__in=CORE_TYPES,
-          creator_names__storycredit__deleted=False).distinct()
+          creator_names__storycredit__deleted=False,
+          creator_names__storycredit__credit_type__id__lt=6).distinct()
         creators = _annotate_creator_list(creators)
     context = {
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
@@ -3817,12 +3823,16 @@ def feature_creators(request, feature_id, creator_names=False):
             creators = creators.filter(
               storycredit__story__feature_name__feature=feature,
               storycredit__story__type__id__in=CORE_TYPES,
-              storycredit__deleted=False).distinct().select_related('creator')
+              storycredit__deleted=False,
+              storycredit__credit_type__id__lt=6)\
+              .distinct().select_related('creator')
             result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
         else:
             creators = creators.filter(
               storycredit__story__feature_name__feature=feature,
-              storycredit__deleted=False).distinct().select_related('creator')
+              storycredit__deleted=False,
+              storycredit__credit_type__id__lt=6)\
+              .distinct().select_related('creator')
             result_disclaimer = MIGRATE_DISCLAIMER
         creators = _annotate_creator_name_detail_list(creators)
     else:
@@ -3831,12 +3841,14 @@ def feature_creators(request, feature_id, creator_names=False):
             creators = creators.filter(
               creator_names__storycredit__story__feature_name__feature=feature,
               creator_names__storycredit__story__type__id__in=CORE_TYPES,
-              creator_names__storycredit__deleted=False).distinct()
+              creator_names__storycredit__deleted=False,
+              creator_names__storycredit__credit_type__id__lt=6).distinct()
             result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
         else:
             creators = creators.filter(
               creator_names__storycredit__story__feature_name__feature=feature,
-              creator_names__storycredit__deleted=False).distinct()
+              creator_names__storycredit__deleted=False,
+              creator_names__storycredit__credit_type__id__lt=6).distinct()
             result_disclaimer = MIGRATE_DISCLAIMER
         creators = _annotate_creator_list(creators)
 
