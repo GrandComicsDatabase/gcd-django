@@ -184,10 +184,14 @@ def test_an_edit_approved_during_an_add_keeps_the_new_last_issue(
                    CTYPES['issue'])
     approver = _assigned(editor, edit)
 
-    with _held(lambda: _commit(added)):
-        thread, result = _approval_started(approver, edit)
-        _wait_for_lock_wait('gcd_series')
-    thread.join(60)
+    thread = None
+    try:
+        with _held(lambda: _commit(added)):
+            thread, result = _approval_started(approver, edit)
+            _wait_for_lock_wait('gcd_series')
+    finally:
+        if thread is not None:
+            thread.join(60)
 
     assert result['response'].status_code == 302
     added.refresh_from_db()
@@ -218,10 +222,14 @@ def test_an_edit_of_a_parent_approved_during_an_add_keeps_its_counts(
                        CTYPES['publisher'], notes='Edited notes')
     approver = _assigned(editor, edit)
 
-    with _held(lambda: _commit(added)):
-        thread, result = _approval_started(approver, edit)
-        _wait_for_lock_wait('gcd_%s' % parent)
-    thread.join(60)
+    thread = None
+    try:
+        with _held(lambda: _commit(added)):
+            thread, result = _approval_started(approver, edit)
+            _wait_for_lock_wait('gcd_%s' % parent)
+    finally:
+        if thread is not None:
+            thread.join(60)
 
     assert result['response'].status_code == 302
     added.refresh_from_db()
