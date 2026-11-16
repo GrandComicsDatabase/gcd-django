@@ -4,7 +4,7 @@
 import mock
 import pytest
 
-from apps.gcd.models import Series, Issue
+from apps.gcd.models import Series, SeriesBond, SeriesBondType, Issue
 from apps.oi.models import Changeset, IssueRevision, CoverRevision, CTYPES
 from apps.oi import states
 
@@ -611,3 +611,32 @@ def test_fork_variant_reserve_no_cover_with_variants(any_added_issue,
     # Because we built a variant in the fixtures, the new variant
     # should be sorted just after the existing variant.
     assert issue_rev.add_after == any_added_variant
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('end', ['origin', 'target'])
+def test_moved_issue_takes_its_series_bonds_along(any_added_issue,
+                                                  any_added_series,
+                                                  any_editing_changeset,
+                                                  end):
+    old_series = any_added_issue.series
+    other = {'origin': 'target', 'target': 'origin'}[end]
+    other_series = Series.objects.create(
+      name='Other Series', sort_name='Other Series', year_began=1960,
+      country=old_series.country, language=old_series.language,
+      publisher=old_series.publisher,
+      publication_type=old_series.publication_type)
+    bond = SeriesBond.objects.create(
+      bond_type=SeriesBondType.objects.get_or_create(name='any type')[0],
+      notes='', **{end: old_series, '%s_issue' % end: any_added_issue,
+                   other: other_series})
+    rev = IssueRevision.clone(data_object=any_added_issue,
+                              changeset=any_editing_changeset)
+    rev.series = any_added_series
+    rev.save()
+
+    rev.commit_to_display()
+
+    bond = SeriesBond.objects.get(pk=bond.pk)
+    assert getattr(bond, end) == any_added_series
+    assert getattr(bond, other) == other_series
