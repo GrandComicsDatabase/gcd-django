@@ -1086,7 +1086,8 @@ def checklist_by_name(request, creator, country=None, language=None,
 
 def creator_name_issues(request, creator_name_id, character_id=None,
                         group_id=None, feature_id=None, series_id=None,
-                        country=None, language=None, universe_id=None):
+                        country=None, language=None, universe_id=None,
+                        publisher_id=None):
     return creator_name_checklist(request=request,
                                   creator_name_id=creator_name_id,
                                   character_id=character_id,
@@ -1095,13 +1096,15 @@ def creator_name_issues(request, creator_name_id, character_id=None,
                                   series_id=series_id,
                                   country=country,
                                   language=language,
-                                  universe_id=universe_id
+                                  universe_id=universe_id,
+                                  publisher_id=publisher_id
                                   )
 
 
 def creator_name_checklist(request, creator_name_id, character_id=None,
                            group_id=None, feature_id=None, series_id=None,
-                           country=None, language=None, universe_id=None):
+                           country=None, language=None, universe_id=None,
+                           publisher_id=None):
     """
     Provides checklists for a CreatorNameDetail.
     """
@@ -1163,6 +1166,10 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
         issues = issues.filter(story__credits__creator=creator,
                                story__issue__series=series)
         heading_addon = 'on series %s' % (series)
+    if publisher_id:
+        publisher = get_gcd_object(Publisher, publisher_id)
+        issues = issues.filter(series__publisher=publisher)
+        heading_addon = 'for publisher %s' % (publisher)
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
