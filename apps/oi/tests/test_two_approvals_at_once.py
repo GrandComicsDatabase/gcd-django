@@ -9,7 +9,7 @@ from contextlib import contextmanager
 import pytest
 
 from django.contrib.auth.models import Permission, User
-from django.db import connection, connections, transaction
+from django.db import OperationalError, connection, connections, transaction
 from django.test import Client
 from django.urls import reverse
 
@@ -83,6 +83,41 @@ def _wait_for_lock_wait(table, timeout=30):
     raise AssertionError('no transaction waits for %s' % table)
 
 
+def _stop(thread):
+    """
+    Wait until thread has ended, before the test database is emptied. If
+    it still runs after a minute, end the other connections to the test
+    database, so that a wait there stops with an error, until the thread
+    has ended and the server has closed them all, for at most 30 s; then
+    fail.
+    """
+    thread.join(60)
+    if not thread.is_alive():
+        return
+    end = time.monotonic() + 30
+    with connection.cursor() as cursor:
+        while True:
+            alive = thread.is_alive()
+            cursor.execute(
+              'SELECT ID FROM performance_schema.processlist '
+              'WHERE DB = DATABASE() AND ID <> CONNECTION_ID()')
+            ids = [row[0] for row in cursor.fetchall()]
+            if not (alive or ids) or time.monotonic() > end:
+                break
+            for connection_id in ids:
+                try:
+                    cursor.execute('KILL %s', [connection_id])
+                except OperationalError as error:
+                    if error.args[0] != 1094:  # unknown thread id: it ended
+                        raise
+            time.sleep(0.05)
+    message = 'the %s thread did not end in 60 s' % thread.name
+    assert not alive, message + ', and still runs'
+    assert not ids, (
+        message + ', and the test database still has other connections')
+    raise AssertionError(message)
+
+
 @contextmanager
 def _held(work):
     """
@@ -106,14 +141,14 @@ def _held(work):
         finally:
             connections.close_all()
 
-    holder = threading.Thread(target=hold)
+    holder = threading.Thread(target=hold, name='holder', daemon=True)
     holder.start()
-    assert held.wait(30) and not failures, failures
     try:
+        assert held.wait(30) and not failures, failures
         yield
     finally:
         release.set()
-        holder.join(60)
+        _stop(holder)
     assert not failures, failures
 
 
@@ -133,7 +168,7 @@ def _approval_started(client, changeset):
         finally:
             connections.close_all()
 
-    thread = threading.Thread(target=run)
+    thread = threading.Thread(target=run, name='approval', daemon=True)
     thread.start()
     return thread, result
 
@@ -191,7 +226,7 @@ def test_an_edit_approved_during_an_add_keeps_the_new_last_issue(
             _wait_for_lock_wait('gcd_series')
     finally:
         if thread is not None:
-            thread.join(60)
+            _stop(thread)
 
     assert result['response'].status_code == 302
     added.refresh_from_db()
@@ -229,7 +264,7 @@ def test_an_edit_of_a_parent_approved_during_an_add_keeps_its_counts(
             _wait_for_lock_wait('gcd_%s' % parent)
     finally:
         if thread is not None:
-            thread.join(60)
+            _stop(thread)
 
     assert result['response'].status_code == 302
     added.refresh_from_db()
