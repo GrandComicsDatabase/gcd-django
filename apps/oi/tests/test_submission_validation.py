@@ -1,8 +1,13 @@
+from datetime import timedelta
+
 import pytest
 
+from django.conf import settings
 from django.contrib.auth.models import Permission, User
 from django.http import HttpResponse
 from django.test import RequestFactory
+from django.urls import reverse
+from django.utils import timezone
 
 from apps.gcd.models import CreditType, Feature, FeatureNameDetail, \
                             FeatureType, StoryType, CREDIT_TYPES, STORY_TYPES
@@ -239,3 +244,85 @@ def test_send_back_requires_comment_using_button_label(any_edit_story_rev,
     assert response.status_code == 200
     assert changeset.state == states.REVIEWING
     assert str(SEND_BACK_TO_INDEXER).encode() in response.content
+
+
+def _old_legacy_change(indexer, issue, **values):
+    """
+    An open change of the legacy bulk edit of this issue with these values,
+    left alone for longer than the reservation of an issue.
+    """
+    changeset = Changeset.objects.create(
+      change_type=CTYPES['issue_bulk'], indexer=indexer, state=states.OPEN)
+    changeset.comments.create(commenter=indexer, text='Used search terms:',
+                              old_state=states.OPEN, new_state=states.OPEN)
+    revision = IssueRevision.clone(issue, changeset=changeset)
+    for field, value in values.items():
+        setattr(revision, field, value)
+    revision.save()
+    RevisionLock.objects.create(locked_object=issue, changeset=changeset)
+    Changeset.objects.filter(id=changeset.id).update(
+      created=timezone.now() - timedelta(
+        weeks=settings.RESERVE_ISSUE_WEEKS + 1))
+    changeset.refresh_from_db()
+    return changeset
+
+
+def _sweep(client, coordinator):
+    """Run the sweep of old issue reservations, as a coordinator does."""
+    coordinator.user_permissions.add(
+      Permission.objects.get(codename='change_ongoingreservation'))
+    client.force_login(coordinator)
+    return client.get(reverse('clear_issues'))
+
+
+def _parts(response):
+    """The submitted part of the sweep's page, and the part after it."""
+    text = response.content.decode()
+    start = text.index('Changes submitted')
+    end = text.index('Changes discarded')
+    return text[start:end], text[end:]
+
+
+def test_sweep_submits_an_invalid_change_with_the_reasons(
+  client, any_added_issue, any_indexer, any_editor):
+    """The sweep submits a change the edit form refuses, with the reasons."""
+    changeset = _old_legacy_change(any_indexer, any_added_issue,
+                                   page_count=None,
+                                   page_count_uncertain=True)
+    compare_url = reverse('compare', kwargs={'id': changeset.id})
+    message = 'You cannot check page count uncertain without a page count.'
+
+    response = _sweep(client, any_editor)
+
+    changeset.refresh_from_db()
+    any_added_issue.refresh_from_db()
+    assert response.status_code == 200
+    assert changeset.state == states.PENDING
+    comment = changeset.comments.latest().text
+    assert comment.startswith('This is an automatic submit')
+    assert 'does not pass the edit form' in comment
+    assert message in comment
+    submitted, rest = _parts(response)
+    assert compare_url in submitted
+    assert message in submitted
+    assert any_added_issue.page_count_uncertain is False
+
+
+def test_sweep_submits_a_valid_change(client, any_added_issue, any_indexer,
+                                      any_editor):
+    """The sweep submits a valid change with no edit form reasons."""
+    changeset = _old_legacy_change(any_indexer, any_added_issue,
+                                   page_count=32)
+    compare_url = reverse('compare', kwargs={'id': changeset.id})
+
+    response = _sweep(client, any_editor)
+
+    changeset.refresh_from_db()
+    assert response.status_code == 200
+    assert changeset.state == states.PENDING
+    comment = changeset.comments.latest().text
+    assert comment.startswith('This is an automatic submit')
+    assert 'does not pass the edit form' not in comment
+    submitted, rest = _parts(response)
+    assert compare_url in submitted
+    assert 'does not pass the edit form' not in response.content.decode()
