@@ -1889,28 +1889,47 @@ class Revision(models.Model):
                 if multi:
                     for v in old_value:
                         v.update_cached_counts(old_counts, negate=True)
-                        v.save()
+                        self._save_counts(v)
                 else:
                     old_value.update_cached_counts(old_counts, negate=True)
-                    old_value.save()
+                    self._save_counts(old_value)
             if new_value:
                 if multi:
                     for v in new_value:
                         v.update_cached_counts(new_counts)
-                        v.save()
+                        self._save_counts(v)
                 else:
                     new_value.update_cached_counts(new_counts)
-                    new_value.save()
+                    self._save_counts(new_value)
 
         elif old_counts != new_counts:
             # Doesn't matter whether we use old or new as they are the same.
             if multi:
                 for v in new_value:
                     v.update_cached_counts(deltas)
-                    v.save()
+                    self._save_counts(v)
             elif new_value:
                 new_value.update_cached_counts(deltas)
-                new_value.save()
+                self._save_counts(new_value)
+
+    @staticmethod
+    def _save_counts(parent):
+        """
+        Saves only the counts that update_cached_counts() set on parent,
+        and the time of the change.
+
+        The parent was read at the start of the commit, so saving all of
+        its row would put back older values that another request may
+        have committed in the meantime.
+        """
+        # update_cached_counts() sets each count that it changes to an F()
+        # expression, such as F('issue_count') + 1, and touches no other
+        # field: the others keep the plain values read from the database.
+        # So the fields that hold an expression are the counts to write.
+        counts = [field.name for field in parent._meta.concrete_fields
+                  if hasattr(getattr(parent, field.attname),
+                             'resolve_expression')]
+        parent.save(update_fields=counts + ['modified'])
 
     # #####################################################################
     # Methods for processing the indexer edits, in particular involving
