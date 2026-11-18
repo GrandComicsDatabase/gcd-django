@@ -2,6 +2,7 @@
 
 from django import forms
 from django.conf import settings
+from django.urls import reverse
 from django.forms.models import inlineformset_factory
 
 from dal import autocomplete, forward
@@ -798,6 +799,13 @@ class StoryRevisionForm(KeywordBaseForm):
         field_list.append(Formset('characters_formset'))
         field_list.append(Field(fields[characters_start],
                                 template='oi/bits/uni_field.html'))
+        field_list.append(HTML(
+          '<tr><th></th><td><button type="button" '
+          'class="mx-0 btn-blue-editing inline" hx-post="%s" '
+          'hx-params="characters,csrfmiddlewaretoken" '
+          'hx-target="#characters-check">Validate Characters</button>'
+          '<div id="characters-check"></div></td></tr>'
+          % reverse('validate_characters')))
         field_list.append(Formset('groups_formset'))
         character_order_html = '<th></th><td>'
         if has_appearance_order:

@@ -130,6 +130,9 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            CreatorSignatureRevisionForm,
                            DateRevisionForm)
 from apps.oi.forms.support import CREATOR_HELP_LINKS
+from apps.oi.characters_text import (MAX_LENGTH as MAX_CHARACTERS_TEXT,
+                                     parse as parse_characters,
+                                     report as report_characters)
 
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
@@ -8074,6 +8077,28 @@ def migrate_story_revision(request, id):
     return HttpResponseRedirect(
       urlresolvers.reverse('edit_revision', kwargs={'model_name': 'story',
                                                     'id': story.id}))
+
+
+def validate_characters(request):
+    """Show how the characters text of a sequence is read.
+
+    The edit page sends only the text of the field; nothing is saved. The
+    answer always goes into the box under the field, so a user whose
+    session has ended gets a message there instead of the login page.
+    """
+    if request.method != 'POST':
+        return _cant_get(request)
+    template = 'oi/bits/characters_check.html'
+    if not request.user.is_authenticated:
+        return render(request, template, {
+          'message': 'Log in again to check the characters.'})
+    text = request.POST.get('characters', '')
+    if len(text) > MAX_CHARACTERS_TEXT:
+        return render(request, template, {
+          'message': 'The text has %d characters; the check reads at most '
+                     '%d.' % (len(text), MAX_CHARACTERS_TEXT)})
+    return render(request, template,
+                  {'check': report_characters(parse_characters(text))})
 
 
 @permission_required('indexer.can_reserve')
