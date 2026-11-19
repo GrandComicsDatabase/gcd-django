@@ -376,8 +376,9 @@ def validate_changeset_revisions(changeset, request):
            page_count_sum > issue.page_count:
             invalid.append((issue,
                             ['Sum of the page count of all sequences is %d, '
-                             'which exceeds the issue page count of %d.' % (
-                              page_count_sum, issue.page_count)]))
+                             'which exceeds the issue page count of %d. In '
+                             'doubt, flag page count uncertain for the '
+                             'issue.' % (page_count_sum, issue.page_count)]))
     return invalid
 
 
