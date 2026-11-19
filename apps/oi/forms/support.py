@@ -11,6 +11,7 @@ from django.core.files import File
 from django.db import IntegrityError
 from django.forms.utils import pretty_name
 from django.forms.widgets import TextInput
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from markdownx.widgets import MarkdownxWidget
 
@@ -699,6 +700,30 @@ def _init_no_barcode(series, revision):
         return True
 
     return False
+
+
+def _init_revert_migration(form):
+    """
+    Keep the revert checkbox only on a row traced to one old text credit.
+
+    The help text shows that credit, and is escaped as it is rendered safe.
+    """
+    credit = form.instance.old_text_credit() if form.instance.pk else None
+    if credit is None:
+        del form.fields['revert_migration']
+    else:
+        form.fields['revert_migration'].help_text = format_html(
+          'On saving, remove this credit and put <i>{}</i> back in the '
+          'text field.', credit)
+
+
+def _clean_revert_migration(form):
+    """Refuse a revert with Save And Migrate, which would migrate it again."""
+    if form.cleaned_data.get('revert_migration') \
+       and 'save_migrate' in form.data:
+        form.add_error('revert_migration',
+                       'Save And Migrate would migrate this credit again. '
+                       'Use Save to revert it.')
 
 
 class HiddenInputWithHelp(forms.TextInput):
