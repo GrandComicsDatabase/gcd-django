@@ -5209,6 +5209,8 @@ class PreviewIssue(Issue):
         if self.can_have_cover():
             if self.id != 0:
                 return self._active_covers()
+            elif self.variant_of and self.variant_cover_status == 1:
+                return self.variant_of.active_covers()
         return Cover.objects.none()
 
     @property
@@ -5266,10 +5268,12 @@ class PreviewIssue(Issue):
             if (len(stories) > 0) and stories[0].type_id == 6:
                 cover_story = stories.pop(0)
                 if self.variant_of:
-                    # can have only one sequence, the variant cover
-                    own_stories = self.active_stories()
-                    if own_stories:
-                        cover_story = own_stories[0]
+                    if self.variant_cover_status == 3:
+                        cover_story = None
+                        # can have only one sequence, the variant cover
+                        own_stories = self.active_stories()
+                        if own_stories:
+                            cover_story = own_stories[0]
             elif self.variant_of and len(self.active_stories()):
                 cover_story = self.active_stories()[0]
 
