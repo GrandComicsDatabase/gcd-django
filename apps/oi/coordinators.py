@@ -46,7 +46,11 @@ def clear_reservations_three_weeks(request=None):
     changes_overdue = list(changes.exclude(change_type__in=
                                            [CTYPES['issue'],
                                             CTYPES['two_issues'],
-                                            CTYPES['variant_add']]))
+                                            CTYPES['variant_add']])
+                           # a bulk change counts from its last work: it
+                           # may have been sent back or retracted
+                           .exclude(change_type=CTYPES['bulk'],
+                                    modified__gte=clearing_date))
     for c in changes_issue:
         # issue edits with more than two existing revisions cannot be
         # changes due to ongoing reservations (which have more time)
@@ -79,8 +83,25 @@ def clear_reservations(request=None, changes=None):
     submitted_list = []
     discarded_list = []
     for changeset in changes:
+        # Lock the change, as the views that change its state do, and leave
+        # alone a change submitted or discarded in the meantime.
+        changeset = Changeset.objects.select_for_update().filter(
+          id=changeset.id, state=states.OPEN).first()
+        if changeset is None:
+            continue
         changed = False
-        if changeset.inline():
+        if changeset.change_type == CTYPES['bulk']:
+            # The list was made before this loop, and a bulk change counts
+            # from its last work: leave one worked on since then.
+            clearing_date = timezone.now() - timedelta(
+                weeks=settings.RESERVE_ISSUE_WEEKS)
+            if Changeset.objects.filter(id=changeset.id,
+                                        modified__gte=clearing_date).exists():
+                continue
+            # A bulk change is never submitted for its indexer: an old
+            # one is discarded, which frees its locks.
+            revision = None
+        elif changeset.inline():
             revision = changeset.inline_revision()
         elif changeset.issuerevisions.count() > 0:
             revision = changeset.issuerevisions.all()[0]
@@ -88,12 +109,12 @@ def clear_reservations(request=None, changes=None):
             raise NotImplementedError
 
         # old (forgotten) cover uploads stay unchanged and get discarded
-        if changeset.change_type != CTYPES['cover']:
+        if revision and changeset.change_type != CTYPES['cover']:
             revision.compare_changes()
             if revision.is_changed:
                 changed = True
 
-        if not changed and changeset.storyrevisions.count():
+        if not changed and revision and changeset.storyrevisions.count():
             for story in changeset.storyrevisions.all():
                 story.compare_changes()
                 if story.is_changed:
@@ -112,10 +133,14 @@ def clear_reservations(request=None, changes=None):
                                  'please reserve and edit after approval.')
             submitted_list.append(mark_safe(info_text))
         else:
+            if revision:
+                notes = ('This is an automatic discard of an unchanged '
+                         'edit which was reserved for 9 weeks')
+            else:
+                notes = ('This is an automatic discard of a bulk change '
+                         'which was not submitted in time.')
             if not SCRIPT_DEBUG:
-                changeset.discard(changeset.indexer, notes='This is an '
-                                  'automatic discard of an unchanged edit '
-                                  'which was reserved for 9 weeks')
+                changeset.discard(changeset.indexer, notes=notes)
             discarded_list.append(mark_safe(info_text))
     return render(request, 'oi/edit/clear_reservations.html',
                   {'submitted_list': submitted_list,
