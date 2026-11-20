@@ -6684,6 +6684,15 @@ class StoryRevision(Revision):
                                                 remainder_note.find(']')]
                                 else:
                                     note = remainder_note
+                        elif (note.startswith('signed as ')
+                              and end_note != -1
+                              and '(' not in note
+                              and '[' not in credit):
+                            # "(signed as X)" is how the site shows a
+                            # signature; a name in [as ...] would replace X
+                            is_signed = True
+                            signed_as = note[len('signed as '):].strip()
+                            note = remainder_note
                         elif note == 'painted':
                             note = 'painting'
                         elif (note == 'signed, credited' or

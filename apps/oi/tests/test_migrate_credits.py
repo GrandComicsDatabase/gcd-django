@@ -91,6 +91,59 @@ def test_note_of_a_migrated_story_credit_has_no_question_mark(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('text,signed_as,credit_name,uncertain', [
+    ('Some Artist (signed as S. A.)', 'S. A.', '', False),
+    ('Some Artist (signed as S. A.) (painting)', 'S. A.', 'painting', False),
+    ('Some Artist ? (signed as S. A.) (painting)', 'S. A.', 'painting', True),
+    ('Some Artist (signed as S. A.) ?', 'S. A.', '', True),
+])
+def test_story_credit_written_as_signed_as_is_migrated(
+  any_edit_story_rev, any_indexer, credit_types, text, signed_as,
+  credit_name, uncertain):
+    """A sequence credit in the form the site shows keeps its signature."""
+    _creator('Some Artist', any_indexer)
+    any_edit_story_rev.script = text
+
+    any_edit_story_rev.migrate_credits()
+
+    credit = any_edit_story_rev.story_credit_revisions.get()
+    assert credit.is_signed
+    assert credit.signed_as == signed_as
+    assert not credit.is_credited
+    assert credit.credit_name == credit_name
+    assert credit.uncertain == uncertain
+    assert any_edit_story_rev.script == ''
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('text,name,is_signed,credit_name', [
+    ('Some Artist (signed)', 'Some Artist', True, ''),
+    ('Some Artist (signed) (painting)', 'Some Artist', True, 'painting'),
+    ('Some Artist (signed as Some (Smiling) Artist)', 'Some Artist', False,
+     'signed as Some (Smiling) Artist'),
+    ('Some Artist (signed as S. A.', 'Some Artist', False,
+     '(signed as S. A.'),
+    ('Some Artist [as S. Artiste] (signed as S. A.)', 'S. Artiste', False,
+     'signed as S. A.'),
+])
+def test_story_signature_note_is_migrated_as_before(
+  any_edit_story_rev, any_indexer, credit_types, text, name, is_signed,
+  credit_name):
+    """The other signature notes of a sequence credit migrate as they did."""
+    _creator('Some Artist', any_indexer)
+    _creator('S. Artiste', any_indexer)
+    any_edit_story_rev.script = text
+
+    any_edit_story_rev.migrate_credits()
+
+    credit = any_edit_story_rev.story_credit_revisions.get()
+    assert credit.creator.name == name
+    assert credit.is_signed == is_signed
+    assert credit.signed_as == ''
+    assert credit.credit_name == credit_name
+
+
+@pytest.mark.django_db
 def test_note_of_a_migrated_issue_credit_has_no_question_mark(
   issue_revision, any_indexer, credit_types):
     """The note of a migrated issue credit does not take the mark."""
