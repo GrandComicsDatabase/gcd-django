@@ -79,6 +79,12 @@ def clear_reservations(request=None, changes=None):
     submitted_list = []
     discarded_list = []
     for changeset in changes:
+        # Lock the change, as the views that change its state do, and leave
+        # alone a change submitted or discarded in the meantime.
+        changeset = Changeset.objects.select_for_update().filter(
+          id=changeset.id, state=states.OPEN).first()
+        if changeset is None:
+            continue
         changed = False
         if changeset.inline():
             revision = changeset.inline_revision()
