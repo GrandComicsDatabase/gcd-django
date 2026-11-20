@@ -1341,20 +1341,6 @@ thanks,
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 
-@permission_required('indexer.can_reserve')
-def discuss_modal(request, id):
-    """
-    Show the modal that asks for the comment required by discuss.
-    """
-    if request.method != 'POST':
-        return _cant_get(request)
-
-    changeset = get_object_or_404(Changeset, id=id)
-    return render(request, 'oi/bits/discuss_modal.html',
-                  {'changeset': changeset,
-                   'comment_text': request.POST.get('comments', '')})
-
-
 def discuss(request, id):
     """
     Move a change into the discussion state and go back to your queue.

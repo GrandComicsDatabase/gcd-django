@@ -1,5 +1,3 @@
-import re
-
 import pytest
 from django.contrib.auth.models import User
 from django.core import mail
@@ -47,10 +45,6 @@ def reviewing_changeset(client, any_indexer, any_added_publisher, approver):
     return changeset
 
 
-def _modal_url(changeset):
-    return reverse('discuss_modal', kwargs={'id': changeset.id})
-
-
 def _user(changeset, role):
     return changeset.indexer if role == 'indexer' else changeset.approver
 
@@ -59,14 +53,6 @@ def _discuss(client, user, changeset, data):
     client.force_login(user)
     return client.post(reverse('process', kwargs={'id': changeset.id}),
                        {'discuss': '', **data})
-
-
-def _assert_button_opens_modal(html, changeset):
-    button = re.search(r'<button[^>]*name="discuss"[^>]*>', html).group(0)
-    assert 'hx-post="%s"' % _modal_url(changeset) in button
-    assert 'hx-target="body"' in button
-    assert 'hx-swap="beforeend"' in button
-    assert 'js/htmx.min.js' in html
 
 
 @pytest.mark.django_db
@@ -105,73 +91,3 @@ def test_discuss_with_a_comment(client, reviewing_changeset, role, queue):
     assert message.subject == 'GCD change put into discussion with a comment'
     assert 'Is the date right?' in message.body
     assert response.url == reverse(queue)
-
-
-@pytest.mark.django_db
-def test_modal_asks_for_the_comment(client, reviewing_changeset):
-    changeset = reviewing_changeset
-    client.force_login(changeset.approver)
-
-    response = client.post(_modal_url(changeset),
-                           {'comments': 'Typed <b>first</b>'})
-
-    html = response.content.decode()
-    assert response.status_code == 200
-    assert '<div id="modal"' in html
-    assert 'action="%s"' % reverse('process', kwargs={'id': changeset.id}) \
-        in html
-    assert 'csrfmiddlewaretoken' in html
-    textarea = re.search(r'<textarea[^>]*>', html).group(0)
-    assert 'name="comments"' in textarea
-    assert 'required' in textarea
-    assert 'Typed &lt;b&gt;first&lt;/b&gt;</textarea>' in html
-    assert re.search(r'<button[^>]*name="discuss"', html)
-    changeset.refresh_from_db()
-    assert changeset.state == states.REVIEWING
-
-
-@pytest.mark.django_db
-def test_modal_cannot_be_fetched_with_get(client, reviewing_changeset):
-    client.force_login(reviewing_changeset.approver)
-
-    html = client.get(_modal_url(reviewing_changeset)).content.decode()
-
-    assert 'may only be accessed through the proper form' in html
-    assert 'id="modal"' not in html
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize('role', ROLES)
-def test_compare_page_button_opens_modal(client, reviewing_changeset, role):
-    changeset = reviewing_changeset
-    client.force_login(_user(changeset, role))
-
-    response = client.get(reverse('compare', kwargs={'id': changeset.id}))
-
-    _assert_button_opens_modal(response.content.decode(), changeset)
-
-
-@pytest.mark.django_db
-def test_inline_edit_page_button_opens_modal(client, reviewing_changeset):
-    changeset = reviewing_changeset
-    changeset.state = states.OPEN
-    changeset.save()
-    client.force_login(changeset.indexer)
-
-    response = client.get(reverse('edit', kwargs={'id': changeset.id}))
-
-    _assert_button_opens_modal(response.content.decode(), changeset)
-
-
-@pytest.mark.django_db
-def test_issue_changeset_page_button_opens_modal(client, any_indexer,
-                                                 any_added_issue, approver):
-    _reserve(client, any_indexer, 'issue', any_added_issue)
-    changeset = Changeset.objects.get(issuerevisions__issue=any_added_issue,
-                                      state=states.OPEN)
-    changeset.approver = approver
-    changeset.save()
-
-    response = client.get(reverse('edit', kwargs={'id': changeset.id}))
-
-    _assert_button_opens_modal(response.content.decode(), changeset)
