@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from django.db import models
+from django.db import models, transaction
 from django.contrib.contenttypes.fields import GenericRelation
 import django.urls as urlresolvers
 from django.db.models import Count, Case, When, F, Q
@@ -176,6 +176,11 @@ class Series(GcdData):
         return self.active_issues().filter(is_indexed__gt=INDEXED['some_data'])
 
     def set_first_last_issues(self):
+        if transaction.get_connection().in_atomic_block:
+            # Lock the row before reading the issues: an approval that adds
+            # or deletes one of them at this moment is waited for, and its
+            # issue is read.
+            Series.objects.select_for_update().filter(pk=self.pk).exists()
         issues = self.active_issues().order_by('sort_code')
         if issues.count() == 0:
             self.first_issue = None

@@ -2109,6 +2109,14 @@ class Revision(models.Model):
 
         Revisions should handle their own dependencies on other revisions.
         """
+        if not self.added and transaction.get_connection().in_atomic_block:
+            source = self.source
+            if source is not None:
+                # Read the object again with its row locked: an approval
+                # that changes it at this moment is waited for, and what
+                # it wrote, counts included, is not written back over.
+                source.refresh_from_db(
+                  from_queryset=type(source)._base_manager.select_for_update())
         self._pre_commit_check()
         changes = self._get_major_changes()
 
