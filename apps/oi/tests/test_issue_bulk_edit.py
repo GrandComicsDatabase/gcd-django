@@ -1,4 +1,5 @@
 """The bulk issue edit and its entry from the advanced search."""
+from collections import Counter
 from urllib.parse import urlencode
 
 import pytest
@@ -98,11 +99,11 @@ def _creator_name(name):
         birth_date=Date.objects.create()))
 
 
-def _add_editing_credit(name, issue_revision):
+def _add_editing_credit(name, issue_revision, credit_name='associate editor'):
     """Give the issue of a revision an editing credit with a description."""
     credit = IssueCredit.objects.create(
       issue=issue_revision.issue, creator=name,
-      credit_name='associate editor',
+      credit_name=credit_name,
       credit_type=CreditType.objects.get_or_create(
         id=CREDIT_TYPES['editing'],
         defaults={'name': 'editing', 'sort_code': 6})[0])
@@ -166,3 +167,138 @@ def test_bulk_edit_removes_a_shared_credit(client, any_added_issue,
       changeset__change_type=CTYPES['issue_bulk']).values_list(
         'issue_credit', 'deleted')) == expected
     assert response.status_code == 302
+
+
+def _credits_of_one_creator(issue, issue_rev, roles, swapped=None,
+                            other_roles=None):
+    """
+    Give the issue and a second one a credit of one creator for each role,
+    the second one for each of other_roles when given, in the other order
+    of id on the issue at the index swapped.
+    """
+    other_issue = Issue.objects.create(
+      number='2', series=issue.series, sort_code=issue.sort_code + 1,
+      editing=issue.editing)
+    revisions = [issue_rev, IssueRevision.objects.create(
+      changeset=issue_rev.changeset, issue=other_issue,
+      series=other_issue.series, number=other_issue.number)]
+    name = _creator_name('Ed Itor')
+    credits = []
+    for index, revision in enumerate(revisions):
+        own = other_roles if index and other_roles else roles
+        order = reversed(own) if index == swapped else own
+        credits += [_add_editing_credit(name, revision, role)
+                    for role in order]
+    return credits
+
+
+def _post_bulk_edit(client, removed=None, added=None, rejected=False):
+    """
+    Post the bulk issue edit as the page renders it, with a comment, with
+    Remove Above on the row of the removed description and with the name
+    and description added entered in the empty row.  When rejected, the
+    removed row is also posted with a name as credited and without "Is
+    credited", which the form rejects.
+    """
+    url = reverse('edit_issues_in_bulk')
+    search = dict(SEARCH, series='Series for Issues')
+    page = client.get(url, search)
+    formset = page.context['credits_formset']
+    data = _browser_post(page.context['form'], formset.management_form,
+                         *formset)
+    data['comments'] = 'Credits of one creator'
+    for form in formset:
+        # the only option of the credit type select
+        data[form.add_prefix('credit_type')] = CREDIT_TYPES['editing']
+        if removed and form.initial.get('credit_name') == removed:
+            # what the Remove Above link of the credit sets
+            data[form.add_prefix('DELETE')] = 'on'
+            if rejected:
+                # a name as credited needs "Is credited": the form rejects
+                # the row, and the page still posts it
+                data[form.add_prefix('credited_as')] = 'E. Itor'
+                data.pop(form.add_prefix('is_credited'), None)
+    if added:
+        empty = formset.forms[-1]
+        data[empty.add_prefix('creator')] = added[0].id
+        data[empty.add_prefix('credit_name')] = added[1]
+    return client.post(url + '?' + urlencode(search), data)
+
+
+def _bulk_credit_revisions():
+    """The credit, deletion and description of each bulk credit revision."""
+    return Counter(IssueCreditRevision.objects.filter(
+      changeset__change_type=CTYPES['issue_bulk']).values_list(
+        'issue_credit', 'deleted', 'credit_name'))
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('removed, swapped, rejected', [
+    pytest.param(None, None, False, id='both-kept'),
+    pytest.param('editor', None, False, id='first-row-removed'),
+    pytest.param('publisher', None, False, id='second-row-removed'),
+    pytest.param(None, 1, False, id='second-issue-other-order'),
+    pytest.param(None, 0, False, id='first-issue-other-order'),
+    pytest.param('editor', None, True, id='first-row-removed-with-errors'),
+])
+def test_bulk_edit_keeps_two_credits_of_one_creator_apart(
+        client, any_added_issue, any_added_issue_rev, searching_indexer,
+        removed, swapped, rejected):
+    """Each of two credits of one creator follows its own row of the page."""
+    _allow_reserving(searching_indexer)
+    client.force_login(searching_indexer)
+    credits = _credits_of_one_creator(any_added_issue, any_added_issue_rev,
+                                      ['editor', 'publisher'], swapped)
+
+    response = _post_bulk_edit(client, removed=removed, rejected=rejected)
+
+    assert _bulk_credit_revisions() == Counter(
+      (credit.id, credit.credit_name == removed, credit.credit_name)
+      for credit in credits)
+    assert response.status_code == 302
+
+
+@pytest.mark.django_db
+def test_bulk_edit_adds_a_second_credit_of_one_creator(
+        client, any_added_issue, any_added_issue_rev, searching_indexer):
+    """A credit entered for a creator credited already is a new credit."""
+    _allow_reserving(searching_indexer)
+    client.force_login(searching_indexer)
+    credits = _credits_of_one_creator(any_added_issue, any_added_issue_rev,
+                                      ['editor'])
+
+    response = _post_bulk_edit(client, added=(credits[0].creator,
+                                              'publisher'))
+
+    expected = Counter((credit.id, False, 'editor') for credit in credits)
+    expected[(None, False, 'publisher')] = 2
+    assert _bulk_credit_revisions() == expected
+    assert response.status_code == 302
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('roles, other_roles, shown', [
+    pytest.param(['editor', 'publisher'], ['editor', 'editor'], False,
+                 id='one-credit-twice'),
+    pytest.param(['editor', 'editor', 'publisher'],
+                 ['editor', 'publisher', 'publisher'], False,
+                 id='another-credit-twice'),
+    pytest.param(['editor', 'editor'], ['editor', 'editor'], True,
+                 id='same-credit-twice-on-both'),
+])
+def test_bulk_edit_shows_credit_rows_for_the_same_credits_only(
+        client, any_added_issue, any_added_issue_rev, searching_indexer,
+        roles, other_roles, shown):
+    """
+    The credit rows need each issue to hold the credits of the first one,
+    one to one.
+    """
+    _allow_reserving(searching_indexer)
+    client.force_login(searching_indexer)
+    _credits_of_one_creator(any_added_issue, any_added_issue_rev, roles,
+                            other_roles=other_roles)
+
+    page = client.get(reverse('edit_issues_in_bulk'),
+                      dict(SEARCH, series='Series for Issues'))
+
+    assert (page.context['credits_formset'] is not None) is shown

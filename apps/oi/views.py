@@ -2097,18 +2097,25 @@ def edit_issues_in_bulk(request):
     if editing_credits and 'editing' not in remove_fields and 'no_editing' \
        not in remove_fields:
         reference_issue = items[0]
-        editing_credits = reference_issue.credits.filter(deleted=False)
+        # the rows of the page, in the order the credits are taken below
+        editing_credits = reference_issue.credits.filter(
+          deleted=False).order_by(*data_fields, 'creator_id')
         issue_count = 1
         for issue in items[1:]:
             if issue.credits.filter(deleted=False).count() == editing_credits\
                                                               .count():
                 count = 0
+                # a credit of the first issue matches one credit only
+                matched = []
                 for credit in issue.credits.filter(deleted=False):
                     query = Q(**{'%s' % ('creator_id'): getattr(credit,
                                                                 'creator_id')})
                     for field in data_fields:
                         query &= Q(**{'%s' % (field): getattr(credit, field)})
-                    if editing_credits.filter(query).exists():
+                    match = editing_credits.filter(query).exclude(
+                      id__in=matched).first()
+                    if match:
+                        matched.append(match.id)
                         count += 1
                     else:
                         break
@@ -2191,8 +2198,10 @@ def edit_issues_in_bulk(request):
     if credits_formset:
         cd_credits = []
         for form in credits_formset:
-            # a removed credit is left out, so it gets deleted below
-            if form.is_valid() and not form.cleaned_data.get('DELETE'):
+            # a removed row takes its credit also when the form rejects
+            # its other fields: it needs only its creator
+            if form.is_valid() or (form.cleaned_data.get('DELETE') and
+                                   form.cleaned_data.get('creator')):
                 cd_credits.append(form.cleaned_data)
     for issue in items:
         revision_lock = _get_revision_lock(issue, changeset)
@@ -2210,14 +2219,21 @@ def edit_issues_in_bulk(request):
             revision.save()
 
             if credits_formset:
-                existing_credits = issue.credits.filter(deleted=False)
+                # each row, kept or removed, takes a credit of its creator
+                # that no earlier row took, in the order of the rows
+                existing_credits = issue.credits.filter(
+                  deleted=False).order_by(*data_fields)
+                taken = []
                 for cd_credit in cd_credits:
-                    if existing_credits.filter(
-                       creator__creator__id=cd_credit['creator'].creator_id)\
-                       .exists():
-                        credit = existing_credits.filter(
-                          creator__creator__id=cd_credit['creator'].creator_id
-                          ).first()
+                    credit = existing_credits.filter(
+                      creator__creator__id=cd_credit['creator'].creator_id
+                      ).exclude(id__in=taken).first()
+                    if credit:
+                        taken.append(credit.id)
+                    if cd_credit.get('DELETE'):
+                        # a removed credit stays unlocked: deleted below
+                        continue
+                    if credit:
                         revision_lock = _get_revision_lock(credit, changeset)
                         if not revision_lock:
                             raise ValueError('could not lock credit')
