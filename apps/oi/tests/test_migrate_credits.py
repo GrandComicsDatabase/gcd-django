@@ -103,3 +103,110 @@ def test_note_of_a_migrated_issue_credit_has_no_question_mark(
     assert credit.credit_name == 'consulting'
     assert credit.uncertain
     assert issue_revision.editing == ''
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('text,credited_as,credit_name,uncertain', [
+    ('Some Editor (credited as Some Other Editor) '
+     '(a cura di, senior art designer);',
+     'Some Other Editor', 'a cura di, senior art designer', False),
+    ('Some Editor (credited as Some Other Editor)',
+     'Some Other Editor', 'editor', False),
+    ('Some Editor (credited as Some Other Editor) (a cura di) ?',
+     'Some Other Editor', 'a cura di', True),
+    ('Some Editor (credited as Some Editor) (a cura di)',
+     '', 'a cura di', False),
+])
+def test_issue_credit_written_as_credited_as_is_migrated(
+  issue_revision, any_indexer, credit_types, text, credited_as, credit_name,
+  uncertain):
+    """An editing credit in the form the site shows keeps its parts."""
+    _creator('Some Editor', any_indexer)
+    issue_revision.editing = text
+
+    issue_revision.migrate_credits()
+
+    credit = issue_revision.issue_credit_revisions.get()
+    assert credit.is_credited
+    assert credit.credited_as == credited_as
+    assert credit.credit_name == credit_name
+    assert credit.uncertain == uncertain
+    assert issue_revision.editing == ''
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('text,credited_as,credit_name,uncertain', [
+    ('Some Artist (credited as S. Artiste) (painting)',
+     'S. Artiste', 'painting', False),
+    ('Some Artist (credited as S. Artiste)', 'S. Artiste', '', False),
+    ('Some Artist ? (credited as S. Artiste) (painting)',
+     'S. Artiste', 'painting', True),
+    ('Some Artist (credited as S. Artiste) (painting) ?',
+     'S. Artiste', 'painting', True),
+    ('Some Artist (credited as Some Artist)', '', '', False),
+])
+def test_story_credit_written_as_credited_as_is_migrated(
+  any_edit_story_rev, any_indexer, credit_types, text, credited_as,
+  credit_name, uncertain):
+    """A sequence credit in the form the site shows keeps its parts."""
+    _creator('Some Artist', any_indexer)
+    any_edit_story_rev.script = text
+
+    any_edit_story_rev.migrate_credits()
+
+    credit = any_edit_story_rev.story_credit_revisions.get()
+    assert credit.is_credited
+    assert credit.credited_as == credited_as
+    assert credit.credit_name == credit_name
+    assert credit.uncertain == uncertain
+    assert any_edit_story_rev.script == ''
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('text,is_credited,credit_name', [
+    ('Some Editor (credited)', True, 'editor'),
+    ('Some Editor (credited) (managing editor)', True, 'managing editor'),
+    ('Some Editor (credited) (managing editor, art director)', True,
+     'managing editor, art director'),
+    ('Some Editor (credited as Some (Smiling) Editor)', False,
+     'credited as Some (Smiling) Editor'),
+    ('Some Editor (credited as Some Other Editor', False,
+     '(credited as Some Other Editor'),
+])
+def test_issue_credit_note_is_migrated_as_before(
+  issue_revision, any_indexer, credit_types, text, is_credited, credit_name):
+    """The other notes of an editing credit migrate as they did."""
+    _creator('Some Editor', any_indexer)
+    issue_revision.editing = text
+
+    issue_revision.migrate_credits()
+
+    credit = issue_revision.issue_credit_revisions.get()
+    assert credit.is_credited == is_credited
+    assert credit.credited_as == ''
+    assert credit.credit_name == credit_name
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('text,is_credited,credit_name', [
+    ('Some Artist (credited)', True, ''),
+    ('Some Artist (credited) (painting)', True, 'painting'),
+    ('Some Artist (credited) (plot, script)', True, 'plot, script'),
+    ('Some Artist (credited as Some (Smiling) Artist)', False,
+     'credited as Some (Smiling) Artist'),
+    ('Some Artist (credited as Some Other Artist', False,
+     '(credited as Some Other Artist'),
+])
+def test_story_credit_note_is_migrated_as_before(
+  any_edit_story_rev, any_indexer, credit_types, text, is_credited,
+  credit_name):
+    """The other notes of a sequence credit migrate as they did."""
+    _creator('Some Artist', any_indexer)
+    any_edit_story_rev.script = text
+
+    any_edit_story_rev.migrate_credits()
+
+    credit = any_edit_story_rev.story_credit_revisions.get()
+    assert credit.is_credited == is_credited
+    assert credit.credited_as == ''
+    assert credit.credit_name == credit_name
