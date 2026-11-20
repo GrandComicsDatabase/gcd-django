@@ -148,6 +148,57 @@ def test_add_accepts_only_a_listed_indicia_publisher(
       indicia_publisher=indicia_publisher).count() == added
 
 
+# What each method needs on top of the fields all methods share.
+METHOD_DATA = {'number': {},
+               'volume': {'issues_per_volume': 12},
+               'year': {'first_year': 1990, 'issues_per_year': 12},
+               'year_volume': {'first_year': 1990, 'issues_per_cycle': 12}}
+
+
+def _input(content, name):
+    """The input tag of a field on the rendered page."""
+    return re.search(r'<input[^>]*name="%s"[^>]*>' % name,
+                     content).group(0)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method', METHODS)
+@pytest.mark.parametrize('with_printer', [True, False])
+def test_add_keeps_indicia_printer_not_printed(
+      adding_client, any_added_series, any_added_indicia_printer,
+      method, with_printer):
+    """The not printed flag and its source reach every added issue."""
+    series = any_added_series
+    series.has_indicia_printer = True
+    series.save()
+    content = _page(adding_client, series, method).content.decode()
+    assert 'type="checkbox"' in _input(content,
+                                       'indicia_printer_not_printed')
+    assert 'type="text"' in _input(content, 'indicia_printer_sourced_by')
+    printers = [any_added_indicia_printer] if with_printer else []
+    source = 'publisher records' if with_printer else ''
+
+    adding_client.post(_url(series, method), {
+      'number_of_issues': 2,
+      'indicia_printer': [printer.id for printer in printers],
+      'indicia_printer_not_printed': 'on',
+      'indicia_printer_sourced_by': source,
+      'publisher_id': series.publisher.id,
+      'year_began': series.year_began,
+      'comments': 'test',
+      'issue_credit_revisions-TOTAL_FORMS': 0,
+      'issue_credit_revisions-INITIAL_FORMS': 0,
+      **METHOD_DATA[method],
+    })
+
+    revisions = IssueRevision.objects.filter(series=series)
+    assert revisions.count() == 2
+    for revision in revisions:
+        assert list(revision.indicia_printer.all()) == printers
+        assert revision.indicia_printer_not_printed
+        assert revision.indicia_printer_sourced_by == source
+
+
 @pytest.mark.django_db
 def test_bulk_edit_lists_are_not_limited(any_added_series, dated_choices):
     """The issues of a bulk edit can be from other years than the series."""
