@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
 from django.db import models
+from django.db.models import F, Q
 from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
 from django.template import engines
 
 import django_tables2 as tables
 
-from .issue import Issue, IssueTable, IssuePublisherTable, IssueColumn
+from .gcddata import GcdLink
+from .story import StoryCharacter
+from .issue import (Issue, IssueTable, IssuePublisherTable, IssueColumn,
+                    VCS_Codes)
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -97,6 +101,93 @@ class Cover(models.Model):
 
     def __str__(self):
         return '%s %s cover' % (self.issue.series, self.issue.display_number)
+
+
+def box_covers(issue):
+    """
+    The covers on which the characters of the cover sequence of an issue
+    can be marked: those of the issue and those of its variants with only a
+    scan difference, which show the same art and use its cover sequence.
+    """
+    return Cover.objects.filter(
+      Q(issue=issue)
+      | Q(issue__variant_of=issue,
+          issue__variant_cover_status=VCS_Codes.ONLY_SCAN_DIFFERENCE),
+      deleted=False)
+
+
+# Boxes on a cover of box_covers for the issue of their sequence.
+VALID_BOX_COVER = Q(cover__deleted=False) & (
+  Q(cover__issue=F('story_character__story__issue'))
+  | Q(cover__issue__variant_of=F('story_character__story__issue'),
+      cover__issue__variant_cover_status=VCS_Codes.ONLY_SCAN_DIFFERENCE))
+
+
+class CoverCharacterBox(GcdLink):
+    """
+    The rectangle on the front of a cover that shows a character appearance.
+
+    The box belongs to the appearance of the character in the cover
+    sequence, so it follows its universe, deletions and locks.
+
+    Points are in affine coordinates of the front as the cover is scanned,
+    with the origin in the top left corner: x in 1/10000 of the width of
+    the front, y in 1/10000 of its height.  The character can be printed at
+    any angle, so the rectangle can be turned on the front and is stored by
+    three of its corners, named as on the upright cut-out (top is the side
+    of the head); the fourth corner is top_right + bottom_left - top_left.
+    A corner can lie outside the front for a character near its edge, and
+    that part of the cut-out stays empty; the centre is on the front and
+    both sides are at least 1.  The proportions of the scan the box was
+    drawn on are kept in scan_aspect, to show the cut-out undistorted and
+    to find the angle again.
+    """
+    class Meta:
+        """One box for an appearance on a cover."""
+        app_label = 'gcd'
+        db_table = 'gcd_cover_character_box'
+        unique_together = ('story_character', 'cover')
+
+    story_character = models.ForeignKey(StoryCharacter,
+                                        on_delete=models.CASCADE,
+                                        related_name='cover_boxes')
+    cover = models.ForeignKey(Cover, on_delete=models.CASCADE,
+                              related_name='character_boxes')
+    top_left_x = models.SmallIntegerField(
+      help_text='x of the top left corner, in 1/10000 of the width of the '
+                'front.')
+    top_left_y = models.SmallIntegerField(
+      help_text='y of the top left corner, in 1/10000 of the height of the '
+                'front.')
+    top_right_x = models.SmallIntegerField(
+      help_text='x of the top right corner, in 1/10000 of the width of the '
+                'front.')
+    top_right_y = models.SmallIntegerField(
+      help_text='y of the top right corner, in 1/10000 of the height of '
+                'the front.')
+    bottom_left_x = models.SmallIntegerField(
+      help_text='x of the bottom left corner, in 1/10000 of the width of '
+                'the front.')
+    bottom_left_y = models.SmallIntegerField(
+      help_text='y of the bottom left corner, in 1/10000 of the height of '
+                'the front.')
+    scan_date = models.DateTimeField(
+      null=True,
+      help_text='The last upload of the cover scan the box was drawn on.')
+    scan_aspect = models.PositiveIntegerField(
+      help_text='Height / width of the scan the box was drawn on, times '
+                '10000 (400 x 615 pixels gives 15375).')
+
+    def __str__(self):
+        """The character of the box and its cover."""
+        return '%s on %s' % (self.story_character.character, self.cover)
+
+
+# Width and height in pixels of the frame a cut-out fills: the size of a cover
+# on the character page, and a size of the same proportions that fits two of
+# them side by side with a small gap in it.
+BOX_SIZE_LARGE = (200, 304)
+BOX_SIZE_SMALL = (98, 149)
 
 
 def calculate_row_class(**kwargs):

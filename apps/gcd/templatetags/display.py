@@ -450,6 +450,9 @@ def changed_story_list(changeset):
                 for field in story_revision._field_list():
                     if story_revision.changed[field]:
                         story_changed_list.append(field_name(field))
+                # The boxes are not a field of the sequence.
+                if story_revision.changed.get('cover_boxes'):
+                    story_changed_list.append('Characters marked on cover')
             if story_changed_list:
                 output += '<li>Sequence %s : %s' % \
                           (story_revision.sequence_number,

@@ -23,7 +23,7 @@ from .character import (Character, CharacterNameDetail, CharacterRelationType,
                         CharacterRelation, Group, GroupNameDetail,
                         GroupRelation, GroupRelationType, GroupMembership,
                         GroupMembershipType, Universe, Multiverse)
-from .cover import Cover
+from .cover import Cover, CoverCharacterBox
 from .reprint import Reprint
 from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
                         SUBNUMBER_TRACKING, MERGE_TRACKING, REBOOT_TRACKING

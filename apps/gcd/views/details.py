@@ -6,7 +6,7 @@ import re
 from urllib.parse import urlencode, quote
 from datetime import date, datetime, time, timedelta
 from operator import attrgetter
-from random import randint, choice
+from random import randint, choice, shuffle
 
 from django.db.models import F, Q, Min, Count, Sum, Case, When, Value, \
                              OuterRef, Subquery
@@ -93,18 +93,22 @@ from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
                                    CharacterSeriesTable, GroupSeriesTable, \
                                    DailyChangesSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
-                                  StoryTable
+                                  STORY_TYPES, StoryTable
 from apps.gcd.views import paginate_response, ORDER_CHRONO, \
                            ResponsePaginator
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
-                                  get_image_tags_per_page
+                                  get_image_tags_per_page, get_box_tag, \
+                                  box_alt_text, common_proportion
 from apps.gcd.models.cover import CoverIssuePublisherTable, \
                                   CoverIssueStoryTable, \
                                   CoverIssueStoryPublisherTable, \
                                   CoverIssuePublisherEditTable, \
                                   OnSaleCoverIssueTable, \
                                   CoverSeriesTable, \
+                                  CoverCharacterBox, \
+                                  VALID_BOX_COVER, \
+                                  BOX_SIZE_LARGE, BOX_SIZE_SMALL, \
                                   ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
@@ -4179,7 +4183,9 @@ def show_character(request, character, preview=False):
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
 
-    if issues:
+    # Cover images of the character, if any, replace the random cover.
+    box_images = _character_page_images(character)
+    if not box_images and issues:
         selected_issue = issues[randint(0, issues.count()-1)]
         image_tag = get_image_tag(cover=selected_issue.cover_set.first(),
                                   zoom_level=ZOOM_MEDIUM,
@@ -4194,6 +4200,7 @@ def show_character(request, character, preview=False):
                'error_subject': '%s' % character,
                'image_tag': image_tag,
                'image_issue': selected_issue,
+               'box_images': box_images,
                'preview': preview}
     return render(request, 'gcd/details/tw_character.html', context)
 
@@ -4844,6 +4851,73 @@ def character_covers(request, character_id, universe_id=None):
                                      template_name=TW_SORT_TABLE_TEMPLATE,
                                      order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
+
+
+def _current_boxes(character):
+    """
+    The boxes of a character page: on a cover shown on the site that the
+    characters of their sequence can be marked on, with the appearance and
+    its cover sequence not deleted, with the universe filter of the page as
+    in show_character, and drawn on the current scan of their cover.  A
+    cover may have no date of its last upload, and then a box drawn on it
+    has none either.
+    """
+    filter_character, universe_id = \
+        _resolve_character_universe(character, None)[:2]
+    boxes = CoverCharacterBox.objects.filter(
+      VALID_BOX_COVER,
+      Q(scan_date=F('cover__last_upload'))
+      | Q(scan_date__isnull=True, cover__last_upload__isnull=True),
+      cover__limit_display=False,
+      story_character__character__character=filter_character,
+      story_character__deleted=False,
+      story_character__story__deleted=False,
+      story_character__story__type_id=STORY_TYPES['cover'])
+    if universe_id:
+        boxes = boxes.filter(story_character__universe_id=universe_id)
+    return boxes
+
+
+# Cut-outs shown on a character page in the place of a random cover.
+IMAGES_ON_CHARACTER_PAGE = 3
+
+
+def _character_page_images(character):
+    """
+    The cut-outs shown on a character page in the place of a random cover,
+    each with the issue of its cover.
+
+    Up to IMAGES_ON_CHARACTER_PAGE boxes of _current_boxes are chosen at
+    random at each view, at most one of an appearance: its boxes on a cover
+    and on its variants with only a scan difference show the same art.  One
+    shows its box as drawn, at most the size of a cover; more share their
+    common_proportion at a smaller size, so together they fit in that place
+    and look alike.
+    """
+    pairs = list(_current_boxes(character)
+                 .values_list('id', 'story_character_id'))
+    shuffle(pairs)
+    chosen, appearances = [], set()
+    for box_id, appearance_id in pairs:
+        if appearance_id not in appearances:
+            appearances.add(appearance_id)
+            chosen.append(box_id)
+            if len(chosen) == IMAGES_ON_CHARACTER_PAGE:
+                break
+    boxes = CoverCharacterBox.objects\
+        .select_related('cover__issue__series__publisher').in_bulk(chosen)
+    if len(chosen) == 1:
+        size, proportion = BOX_SIZE_LARGE, None
+    else:
+        size = BOX_SIZE_SMALL
+        proportion = common_proportion(boxes.values()) if chosen else None
+    images = []
+    for box_id in chosen:
+        issue = boxes[box_id].cover.issue
+        images.append((issue, get_box_tag(boxes[box_id],
+                                          box_alt_text(character, issue),
+                                          size, proportion)))
+    return images
 
 
 def character_name_issues(request, character_name_id, universe_id=None):

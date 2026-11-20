@@ -19,10 +19,27 @@ GCD :: Character :: {{ character.name }}
   <tr>
     <td class="align-top">
       <div class="w-[150px] md:w-[200px] mt-1">
+{% if box_images|length == 1 %}
+  {% with issue=box_images.0.0 %}
+        <a class="block" href="{{ issue.get_absolute_url }}cover/4/">
+          {{ box_images.0.1 }}</a>
+        <a href="{{ issue.get_absolute_url }}">{{ issue.full_name }}<br>
+        {{ issue.publication_date }}<br>
+        </a>
+  {% endwith %}
+{% elif box_images %}
+        <div class="grid grid-cols-2 items-start gap-1">
+  {% for issue, box_tag in box_images %}
+          <a class="block" href="{{ issue.get_absolute_url }}cover/4/"
+             title="{{ issue.full_name }}">{{ box_tag }}</a>
+  {% endfor %}
+        </div>
+{% else %}
         <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
         <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
         {{ image_issue.publication_date }}<br>
         </a>
+{% endif %}
       </div>
     </td>
     <td class="align-top">

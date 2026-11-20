@@ -220,6 +220,9 @@ urlpatterns = [
     path('character_order/revision/<int:character_order_id>/reorder/',
         oi_views.reorder_characters,
         name='reorder_characters'),
+    path('story/revision/<int:story_revision_id>/mark_cover_characters/',
+         oi_views.mark_cover_characters,
+         name='mark_cover_characters'),
 
     # Story Arc URLs
     path('story_arc/add/',
