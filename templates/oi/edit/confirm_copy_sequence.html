@@ -36,6 +36,11 @@
           <legend>Options for All Sequences</legend>
           <p><label><input type="checkbox" id="copy-all-credit-info"> Copy credits with credited/signed qualifiers for all sequences</label></p>
           <p><label><input type="checkbox" id="copy-all-characters"> Copy characters for all sequences</label></p>
+          <p><label>
+            <input type="checkbox" id="copy-all-omit-details">
+            Leave out first line, job number, story arcs, universe, keywords,
+            synopsis, notes and reprint notes for all sequences
+          </label></p>
         </fieldset>
       {% endif %}
       {% if needs_main_cover %}
@@ -54,6 +59,13 @@
           {% if not needs_main_cover %}<p>Position {{ row.position }} — Copy as {{ row.copy_type }}</p>{% endif %}
           <p><label><input type="checkbox" name="copy_credit_info_ids" value="{{ row.story.id }}" {% if row.copy_credit_info %}checked{% endif %}> Copy credits with credited/signed qualifiers</label></p>
           <p><label><input type="checkbox" name="copy_characters_ids" value="{{ row.story.id }}" {% if row.copy_characters %}checked{% endif %}> Copy characters</label></p>
+          <p><label>
+            <input type="checkbox" name="omit_story_details_ids"
+                   value="{{ row.story.id }}"
+                   {% if row.omit_story_details %}checked{% endif %}>
+            Leave out first line, job number, story arcs, universe, keywords,
+            synopsis, notes and reprint notes
+          </label></p>
           {% with story=row.story preview=1 %}
             {% include "gcd/details/tw_single_story.html" %}
           {% endwith %}
@@ -70,6 +82,7 @@
       const optionGroups = [
         ['copy-all-credit-info', 'copy_credit_info_ids'],
         ['copy-all-characters', 'copy_characters_ids'],
+        ['copy-all-omit-details', 'omit_story_details_ids'],
       ].filter(([id]) => document.getElementById(id)).map(([id, name]) => {
         const all = document.getElementById(id);
         const items = Array.from(copyForm.querySelectorAll(`input[name="${name}"]`));
@@ -120,6 +133,16 @@
               Copy characters:
             </label></th>
             <td><input type="checkbox" name="copy_characters" value=True {% if copy_characters %}checked{% endif %}></td>
+          </tr>
+          <tr>
+            <th><label>
+              Leave out first line, job number, story arcs, universe, keywords,
+              synopsis, notes and reprint notes:
+            </label></th>
+            <td>
+              <input type="checkbox" name="omit_story_details" value=True
+                     {% if omit_story_details %}checked{% endif %}>
+            </td>
           </tr>
         </table>
         {% with 1 as preview %}
