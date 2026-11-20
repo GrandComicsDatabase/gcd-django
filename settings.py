@@ -484,6 +484,9 @@ MYCOMICS = False
 BOOTSTRAP3 = {
     'jquery_url': STATIC_URL + 'jquery/js/jquery.min.js',
     'base_url': STATIC_URL + 'bootstrap/',
+    # beside the field at any width, the dialogs are narrow in any window
+    'horizontal_label_class': 'col-xs-4 col-sm-3',
+    'horizontal_field_class': 'col-xs-8 col-sm-9',
     }
 
 # absolute path to the directory that holds election files.
