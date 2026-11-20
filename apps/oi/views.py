@@ -6164,10 +6164,11 @@ def remove_variant_revision(request, id):
     changeset.change_type = CTYPES['issue']
     changeset.save()
 
-    # under variant_add the form of the base issue offers its variant_name
+    # Under variant_add the form of the base issue offers a variant name.
+    # An issue without variants has none.
     base_revision = changeset.issuerevisions.get()
-    if 'variant_name' not in base_revision.field_list():
-        base_revision.variant_name = base_revision.issue.variant_name
+    if not base_revision.issue.active_variants().exists():
+        base_revision.variant_name = ''
         base_revision.save()
     return HttpResponseRedirect(edit_url)
 

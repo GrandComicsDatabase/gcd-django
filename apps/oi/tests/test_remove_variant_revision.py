@@ -410,12 +410,24 @@ def _mistype_base_variant_name(variant):
 
 
 @pytest.mark.django_db
-def test_base_variant_name_restored_without_other_variants(client, variant):
-    """Without other variants the field is hidden again, so it is reset."""
+def test_base_variant_name_cleared_without_other_variants(client, variant):
+    """Without other variants the base issue keeps no variant name."""
     base_revision = _mistype_base_variant_name(variant)
     client.post(_url(variant))
     base_revision.refresh_from_db()
-    assert base_revision.variant_name == 'Regular'
+    assert base_revision.variant_name == ''
+
+
+@pytest.mark.django_db
+def test_base_variant_name_cleared_with_only_deleted_variants(
+        client, variant, any_added_variant):
+    """A deleted variant does not keep the variant name of the base."""
+    any_added_variant.deleted = True
+    any_added_variant.save()
+    base_revision = _mistype_base_variant_name(variant)
+    client.post(_url(variant))
+    base_revision.refresh_from_db()
+    assert base_revision.variant_name == ''
 
 
 @pytest.mark.django_db
