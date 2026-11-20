@@ -24,7 +24,7 @@ should include a comment explaining the deletion.
     <td>{{ changeset.approver.indexer|absolute_url }}</td>
     <td>
     {{ changeset|changed_fields:object }}
-    {{ changeset|changed_story_list }}
+    {{ changeset|changed_story_list:object }}
     </td>
   </tr>
 {% endfor %}
