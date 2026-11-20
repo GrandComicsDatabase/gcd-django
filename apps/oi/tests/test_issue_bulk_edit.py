@@ -169,10 +169,12 @@ def test_bulk_edit_removes_a_shared_credit(client, any_added_issue,
     assert response.status_code == 302
 
 
-def _credits_of_one_creator(issue, issue_rev, roles, swapped=None):
+def _credits_of_one_creator(issue, issue_rev, roles, swapped=None,
+                            other_roles=None):
     """
     Give the issue and a second one a credit of one creator for each role,
-    in the other order of id on the issue at the index swapped.
+    the second one for each of other_roles when given, in the other order
+    of id on the issue at the index swapped.
     """
     other_issue = Issue.objects.create(
       number='2', series=issue.series, sort_code=issue.sort_code + 1,
@@ -183,7 +185,8 @@ def _credits_of_one_creator(issue, issue_rev, roles, swapped=None):
     name = _creator_name('Ed Itor')
     credits = []
     for index, revision in enumerate(revisions):
-        order = reversed(roles) if index == swapped else roles
+        own = other_roles if index and other_roles else roles
+        order = reversed(own) if index == swapped else own
         credits += [_add_editing_credit(name, revision, role)
                     for role in order]
     return credits
@@ -271,3 +274,31 @@ def test_bulk_edit_adds_a_second_credit_of_one_creator(
     expected[(None, False, 'publisher')] = 2
     assert _bulk_credit_revisions() == expected
     assert response.status_code == 302
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('roles, other_roles, shown', [
+    pytest.param(['editor', 'publisher'], ['editor', 'editor'], False,
+                 id='one-credit-twice'),
+    pytest.param(['editor', 'editor', 'publisher'],
+                 ['editor', 'publisher', 'publisher'], False,
+                 id='another-credit-twice'),
+    pytest.param(['editor', 'editor'], ['editor', 'editor'], True,
+                 id='same-credit-twice-on-both'),
+])
+def test_bulk_edit_shows_credit_rows_for_the_same_credits_only(
+        client, any_added_issue, any_added_issue_rev, searching_indexer,
+        roles, other_roles, shown):
+    """
+    The credit rows need each issue to hold the credits of the first one,
+    one to one.
+    """
+    _allow_reserving(searching_indexer)
+    client.force_login(searching_indexer)
+    _credits_of_one_creator(any_added_issue, any_added_issue_rev, roles,
+                            other_roles=other_roles)
+
+    page = client.get(reverse('edit_issues_in_bulk'),
+                      dict(SEARCH, series='Series for Issues'))
+
+    assert (page.context['credits_formset'] is not None) is shown

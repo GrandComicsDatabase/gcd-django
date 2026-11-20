@@ -2105,12 +2105,17 @@ def edit_issues_in_bulk(request):
             if issue.credits.filter(deleted=False).count() == editing_credits\
                                                               .count():
                 count = 0
+                # a credit of the first issue matches one credit only
+                matched = []
                 for credit in issue.credits.filter(deleted=False):
                     query = Q(**{'%s' % ('creator_id'): getattr(credit,
                                                                 'creator_id')})
                     for field in data_fields:
                         query &= Q(**{'%s' % (field): getattr(credit, field)})
-                    if editing_credits.filter(query).exists():
+                    match = editing_credits.filter(query).exclude(
+                      id__in=matched).first()
+                    if match:
+                        matched.append(match.id)
                         count += 1
                     else:
                         break
