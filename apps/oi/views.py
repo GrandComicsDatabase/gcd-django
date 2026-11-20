@@ -47,7 +47,7 @@ from apps.gcd.models import (
     Printer, IndiciaPrinter,
     CreatorSignature, Character, CharacterRelation, Group,
     GroupRelation, GroupMembership, Universe, CREDIT_TYPES, VCS_Codes)
-from apps.gcd.views import paginate_response
+from apps.gcd.views import paginate_response, ResponsePaginator
 # need this for preview-call
 from apps.gcd.views.details import (  # noqa: F401
     show_publisher, show_indicia_publisher,
@@ -72,7 +72,7 @@ from apps.oi.models import (
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, BiblioEntryRevision, CharacterOrderRevision,
     OngoingReservation, RevisionLock,
-    _get_revision_lock, _free_revision_lock, CTYPES,
+    _get_revision_lock, _free_revision_lock, CTYPES, BULK_OBJECT_NAMES,
     get_issue_field_list, set_series_first_last,
     AwardRevision, ReceivedAwardRevision, IssueCreditRevision,
     StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision,
@@ -129,12 +129,13 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            CreatorDegreeRevisionForm,
                            CreatorSignatureRevisionForm,
                            DateRevisionForm)
+from apps.oi.forms.bulk import BulkOperationForm, offered_fields
 from apps.oi.forms.support import CREATOR_HELP_LINKS
 
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
-from apps.oi import states
+from apps.oi import bulk, states
 from apps.oi.templatetags.editing import is_locked
 
 REVISION_CLASSES = {
@@ -666,6 +667,9 @@ def edit_revision(request, id, model_name):
 @permission_required('indexer.can_reserve')
 def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
+    if changeset.change_type == CTYPES['bulk']:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'compare', kwargs={'id': changeset.id}))
 
     if changeset.inline():
         revision = changeset.inline_revision()
@@ -1874,6 +1878,73 @@ def process_revision(request, id, model_name):
 ##############################################################################
 
 
+def _bulk_compare(request, changeset):
+    """
+    Show a bulk change: one row for each changed field of each changed
+    object, BULK_CHANGE_MAX objects to a page, then the comments and the
+    actions of any change.
+    """
+    name, revisions = changeset.bulk_target()
+    context = {'changeset': changeset, 'states': states}
+    if name is None:
+        context['heading'] = 'no objects'
+        revisions = changeset.issuerevisions.none()
+    else:
+        context['heading'] = bulk.compare_heading(name, revisions)
+        context['object_label'] = BULK_OBJECT_NAMES[name][0]
+    page = ResponsePaginator(revisions, vars=context,
+                             per_page=settings.BULK_CHANGE_MAX) \
+        .paginate(request)
+    context['rows'] = bulk.compare_rows(page.object_list)
+    response = oi_render(request, 'oi/edit/compare_bulk.html', context)
+    response['Cache-Control'] = ('no-cache, no-store, max-age=0,'
+                                 ' must-revalidate')
+    return response
+
+
+def _bulk_start(request, token):
+    """
+    Show the page that starts a bulk change, for the selection that a list
+    kept under token.  With GET the indexer chooses a field, sees its
+    values and previews an operation; nothing is written.
+    """
+    selection = bulk.stored_selection(request, token)
+    if selection is None:
+        return render_error(
+          request,
+          'This selection for a bulk change is no longer available. Please '
+          'start again from the list.', redirect=False)
+    model, ids, source = selection
+    rev_class = bulk.BULK_TARGETS[model]
+    publisher = bulk.single_publisher(model, ids)
+    names = offered_fields(rev_class, publisher)
+    name = request.GET.get('field')
+    if name not in names:
+        name = names[0]
+    values = bulk.distinct_values(model, ids, name)
+    data = request.GET if request.GET.get('shown') == name else None
+    form = BulkOperationForm(data, rev_class, name,
+                             values[:bulk.LISTED_VALUES], publisher)
+
+    # A changeset names its revisions of a class '<class>s'.
+    singular, plural = BULK_OBJECT_NAMES[rev_class._meta.model_name + 's']
+    context = {
+      'form': form,
+      'token': token,
+      'source': source,
+      'selection': '%d %s' % (len(ids), singular if len(ids) == 1
+                              else plural),
+      'object_label': singular,
+      'deleted': bulk.deleted_count(model, ids),
+      'more_values': max(0, len(values) - bulk.LISTED_VALUES),
+    }
+    if form.is_bound and form.is_valid():
+        context['bulk_preview'] = bulk.preview(
+          model, ids, name, form.cleaned_data['operation'],
+          form.cleaned_data['old_value'], form.cleaned_data['new_value'])
+    return oi_render(request, 'oi/edit/bulk_start.html', context)
+
+
 def _clean_bulk_issue_change_form(form, remove_fields, items,
                                   number_of_issues=True):
     for i in remove_fields:
@@ -1910,6 +1981,9 @@ def edit_issues_in_bulk(request):
         an IssueRevision, applying the submitted changes. It also handles the
         creation and modification of credit revisions if applicable.
 
+    With BULK_CHANGE_ENABLED, a request with a token shows instead the
+    page that starts a bulk change from the selection of a list.
+
     Returns:
         HttpResponse:
         - Renders the bulk edit form on a GET request.
@@ -1920,6 +1994,9 @@ def edit_issues_in_bulk(request):
         - Redirects to the submit page upon successful creation of the
           bulk change revisions.
     """
+    if settings.BULK_CHANGE_ENABLED and 'token' in request.GET:
+        return _bulk_start(request, request.GET['token'])
+
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -6693,7 +6770,8 @@ def show_queue(request, queue_name):
                                       'issuerevisions__variant_of',
                                       'issuerevisions__series',
                                       'issuerevisions__previous_revision')
-    issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
+    issue_bulks = changes.filter(change_type__in=[CTYPES['issue_bulk'],
+                                                  CTYPES['bulk']])
     covers = changes.filter(change_type=CTYPES['cover'])\
                     .prefetch_related('coverrevisions__previous_revision',
                                       'coverrevisions__cover')
@@ -6837,7 +6915,7 @@ def show_queue(request, queue_name):
               country=Max('issuerevisions__series__country__id')),
           },
           {
-            'object_name': 'Issue Bulk Changes',
+            'object_name': 'Bulk Changes',
             'object_type': 'issue',
             'changesets': issue_bulks.order_by('state', 'modified', 'id')
                                      .annotate(
@@ -7076,6 +7154,8 @@ def compare(request, id):
     changeset = get_object_or_404(Changeset.objects
                                   .prefetch_related('comments__commenter'),
                                   id=id)
+    if changeset.change_type == CTYPES['bulk']:
+        return _bulk_compare(request, changeset)
 
     if changeset.inline():
         revision = changeset.inline_revision()

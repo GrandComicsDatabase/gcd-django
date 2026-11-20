@@ -275,12 +275,6 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     'If entered, day needs to be between 1 and 31.')
             return day_on_sale
 
-        def clean_key_date(self):
-            key_date = self.cleaned_data['key_date']
-            if key_date is not None:
-                key_date = key_date.replace('.', '-')
-            return key_date
-
         def clean_keywords(self):
             return _clean_keywords(self.cleaned_data)
 
@@ -677,6 +671,13 @@ class IssueRevisionForm(KeywordBaseForm):
                   ' If no overall editor is known put a question mark in '
                   'the text field below.',
         label='')
+
+    def clean_key_date(self):
+        """Return the key date with dashes, where it was typed with dots."""
+        key_date = self.cleaned_data['key_date']
+        if key_date is not None:
+            key_date = key_date.replace('.', '-')
+        return key_date
 
 
 def get_bulk_issue_revision_form(series, method, user=None):
