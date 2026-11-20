@@ -36,6 +36,10 @@
       {% else %}
         {% if changeset.change_type == CTYPES.issue_bulk %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue bulk changes</a></td>
+        {% elif changeset.change_type == CTYPES.bulk %}
+    <td class="{{ changeset.changeset_action }}">
+      <a href="{% url "compare" id=changeset.id %}">bulk changes</a>
+    </td>
         {% else %}
         <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue variant add (with base)</a></td>
         {% endif %}

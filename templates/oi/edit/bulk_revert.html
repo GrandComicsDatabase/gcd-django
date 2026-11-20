@@ -1,0 +1,89 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+GCD :: Revert a Bulk Change
+{% endblock %}
+
+{% block view_body %}
+<h1>
+Revert a bulk change
+</h1>
+<p>
+{% if plan.active %}
+Change <a href="{% url 'compare' id=plan.active.id %}">{{ plan.active.id }}</a>
+is already reverting this change.
+{% elif not plan.values %}
+Nothing to restore from
+<a href="{% url 'compare' id=changeset.id %}">change {{ changeset.id }}</a>.
+{% else %}
+Restores the values from before
+<a href="{% url 'compare' id=changeset.id %}">change {{ changeset.id }}</a>
+in {{ plan.part }}.
+  {% if plan.others == 1 %}
+The other one keeps its present value:
+  {% elif plan.others %}
+The other {{ plan.others }} keep their present values:
+  {% endif %}
+{% endif %}
+</p>
+{% for summary, count, left, is_later in plan.groups %}
+<details>
+  <summary> {{ summary }}: {{ count }} </summary>
+  {% if is_later %}
+  <table class="max-w-[calc(100vw-0.5rem)] border border-gray-200 max-w-full">
+  <tr class="bg-blue-100 [&>th]:px-1.5">
+    <th> {{ object_label|capfirst }} </th>
+    <th> Field </th>
+    <th> Before that change </th>
+    <th> After that change </th>
+    <th> Now </th>
+  </tr>
+    {% for data_object, label, before, wrote, now in left %}
+  <tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
+    <td>
+      <a href="{{ data_object.get_absolute_url }}">{{ data_object }}</a>
+    </td>
+    <td> {{ label }} </td>
+    <td> {{ before }} </td>
+    <td> {{ wrote }} </td>
+    <td> {{ now }} </td>
+  </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <ul class="list-disc ps-4">
+    {% for data_object, label, message in left %}
+    <li>
+      <a href="{{ data_object.get_absolute_url }}"
+        >{{ data_object }}</a>{% if label %},
+      {{ label }}{% endif %}{% if message %}:
+      {{ message }}{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</details>
+{% endfor %}
+{% if plan.values and not plan.active %}
+  {% include 'oi/bits/bulk_rows.html' %}
+  {% if plan.spaces %}
+<p>
+Spaces at the start or end of an old value are not restored.
+</p>
+  {% endif %}
+<form action="{% url 'edit_issues_in_bulk' %}?revert={{ changeset.id }}"
+      method="POST">
+  {% csrf_token %}
+  <button class="btn-blue-editing inline" type="submit">Apply</button>
+  Reserves
+  {% if plan.objects == 1 %}this {{ object_label }}
+  {% else %}these {{ plan.objects }} {{ objects_label }}
+  {% endif %} in one change, not yet submitted. Say why in the comment when
+  you submit it.
+  {% if plan.objects > 1 %}
+  To restore only some, apply, then remove the others from the new change.
+  {% endif %}
+  To restore just one {{ object_label }}, edit it as usual.
+</form>
+{% endif %}
+{% endblock %}

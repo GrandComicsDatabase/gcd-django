@@ -11,6 +11,19 @@ Reviewing :: {{ revision }}
 <h1>
 {{ changeset|header_link }}
 </h1>
+{% if can_revert_older %}
+<p>
+  {% if older_refusal %}
+{{ older_refusal }}
+  {% else %}
+This older kind of bulk change cannot be reverted automatically. To put a
+field back,
+<a href="{% url 'edit_issues_in_bulk' %}?revert={{ changeset.id }}">start a
+bulk change on these issues</a>. Credits, brand emblems and indicia printers
+cannot be put back this way.
+  {% endif %}
+</p>
+{% endif %}
 <p>
 This bulk change considers the following issues, the search terms used are given in the comments section:
 <table class="comparison">

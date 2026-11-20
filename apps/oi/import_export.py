@@ -697,6 +697,7 @@ def import_issues_to_series(request, series_id):
 @permission_required('indexer.can_reserve')
 def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
+    changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         return render_error(request,
                             'Only the reservation holder may import issue '
@@ -804,6 +805,7 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
 @permission_required('indexer.can_reserve')
 def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
+    changeset.refuse_manual_edit()
     if request.user != changeset.indexer:
         return render_error(request,
                             'Only the reservation holder may import stories.')
