@@ -2823,7 +2823,9 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
           kwargs={'id': changeset_id}))
 
     form = form_class(request.POST)
-    if not form.is_valid():
+    if not form.is_valid() or not credits_formset.is_valid() \
+       or not external_link_formset.is_valid() \
+       or (code_number_formset and not code_number_formset.is_valid()):
         return _display_add_issue_form(request, series, form, credits_formset,
                                        code_number_formset,
                                        external_link_formset, None, None,
