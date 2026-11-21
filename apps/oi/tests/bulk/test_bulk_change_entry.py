@@ -121,24 +121,32 @@ def test_no_link_on_a_list_with_a_json_download(settings,
                                                 approved_issues):
     """
     A list whose page offers its own JSON download shows that button
-    and no link.
+    and no link, and its address with _export=bulk shows the list and
+    starts no bulk change.
     """
     settings.BULK_CHANGE_ENABLED = True
-    request = RequestFactory().get('/list/')
-    request.user = reserving_indexer
-    items = Issue.objects.all()
-    table = IssuePublisherTable(items,
-                                template_name=TW_SORT_TABLE_TEMPLATE)
+    contents = []
+    for query in ({}, {'_export': 'bulk'}):
+        request = RequestFactory().get('/list/', query)
+        request.user = reserving_indexer
+        request.session = import_module(
+          settings.SESSION_ENGINE).SessionStore()
+        items = Issue.objects.all()
+        table = IssuePublisherTable(items,
+                                    template_name=TW_SORT_TABLE_TEMPLATE)
 
-    response = generic_sortable_list(
-      request, items, table, 'gcd/search/tw_generic_list_sortable.html',
-      {'item_name': 'issue', 'plural_suffix': 's',
-       'json_download_url': '/download/'})
+        response = generic_sortable_list(
+          request, items, table, 'gcd/search/tw_generic_list_sortable.html',
+          {'item_name': 'issue', 'plural_suffix': 's',
+           'json_download_url': '/download/'})
 
-    content = response.content.decode()
-    assert table.bulk_change
-    assert 'Download: (JSON)' in content
-    assert '_export=bulk' not in content
+        assert response.status_code == 200
+        assert not table.bulk_change
+        assert bulk.SELECTION_KEY not in request.session
+        contents.append(response.content.decode())
+
+    assert 'Download: (JSON)' in contents[0]
+    assert '_export=bulk' not in contents[0]
 
 
 @pytest.mark.django_db
@@ -305,6 +313,38 @@ def test_selection_above_the_maximum(client, settings, reserving_indexer,
     assert 'at most 2 objects, and this list has 3' in \
         response.content.decode()
     assert bulk.SELECTION_KEY not in client.session
+
+
+@pytest.mark.django_db
+def test_selection_keeps_the_ids_that_were_counted(settings,
+                                                   reserving_indexer,
+                                                   approved_issues,
+                                                   monkeypatch):
+    """
+    The selection holds the objects that were checked against
+    BULK_CHANGE_MAX: one that joins the list after the check is left out.
+    """
+    settings.BULK_CHANGE_ENABLED = True
+    settings.BULK_CHANGE_MAX = 2
+    late = approved_issues[0]
+    late.deleted = True
+    late.save()
+    request = RequestFactory().get('/list/', {'_export': 'bulk'})
+    request.user = reserving_indexer
+    request.session = import_module(settings.SESSION_ENGINE).SessionStore()
+    escape = bulk.escape_uri_path
+
+    def join_then_escape(path):
+        """Bring the deleted issue back into the list, then escape path."""
+        Issue.objects.filter(id=late.id).update(deleted=False)
+        return escape(path)
+    monkeypatch.setattr(bulk, 'escape_uri_path', join_then_escape)
+
+    response = bulk.start_from_list(request, Issue.objects.all())
+
+    assert response.status_code == 302
+    assert request.session[bulk.SELECTION_KEY]['ids'] == \
+        [issue.id for issue in approved_issues[1:]]
 
 
 def _counts():
@@ -487,6 +527,7 @@ def test_forms_as_rendered(client, settings, reserving_indexer,
 @pytest.mark.django_db
 @pytest.mark.parametrize('name, params, stored', [
     ('price', {'operation': 'set', 'new_value': ' 0.12 USD '}, '0.12 USD'),
+    ('price', {'operation': 'set', 'new_value': '0.12 USD; '}, '0.12 USD'),
     ('key_date', {'operation': 'replace_exact', 'old_value': '=1947-01-00',
                   'new_value': '1947.02.00'}, '1947-02-00'),
 ])
@@ -494,8 +535,9 @@ def test_preview_shows_the_value_as_stored(started, approved_issues, name,
                                            params, stored):
     """
     The new value is cleaned as in the edit form, which drops the outer
-    spaces and writes a key date with dashes, and shown so.  A key date
-    is only replaced, so the three issues first get the same one.
+    spaces and a ';' at the end of a price and writes a key date with
+    dashes, and shown so.  A key date is only replaced, so the three
+    issues first get the same one.
     """
     Issue.objects.filter(id__in=[issue.id for issue in approved_issues]) \
                  .update(key_date='1947-01-00')

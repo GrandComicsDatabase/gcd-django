@@ -207,6 +207,7 @@ def generic_sortable_list(request, items, table, template, context,
     table.bulk_change = (paginator.p.count > 0 and
                          not getattr(table, 'no_export', False) and
                          not context.get('no_bulk_edit') and
+                         not context.get('json_download_url') and
                          bulk.entry_allowed(request.user, items))
     if export_format == 'bulk' and table.bulk_change:
         return bulk.start_from_list(request, items)
