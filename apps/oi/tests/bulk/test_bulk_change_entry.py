@@ -140,24 +140,32 @@ def test_no_link_on_a_list_with_a_json_download(settings,
                                                 approved_issues):
     """
     A list whose page offers its own JSON download shows that button
-    and no link.
+    and no link, and its address with _export=bulk shows the list and
+    starts no bulk change.
     """
     settings.BULK_CHANGE_ENABLED = True
-    request = RequestFactory().get('/list/')
-    request.user = reserving_indexer
-    items = Issue.objects.all()
-    table = IssuePublisherTable(items,
-                                template_name=TW_SORT_TABLE_TEMPLATE)
+    contents = []
+    for query in ({}, {'_export': 'bulk'}):
+        request = RequestFactory().get('/list/', query)
+        request.user = reserving_indexer
+        request.session = import_module(
+          settings.SESSION_ENGINE).SessionStore()
+        items = Issue.objects.all()
+        table = IssuePublisherTable(items,
+                                    template_name=TW_SORT_TABLE_TEMPLATE)
 
-    response = generic_sortable_list(
-      request, items, table, 'gcd/search/tw_generic_list_sortable.html',
-      {'item_name': 'issue', 'plural_suffix': 's',
-       'json_download_url': '/download/'})
+        response = generic_sortable_list(
+          request, items, table, 'gcd/search/tw_generic_list_sortable.html',
+          {'item_name': 'issue', 'plural_suffix': 's',
+           'json_download_url': '/download/'})
 
-    content = response.content.decode()
-    assert table.bulk_change
-    assert 'Download: (JSON)' in content
-    assert '_export=bulk' not in content
+        assert response.status_code == 200
+        assert not table.bulk_change
+        assert bulk.SELECTION_KEY not in request.session
+        contents.append(response.content.decode())
+
+    assert 'Download: (JSON)' in contents[0]
+    assert '_export=bulk' not in contents[0]
 
 
 @pytest.mark.django_db
