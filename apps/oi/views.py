@@ -4030,12 +4030,6 @@ def story_select_compare(request, story_revision_id):
          'cached_covers': cached_covers, 'other_revisions': other_revisions})
 
 
-def _revision_language(revision):
-    """Return the language of a sequence, even if its issue is still new."""
-    issue = revision.issue or revision.my_issue_revision
-    return issue.series.language
-
-
 @permission_required('indexer.can_reserve')
 def compare_stories_copy(request, story_revision_id, story_id=None,
                          other_revision_id=None):
@@ -4184,8 +4178,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_credit.save()
                 else:
                     existing_credit.delete()
-    same_language = (_revision_language(compare_revision) ==
-                     _revision_language(revision))
+    same_language = compare_revision.language == revision.language
 
     if 'characters' in selected_fields:
         characters = compare_revision.story_character_revisions\
@@ -4264,7 +4257,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_groups = existing_groups.exclude(
                       id=new_group.id)
             else:
-                language = _revision_language(revision)
+                language = revision.language
 
                 translations = group.group_name.group.translations(language)
                 if translations.count() == 0 and \

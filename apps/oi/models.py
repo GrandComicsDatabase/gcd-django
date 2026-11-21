@@ -5508,8 +5508,7 @@ class StoryCharacterRevision(Revision):
         but a different translation. A translation in kept, a set of pairs
         of character id and universe id, gets no revision.
         """
-        issue = story_revision.issue or story_revision.my_issue_revision
-        language = issue.series.language
+        language = story_revision.language
         translations = character.character.character.translations(
             language)
         if translations.count() == 0 and \
@@ -6892,6 +6891,17 @@ class StoryRevision(Revision):
             self._saved_my_issue_revision = \
                 self.changeset.issuerevisions.filter(issue=self.issue)[0]
         return self._saved_my_issue_revision
+
+    @property
+    def language(self):
+        """
+        The language of the series of this sequence.
+
+        The sequence of a variant that is not approved yet has no issue, so
+        the series comes from the issue revision of the variant.
+        """
+        issue = self.issue or self.my_issue_revision
+        return issue.series.language
 
     def moveable(self):
         """
