@@ -35,6 +35,8 @@ from apps.gcd.models import (
     StoryType,
     Universe,
 )
+from apps.indexer.models import Indexer
+from apps.mycomics.models import Collection, Collector
 from apps.oi import states
 from apps.oi.models import (
     CTYPES,
@@ -48,6 +50,17 @@ from apps.stats.models import CountStats
 
 SAMPLE_PREFIX = '[GCD DEV]'
 SAMPLE_USERS = {1: 'admin', 2: 'editor', 3: 'dexter_1234', 4: 'anon'}
+SAMPLE_PROFILE_OWNERS = {user_id: user_id for user_id in SAMPLE_USERS}
+SAMPLE_COLLECTION_OWNERS = {
+    collection_id: user_id
+    for user_id in SAMPLE_USERS
+    for collection_id in (user_id, user_id + 100)
+}
+SAMPLE_RELATED_ROWS = (
+    (Indexer, 'user', SAMPLE_PROFILE_OWNERS),
+    (Collector, 'user', SAMPLE_PROFILE_OWNERS),
+    (Collection, 'collector', SAMPLE_COLLECTION_OWNERS),
+)
 SAMPLE_COMMENT = (
     '[GCD DEV] Seeded sample change history for local development. ✅'
 )
@@ -69,6 +82,7 @@ class Command(BaseCommand):
         """Seed data safely on a new database or refresh it on an existing one."""
         with transaction.atomic():
             self._validate_sample_accounts()
+            self._validate_sample_related_rows()
             call_command('loaddata', 'users', verbosity=options['verbosity'])
             self._seed_catalog()
             self._seed_change_history()
@@ -92,6 +106,26 @@ class Command(BaseCommand):
                     'or usernames conflict. Use a separate empty development '
                     'database; no fixture data was changed.'
                 )
+
+    def _validate_sample_related_rows(self):
+        """Preserve related rows that do not match the fixture's ownership."""
+        for model, owner_field, expected in SAMPLE_RELATED_ROWS:
+            owner_id = f'{owner_field}_id'
+            candidates = Q(pk__in=expected)
+            # One-to-one owners must also be free at the fixture's target ID.
+            # Collections are many-to-one: extra collections must stay valid.
+            if model._meta.get_field(owner_field).unique:
+                candidates |= Q(**{f'{owner_id}__in': expected.values()})
+            rows = model.objects.select_for_update().filter(candidates)
+            for pk, actual_owner in rows.values_list('pk', owner_id):
+                if expected.get(pk) != actual_owner:
+                    raise CommandError(
+                        'Refusing to overwrite existing account data: '
+                        'reserved sample relationships conflict in '
+                        f'{model._meta.label}. '
+                        'Use a separate empty development database; '
+                        'no fixture data was changed.'
+                    )
 
     def _seed_catalog(self):
         """Create a compact, relationship-rich catalog sample idempotently."""

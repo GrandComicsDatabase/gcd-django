@@ -130,7 +130,12 @@ does not establish that a server is local or safe; verify the connection first.
 The sample reserves user IDs 1–4 for `admin`, `editor`, `dexter_1234` and `anon`.
 Setup refuses to load its account fixture if one of those IDs belongs to a
 different username, or a sample username belongs to another ID. Existing sample
-identities can be refreshed normally. On a conflict, preserve the database and
+identities can be refreshed normally. The fixture also reserves profile and
+collector IDs 1–4 and collection IDs 1–4 and 101–104. Setup refuses to reassign
+those rows to different owners, even if the existing user's ID is not reserved.
+It also refuses a sample user's profile or collector at a different ID, instead
+of creating a conflicting one-to-one record. Unrelated collections outside the
+reserved IDs are retained. On a conflict, preserve the database and
 use a separate empty development database; do not delete or rename accounts to
 bypass the guard.
 
