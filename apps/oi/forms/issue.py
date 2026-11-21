@@ -418,7 +418,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 # can add after one of the variants
                 if 'after' in self.fields:
                     self.fields['after'].queryset = (
-                        variant_of.variant_set.filter(deleted=False) |
+                        variant_of.active_variants() |
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
 
@@ -456,7 +456,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
     # the other issuerevision from 'variant_add' was taken care of above
     if (revision.changeset.change_type == CTYPES['variant_add']) or \
-            revision.issue.variant_set.count():
+            revision.issue.active_variants().exists() or revision.variant_name:
         class RuntimeBaseIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
