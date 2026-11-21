@@ -327,3 +327,27 @@ def test_set_first_last_issues_nonempty():
         assert s.last_issue is i2
         s.save.assert_called_once_with(
           update_fields=['first_issue', 'last_issue', 'modified'])
+
+
+@pytest.mark.parametrize('ended, first, last, expected', [
+    # The key dates of the first and the last issue widen the years.
+    (1990, '1988-05-00', '2001-03-00', (1988, 2001)),
+    # Key dates within the series years leave them as they are.
+    (1995, '1990-01-00', '1995-12-00', (1990, 1995)),
+    # A series without an end year keeps none.
+    (None, '1990-01-00', '2001-03-00', (1990, None)),
+    # Issues without a key date are left out.
+    (1990, '', '', (1990, 1990)),
+])
+def test_year_range(ended, first, last, expected):
+    s = Series(year_began=1990, year_ended=ended,
+               first_issue=Issue(number='1', key_date=first),
+               last_issue=Issue(number='2', key_date=last))
+
+    assert s.year_range() == expected
+
+
+def test_year_range_without_issues():
+    s = Series(year_began=1990, year_ended=1995)
+
+    assert s.year_range() == (1990, 1995)

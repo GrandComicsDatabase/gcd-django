@@ -1,4 +1,4 @@
-"""The indicia publisher and brand emblem lists of the multiple issue add."""
+"""The indicia publisher and brand emblem lists of the issue adds."""
 import json
 import re
 
@@ -7,7 +7,7 @@ import pytest
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 
-from apps.gcd.models import Brand, BrandUse, IndiciaPublisher
+from apps.gcd.models import Brand, BrandUse, IndiciaPublisher, Issue
 from apps.oi.forms import get_bulk_issue_revision_form
 from apps.oi.models import IssueRevision
 
@@ -120,6 +120,40 @@ def test_brand_emblems_of_single_year_series(
 def test_ongoing_series_is_limited_by_its_start_only(
       adding_client, any_added_series, dated_choices, method):
     response = _page(adding_client, any_added_series, method)
+
+    expected = {'during', 'after', 'undated'}
+    assert _indicia_listing(response) == expected
+    assert _brand_listing(adding_client, response) == expected
+
+
+def _end_too_early(series):
+    """End the series in 1990, before its last issue from 2001."""
+    Issue.objects.create(series=series, number='1', sort_code=0,
+                         key_date='2001-03-00')
+    series.set_first_last_issues()
+    return _end_series(series, 1990)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method', METHODS)
+def test_end_year_too_early_keeps_choices_of_last_issue(
+      adding_client, any_added_series, dated_choices, method):
+    series = _end_too_early(any_added_series)
+
+    response = _page(adding_client, series, method)
+
+    expected = {'during', 'after', 'undated'}
+    assert _indicia_listing(response) == expected
+    assert _brand_listing(adding_client, response) == expected
+
+
+@pytest.mark.django_db
+def test_single_add_keeps_choices_of_last_issue(
+      adding_client, any_added_series, dated_choices):
+    series = _end_too_early(any_added_series)
+
+    response = adding_client.get(reverse('add_issue',
+                                         kwargs={'series_id': series.id}))
 
     expected = {'during', 'after', 'undated'}
     assert _indicia_listing(response) == expected

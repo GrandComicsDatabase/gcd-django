@@ -136,14 +136,15 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     self.fields['indicia_publisher'].queryset\
                     .exclude(year_began__gt=issue_year)
             else:
-                if series.year_began:
+                year_began, year_ended = series.year_range()
+                if year_began:
                     self.fields['indicia_publisher'].queryset = \
                         self.fields['indicia_publisher'].queryset \
-                            .exclude(year_ended__lt=series.year_began)
-                if series.year_ended:
+                            .exclude(year_ended__lt=year_began)
+                if year_ended:
                     self.fields['indicia_publisher'].queryset = \
                         self.fields['indicia_publisher'].queryset \
-                            .exclude(year_began__gt=series.year_ended)
+                            .exclude(year_began__gt=year_ended)
             if revision:
                 if revision.indicia_publisher and \
                         revision.indicia_publisher not in \
@@ -170,14 +171,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             year_began = issue_year
             year_ended = issue_year
         else:
-            if series.year_began:
-                year_began = series.year_began
-            else:
-                year_began = None
-            if series.year_ended:
-                year_ended = series.year_ended
-            else:
-                year_ended = None
+            year_began, year_ended = series.year_range()
         if year_began:
             year_began = forms.CharField(widget=forms.HiddenInput,
                                          required=False,
@@ -697,6 +691,8 @@ def get_bulk_issue_revision_form(series, method, user=None):
         return render_error(request,                             # noqa
                             'Unknown method of adding issues.')
 
+    year_from, year_to = series.year_range()
+
     class RuntimeBulkIssueRevisionForm(base):
         class Meta(base.Meta):
             pass
@@ -706,12 +702,12 @@ def get_bulk_issue_revision_form(series, method, user=None):
             indicia_publishers = \
                 series.publisher.active_indicia_publishers_no_pending()
             if method != 'bulk_edit':
-                if series.year_began:
+                if year_from:
                     indicia_publishers = indicia_publishers.exclude(
-                        year_ended__lt=series.year_began)
-                if series.year_ended:
+                        year_ended__lt=year_from)
+                if year_to:
                     indicia_publishers = indicia_publishers.exclude(
-                        year_began__gt=series.year_ended)
+                        year_began__gt=year_to)
             self.fields['indicia_publisher'].queryset = indicia_publishers
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
@@ -747,16 +743,16 @@ def get_bulk_issue_revision_form(series, method, user=None):
                     widget=forms.HiddenInput, required=False)
                 indicia_printer_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
-            if series.year_ended:
+            if year_to:
                 year_ended = forms.CharField(widget=forms.HiddenInput,
                                              required=False,
-                                             initial=series.year_ended)
+                                             initial=year_to)
         publisher_id = forms.CharField(widget=forms.HiddenInput,
                                        initial=series.publisher.id)
-        if series.year_began:
+        if year_from:
             year_began = forms.CharField(widget=forms.HiddenInput,
                                          required=False,
-                                         initial=series.year_began)
+                                         initial=year_from)
 
         after = forms.ModelChoiceField(
             required=False,
