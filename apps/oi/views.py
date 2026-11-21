@@ -5965,6 +5965,11 @@ def move_story_revision(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
+    if not story.moveable():
+        return render_error(
+          request, 'This sequence cannot be moved to the other issue.',
+          redirect=False)
+
     new_issue = story.changeset.issuerevisions.exclude(issue=story.issue).get()
     if _story_move_creates_internal_reprint(story, new_issue):
         return render_error(
