@@ -22,7 +22,8 @@ Commands:
   up                  Start the application at http://127.0.0.1:8000
   setup [--dump ARCHIVE] [--replace --yes]
                       Create a ready-to-use local environment, optionally
-                      loading a manually downloaded GCD catalog dump
+                      loading a GCD catalog dump (Docker only); native setup
+                      seeds sample data without replacing the database
   search-up           Start the application with Elasticsearch and queued updates
   search-rebuild [args]
                       Start search and rebuild the Haystack index
@@ -44,6 +45,7 @@ Examples:
   ./bin/dev test apps/gcd/tests
   ./bin/dev manage createsuperuser
   ./bin/dev --runtime native up
+  ./bin/dev --runtime native setup
 EOF
 }
 
@@ -171,11 +173,37 @@ validate_dump_archive() {
 }
 
 validate_setup_database_name() {
-  if [[ ! "$MYSQL_DATABASE" =~ ^gcd_dev(_[a-z0-9_]+)?$ ]] && \
-     [[ "$MYSQL_DATABASE" != "gcd_django_dev" ]]; then
-    echo "setup only permits a local development database named gcd_dev, gcd_django_dev, or gcd_dev_* (got $MYSQL_DATABASE)." >&2
+  local database_name="$1"
+  if [[ ! "$database_name" =~ ^gcd_dev(_[a-z0-9_]+)?$ ]] && \
+     [[ "$database_name" != "gcd_django_dev" ]]; then
+    echo "setup only permits a local development database named gcd_dev, gcd_django_dev, or gcd_dev_* (got $database_name)." >&2
     exit 2
   fi
+}
+
+setup_native_environment() {
+  local database_name
+  if [[ $# -ne 0 ]]; then
+    echo "Native setup accepts no options. For Docker-only dump imports, use ./bin/dev setup --dump ARCHIVE [--replace --yes]." >&2
+    exit 2
+  fi
+  cd "$PROJECT_ROOT"
+  require_native_python
+  native_environment
+  # Sample setup is core-only, even when the calling shell enabled search.
+  export USE_ELASTICSEARCH=false
+  # Preserve the selected name, removing only the probe's print newline.
+  # Plain command substitution would also strip newlines within the name.
+  database_name="$(native_database_name && printf '.')"
+  database_name="${database_name%.}"
+  database_name="${database_name%$'\n'}"
+  validate_setup_database_name "$database_name"
+  "$PYTHON_BIN" manage.py migrate --noinput
+  "$PYTHON_BIN" manage.py seed_development_data
+  "$PYTHON_BIN" scripts/check_dev_environment.py
+  echo "GCD is available at http://127.0.0.1:${GCD_WEB_PORT}"
+  echo "Local sample accounts are for development only; see docs/development/CORE_SETUP.md#ready-to-use-development-data."
+  exec "$PYTHON_BIN" manage.py runserver "127.0.0.1:${GCD_WEB_PORT}"
 }
 
 database_has_user_data() {
@@ -338,7 +366,7 @@ seed_docker_development_data() {
 
 setup_docker_environment() {
   local archive="$1" replace="$2" yes="$3"
-  validate_setup_database_name
+  validate_setup_database_name "$MYSQL_DATABASE"
   if [[ -n "$archive" ]]; then
     validate_dump_archive "$archive"
   fi
@@ -371,33 +399,33 @@ set_defaults
 case "$command" in
   help|-h|--help) usage ;;
   setup)
-    setup_archive=""
-    setup_replace=false
-    setup_yes=false
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        --dump)
-          if [[ $# -lt 2 ]]; then
-            echo "Usage: ./bin/dev setup --dump ARCHIVE [--replace --yes]" >&2
+    if [[ "$runtime" == "native" ]]; then
+      setup_native_environment "$@"
+    else
+      setup_archive=""
+      setup_replace=false
+      setup_yes=false
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --dump)
+            if [[ $# -lt 2 ]]; then
+              echo "Usage: ./bin/dev setup --dump ARCHIVE [--replace --yes]" >&2
+              exit 2
+            fi
+            setup_archive="$2"
+            shift 2
+            ;;
+          --replace) setup_replace=true; shift ;;
+          --yes) setup_yes=true; shift ;;
+          *)
+            echo "Unknown setup option: $1" >&2
             exit 2
-          fi
-          setup_archive="$2"
-          shift 2
-          ;;
-        --replace) setup_replace=true; shift ;;
-        --yes) setup_yes=true; shift ;;
-        *)
-          echo "Unknown setup option: $1" >&2
-          exit 2
-          ;;
-      esac
-    done
-    if [[ "$runtime" != "docker" ]]; then
-      echo "setup currently supports the default Docker runtime. Use ./bin/dev --runtime native up for Docker-free development." >&2
-      exit 2
+            ;;
+        esac
+      done
+      require_docker
+      setup_docker_environment "$setup_archive" "$setup_replace" "$setup_yes"
     fi
-    require_docker
-    setup_docker_environment "$setup_archive" "$setup_replace" "$setup_yes"
     ;;
   up)
     if [[ "$runtime" == "docker" ]]; then

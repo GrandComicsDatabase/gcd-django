@@ -25,10 +25,16 @@ from apps.indexer.models import Indexer
 from apps.oi import states
 from apps.oi.models import ChangesetComment, SeriesRevision
 from apps.stats.models import CountStats
+from apps.stddata.models import Country
 
 
 def test_seed_development_data_is_idempotent_and_initializes_stats(db):
     """Contributors can rerun setup without duplicating accounts or statistics."""
+    sentinel = Publisher.objects.create(
+        name='Unrelated local publisher',
+        notes='Keep this local work when refreshing the sample.',
+        country=Country.objects.get(code='us'),
+    )
     call_command('seed_development_data')
 
     seeded_comment = ChangesetComment.objects.get(text__contains='[GCD DEV]')
@@ -96,3 +102,6 @@ def test_seed_development_data_is_idempotent_and_initializes_stats(db):
         changeset=changeset, series=series
     )
     assert revision.created == revision_created
+    sentinel.refresh_from_db()
+    assert sentinel.name == 'Unrelated local publisher'
+    assert sentinel.notes == 'Keep this local work when refreshing the sample.'

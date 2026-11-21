@@ -203,8 +203,28 @@ python3.13 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip "setuptools<81"
 .venv/bin/python -m pip install -r requirements.txt
 
-MYSQL_PORT=3306 PYTHON=.venv/bin/python ./bin/dev --runtime native up
+MYSQL_PORT=3306 PYTHON=.venv/bin/python ./bin/dev --runtime native setup
 ```
+
+Native `setup` applies migrations, seeds the deterministic sample and public
+local accounts listed above, verifies the environment, and starts Django in
+the foreground. Stop it with Ctrl+C. It accepts no options and only permits
+the database Django selects to be named `gcd_dev`, `gcd_django_dev`, or
+`gcd_dev_*` with a lowercase letter/digit/underscore suffix. Create that
+database and grant your local application user access before running setup;
+the command does not create databases or need MySQL root credentials.
+
+Re-running native setup refreshes the sample and fixture accounts without
+dropping or flushing the database; unrelated local catalog records remain.
+The fixture accounts and global statistics are deliberately refreshed, so
+this is not a production-data workflow. Search is disabled for native setup,
+including when the calling shell has `USE_ELASTICSEARCH=true`. Full-dump
+imports and managed search remain Docker-only.
+
+For daily startup without refreshing sample data, use
+`./bin/dev --runtime native up` with the same Python/database configuration.
+For native setup, a relative `PYTHON` path is resolved from the repository
+root, even when the launcher is called from another directory.
 
 The equivalent native commands are:
 
