@@ -201,24 +201,11 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
 
     # A request that waits too long for the indexer row, which another
     # request of the indexer holds, gets a message, not a server error.
-    held, release = threading.Event(), threading.Event()
-    holder = threading.Thread(target=_hold_indexer,
-                              args=(reserving_indexer, held, release))
-    holder.start()
-    assert held.wait(30)
-    waiting = _logged_in(reserving_indexer, approved_issues, token='held')
-    with connection.cursor() as cursor:
-        cursor.execute('SELECT @@SESSION.innodb_lock_wait_timeout')
-        saved = cursor.fetchone()[0]
-        cursor.execute('SET SESSION innodb_lock_wait_timeout = 1')
-    try:
-        response = _apply(waiting, token='held')
-    finally:
-        release.set()
-        holder.join(30)
-        with connection.cursor() as cursor:
-            cursor.execute('SET SESSION innodb_lock_wait_timeout = %s',
-                           [saved])
+    with _held(_hold_indexer, reserving_indexer):
+        waiting = _logged_in(reserving_indexer, approved_issues,
+                             token='held')
+        with _short_server_wait():
+            response = _apply(waiting, token='held')
 
     assert 'Another request of yours is applying a bulk change.' in \
         response.content.decode()
@@ -770,12 +757,13 @@ def _held(target, *args):
     held, release = threading.Event(), threading.Event()
     holder = threading.Thread(target=target, args=(*args, held, release))
     holder.start()
-    assert held.wait(30)
     try:
+        assert held.wait(30)
         yield
     finally:
         release.set()
         holder.join(30)
+        assert not holder.is_alive()
 
 
 def _held_change(changeset):
