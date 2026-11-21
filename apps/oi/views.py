@@ -401,8 +401,8 @@ def validate_changeset_revisions(changeset, request):
         messages = validate_revision_for_transition(revision, request)
         if messages:
             invalid.append((revision, messages))
-    # The order of the covers needs the sequences, which a bulk issue
-    # change does not hold.
+    # Reserving an issue reserves all its sequences, so the change holds
+    # their whole order. A bulk issue change holds no sequences.
     if changeset.storyrevisions.exists():
         for issue_revision in changeset.issuerevisions.filter(deleted=False):
             message = _cover_order_error(issue_revision)
