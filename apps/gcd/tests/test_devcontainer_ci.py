@@ -66,13 +66,13 @@ def test_ci_pins_verified_compose_only_for_the_editor_job():
         (ROOT / '.github/workflows/dev-environment-ci.yml').read_text(),
     )['jobs']
     job = jobs['devcontainer-smoke']
-    assert job['env']['DOCKER_CONFIG'] == (
-        '${{ runner.temp }}/gcd-devcontainer-docker'
-    )
+    # The runner context is available in step env, not job env.
+    assert 'DOCKER_CONFIG' not in job.get('env', {})
     steps = job['steps']
     install = next(step for step in steps
                    if step['name'] == 'Install the tested Compose plugin')
     assert install['env'] == {
+        'DOCKER_CONFIG': '${{ runner.temp }}/gcd-devcontainer-docker',
         'COMPOSE_VERSION': 'v5.7.1',
         'COMPOSE_SHA256': (
             'af426722a8af5de812fcee30cc1c39f0639f5f723cbadefb25e5d4db054064cf'
@@ -82,6 +82,11 @@ def test_ci_pins_verified_compose_only_for_the_editor_job():
         index for index, step in enumerate(steps)
         if step['name'] == 'Rehearse an isolated Dev Container clone'
     )
+    rehearse = next(
+        step for step in steps
+        if step['name'] == 'Rehearse an isolated Dev Container clone'
+    )
+    assert rehearse['env']['DOCKER_CONFIG'] == install['env']['DOCKER_CONFIG']
     assert not any('DOCKER_CONFIG' in other.get('env', {})
                    for name, other in jobs.items()
                    if name != 'devcontainer-smoke')
@@ -130,8 +135,8 @@ assert sys.argv[1:] == ['buildx', 'version']
         executable.chmod(0o755)
     environment = {
         'PATH': f'{binaries}:{os.environ["PATH"]}',
-        'DOCKER_CONFIG': str(tmp_path / 'isolated config'),
         **install['env'],
+        'DOCKER_CONFIG': str(tmp_path / 'isolated config'),
         'COMPOSE_SHA256': (hashlib.sha256(payload.read_bytes()).hexdigest()
                            if valid_checksum else '0' * 64),
         'COMPOSE_TEST_PAYLOAD': str(payload),
