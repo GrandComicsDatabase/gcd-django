@@ -644,7 +644,7 @@ CHARACTER_FIELDS = ['universe', 'appearing_characters', 'group_name',
                     'group_members', 'story_character_revisions',
                     'characters', 'story_group_revisions']
 BLANK_PAGE_ROWS = [
-    (['title', 'title_inferred'], ['title']),
+    (['title', 'title_inferred'], ['title', 'title_inferred']),
     (['first_line'], ['first_line']),
     (['story_arc'], ['story_arc']),
     (['job_number'], ['job_number']),

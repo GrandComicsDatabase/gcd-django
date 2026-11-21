@@ -99,3 +99,24 @@ def test_edit_page_tells_the_rows_to_hide(client, any_indexer,
     hidden_rows = re.search(r'data-hidden-rows="([^"]*)"', select).group(1)
     assert json.loads(html.unescape(hidden_rows)) == \
         json.loads(json.dumps(_hidden_rows()))
+
+
+@pytest.mark.django_db
+def test_checked_unofficial_box_stays_shown_on_blank_pages(any_indexer):
+    """
+    On a blank page an empty title with the Unofficial title box checked
+    cannot be saved, so the box stays shown and can be unchecked.
+    """
+    blank = StoryType.objects.get(name='blank page(s)').id
+    data = {'sequence_number': '0', 'type': str(blank), 'title': '',
+            'title_inferred': 'on'}
+    form = StoryRevisionForm(data, user=any_indexer,
+                             instance=StoryRevision())
+    assert not form.is_valid()
+    assert form.non_field_errors() == ['Empty titles cannot be unofficial.']
+    # the rule of storyrevision_form_utils.js: the rows of a group are
+    # hidden unless one of the fields that keep them shown holds a value
+    hidden = {name for rows, shown_by in _hidden_rows()[blank]
+              if not any(data.get(field) for field in shown_by)
+              for name in rows}
+    assert 'title_inferred' not in hidden
