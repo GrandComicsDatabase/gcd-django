@@ -627,6 +627,17 @@ StoryGroupRevisionFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
+# credit types counting as script credits, as in StoryRevisionForm.clean()
+SCRIPT_CREDIT_TYPES = [CREDIT_TYPES['script'], 10, 11, 12, 13]
+
+
+def _has_script(story):
+    """Whether the approved story has a script entry or No Script."""
+    return (story.script != '' or story.no_script or
+            story.active_credits.filter(
+              credit_type_id__in=SCRIPT_CREDIT_TYPES).exists())
+
+
 # TODO check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, context, renderer=None,
@@ -1294,6 +1305,7 @@ class StoryRevisionForm(KeywordBaseForm):
                     cd['keywords'] += '; '
                 cd['keywords'] += keyword.name
 
+        credits_found = {}
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
             nr_credit_forms = self.data['story_credit_revisions-TOTAL_FORMS']
@@ -1323,6 +1335,7 @@ class StoryRevisionForm(KeywordBaseForm):
                     elif seq_type == 'letters' and credit_type in ['12', '13',
                                                                    '14']:
                         seq_type_found = True
+            credits_found[seq_type] = seq_type_found
 
             if cd['type'].id in NON_OPTIONAL_TYPES:
                 if not cd['no_%s' % seq_type] and cd[seq_type] == "" \
@@ -1336,6 +1349,23 @@ class StoryRevisionForm(KeywordBaseForm):
                 raise forms.ValidationError(
                     ['%s field and No %s checkbox cannot both be filled in.' %
                      (seq_type.capitalize(), seq_type.capitalize())])
+
+        # the approved sequence, None for an added one
+        story = self.instance.story
+
+        if cd['type'].id == STORY_TYPES['letters_page'] and \
+           not cd['no_script'] and cd['script'] == '' and \
+           not credits_found['script']:
+            # older letters pages without a script entry stay editable
+            if story is None or \
+               story.type_id != STORY_TYPES['letters_page'] or \
+               _has_script(story):
+                raise forms.ValidationError(
+                    ['Enter the people answering the letters in the Script '
+                     'field, or check No Script if there are no answers. '
+                     'Wiki "Letters and Fan Art", Letter Column Script and '
+                     'Editorial Comment Credits: "If there is no response, '
+                     'then the NO script check-box must be checked."'])
 
         synopsis_length = len(' '.join(cd['synopsis'].split()))
         if (synopsis_length > settings.LIMIT_SYNOPSIS_LENGTH and
