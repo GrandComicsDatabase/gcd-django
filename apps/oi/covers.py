@@ -910,7 +910,7 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
 
 
 def handle_uploaded_image(request, display_obj, model_name, image_type,
-                          current_image=None):
+                          current_image=None, kwargs=None):
     ''' process the uploaded file and generate ImageRevision '''
 
     try:
@@ -922,7 +922,8 @@ def handle_uploaded_image(request, display_obj, model_name, image_type,
 
     if not form.is_valid():
         return _display_image_upload_form(request, form, display_obj,
-                                          model_name, image_type)
+                                          model_name, image_type,
+                                          kwargs=kwargs)
 
     # process form
     image = form.cleaned_data['image']
@@ -1023,7 +1024,8 @@ def upload_image(request, model_name, id, image_type, image=None):
     if request.method == 'POST':
         if image:
             return handle_uploaded_image(request, display_obj, model_name,
-                                         image_type, current_image=image)
+                                         image_type, current_image=image,
+                                         kwargs=kwargs)
         else:
             return handle_uploaded_image(request, display_obj, model_name,
                                          image_type)
