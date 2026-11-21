@@ -325,6 +325,38 @@ def test_selection_above_the_maximum(client, settings, reserving_indexer,
     assert bulk.SELECTION_KEY not in client.session
 
 
+@pytest.mark.django_db
+def test_selection_keeps_the_ids_that_were_counted(settings,
+                                                   reserving_indexer,
+                                                   approved_issues,
+                                                   monkeypatch):
+    """
+    The selection holds the objects that were checked against
+    BULK_CHANGE_MAX: one that joins the list after the check is left out.
+    """
+    settings.BULK_CHANGE_ENABLED = True
+    settings.BULK_CHANGE_MAX = 2
+    late = approved_issues[0]
+    late.deleted = True
+    late.save()
+    request = RequestFactory().get('/list/', {'_export': 'bulk'})
+    request.user = reserving_indexer
+    request.session = import_module(settings.SESSION_ENGINE).SessionStore()
+    escape = bulk.escape_uri_path
+
+    def join_then_escape(path):
+        """Bring the deleted issue back into the list, then escape path."""
+        Issue.objects.filter(id=late.id).update(deleted=False)
+        return escape(path)
+    monkeypatch.setattr(bulk, 'escape_uri_path', join_then_escape)
+
+    response = bulk.start_from_list(request, Issue.objects.all())
+
+    assert response.status_code == 302
+    assert request.session[bulk.SELECTION_KEY]['ids'] == \
+        [issue.id for issue in approved_issues[1:]]
+
+
 def _counts():
     """Count the changes, locks and errors."""
     return [model.objects.count()
