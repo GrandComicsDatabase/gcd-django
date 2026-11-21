@@ -19,7 +19,7 @@ after issue
 {% if changeset.issuerevisions.count > 1 %}
 the following issues (links open in new windows):
 <table>
-<tr>
+<tr{% if dated_issues %} class="[&>th]:px-1.5"{% endif %}>
   <th> Volume </th>
   <th> Issue Number</th>
   <th> Display Number </th>{% if dated_issues %}
@@ -32,7 +32,7 @@ the following issues (links open in new windows):
     
 </tr>
   {% for issue in changeset.ordered_issue_revisions %}
-<tr>
+<tr{% if dated_issues %} class="[&>td]:px-1.5"{% endif %}>
   <td> {{ issue.volume }}
   <td> {{ issue.number }}
   <td> {{ issue.display_number }}{% if dated_issues %}

@@ -870,9 +870,25 @@ def test_compare_page_of_an_add_without_dates(
     content = _compare_page(adding_client, any_added_series)
 
     assert 'Publication Date' not in content
+    assert '<tr>\n  <th> Volume </th>' in content
     assert '<th> Display Number </th>\n  <th> Preview </th>' in content
     assert ('Keep in mind\nthat publication date, key date and notes will '
             'always be blank.\n</p>') in content
+
+
+@pytest.mark.django_db
+def test_compare_page_spaces_the_cells_of_the_dated_issues(
+      adding_client, any_added_series, add_values):
+    """The cells of the table of the dated issues on the compare page are
+    spaced apart, as on the other tables of the change pages."""
+    action = _url(any_added_series)
+    page = _list(adding_client, any_added_series, add_values)
+    _post(adding_client, page, action, {})
+
+    content = _compare_page(adding_client, any_added_series)
+
+    assert '<tr class="[&>th]:px-1.5">\n  <th> Volume </th>' in content
+    assert content.count('<tr class="[&>td]:px-1.5">\n  <td> ') == 12
 
 
 # What the credits row of the add form shows when it is checked with
