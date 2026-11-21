@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""The series lists of a publisher show country and language of each series."""
+"""The series lists of a publisher show the language when it varies."""
 import csv
 import io
 import json
@@ -10,43 +10,68 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
 from apps.gcd.models import Publisher, Series
-from apps.gcd.templatetags.credits import get_country_flag
 from apps.stddata.models import Country, Language
 
 PAGES = ['', 'current_series/']
-COLUMNS = 7
+COLUMNS = 6
 
-# Name, year, country, language. Created in this order, so that the database
-# ids of the series, the countries and the languages follow no sorted order.
+# The publisher with series in two languages and two countries: name, year,
+# country, language. Created in this order, so that the database ids of the
+# series, the countries and the languages follow no sorted order.
 SERIES = [('D', 2000, 'Aaland', 'Bbish'), ('C', 1990, 'Zzland', 'Yyish'),
           ('C', 1985, 'Zzland', 'Yyish'), ('B', 2005, 'Aaland', 'Yyish'),
           ('A', 1980, 'Zzland', 'Bbish')]
-SHOWN = {('%s %s' % (name, year), country, language)
+SHOWN = {('%s %s' % (name, year), language)
          for name, year, country, language in SERIES}
 
+# The publisher with series in one language: three names, two countries.
+ONE_LANGUAGE_SERIES = [('F', 1995, 'Zzland', 'Yyish'),
+                       ('G', 1975, 'Aaland', 'Yyish'),
+                       ('E', 2010, 'Zzland', 'Yyish')]
+ONE_LANGUAGE_ORDER = ['E 2010', 'F 1995', 'G 1975']
 
-def add_series(publisher, name, year, country, language):
-    """Create a current series of the publisher."""
-    return Series.objects.create(
-        name=name, sort_name=name, year_began=year, publisher=publisher,
-        country=country, language=language, is_current=True,
-        is_comics_publication=True, has_gallery=False,
-        publication_dates=str(year))
+
+def add_series(publisher, name, year, country, language, **fields):
+    """Create a series of the publisher, current unless fields say so."""
+    values = dict(name=name, sort_name=name, year_began=year,
+                  publisher=publisher,
+                  country=Country.objects.get(name=country),
+                  language=Language.objects.get(name=language),
+                  is_current=True, is_comics_publication=True,
+                  has_gallery=False, publication_dates=str(year))
+    values.update(fields)
+    return Series.objects.create(**values)
+
+
+def add_publisher(name, series):
+    """Create a publisher of Zzland with the given series, in that order."""
+    publisher = Publisher.objects.create(
+        name=name, country=Country.objects.get(name='Zzland'),
+        year_began=1960)
+    for series_name, year, country, language in series:
+        add_series(publisher, series_name, year, country, language)
+    return publisher
 
 
 @pytest.fixture
-def publisher(db):
-    """A publisher with the series of SERIES, in that order."""
-    countries = {name: Country.objects.create(code='zq%d' % i, name=name)
-                 for i, name in enumerate(['Zzland', 'Aaland'])}
-    languages = {name: Language.objects.create(code='zq%d' % i, name=name)
-                 for i, name in enumerate(['Yyish', 'Bbish'])}
-    publisher = Publisher.objects.create(
-        name='Test Publisher', country=countries['Zzland'], year_began=1960)
-    for name, year, country, language in SERIES:
-        add_series(publisher, name, year, countries[country],
-                   languages[language])
-    return publisher
+def places(db):
+    """The made-up countries and languages of the series."""
+    for number, name in enumerate(['Zzland', 'Aaland']):
+        Country.objects.create(code='zq%d' % number, name=name)
+    for number, name in enumerate(['Yyish', 'Bbish']):
+        Language.objects.create(code='zq%d' % number, name=name)
+
+
+@pytest.fixture
+def publisher(places):
+    """A publisher with the series of SERIES, in two languages."""
+    return add_publisher('Test Publisher', SERIES)
+
+
+@pytest.fixture
+def one_language_publisher(places):
+    """A publisher with the series of ONE_LANGUAGE_SERIES, in one language."""
+    return add_publisher('Other Test Publisher', ONE_LANGUAGE_SERIES)
 
 
 def table_head(response):
@@ -82,91 +107,147 @@ def click_heading(client, url, response, column):
     return client.get(url + link.group(1))
 
 
+def download(client, url, export):
+    """Return the rows of the download of a list, as dictionaries."""
+    body = client.get(url, {'_export': export}).content.decode()
+    return (json.loads(body) if export == 'json'
+            else list(csv.DictReader(io.StringIO(body))))
+
+
+def language_queries(client, url):
+    """Return a page, its queries on the languages and its language checks."""
+    with CaptureQueriesContext(connection) as context:
+        response = client.get(url)
+    queries = [query['sql'] for query in context.captured_queries]
+    return (response,
+            [sql for sql in queries if 'stddata_language' in sql],
+            [sql for sql in queries
+             if re.match(r'SELECT DISTINCT \S*language_id\S* (AS \S+ )?FROM',
+                         sql)])
+
+
 @pytest.mark.parametrize('page', PAGES)
-def test_each_series_shows_its_country_and_language(client, publisher, page):
-    """Each row has the flag of its country and the name of its language."""
+def test_several_languages_show_the_language_of_each_series(client, publisher,
+                                                            page):
+    """With series in two languages each row shows the name of its own."""
     response = client.get(publisher.get_absolute_url() + page)
 
-    assert 'Country' in table_head(response)
     assert 'Language' in table_head(response)
+    assert 'Country' not in table_head(response)
     rows = table_rows(response)
     assert [len(row) for row in rows] == [COLUMNS] * len(SERIES)
-    flags = {name: str(get_country_flag(Country.objects.get(name=name)))
-             for name in ('Aaland', 'Zzland')}
-    assert {(row_series(row), row[2].strip(), row[3].strip())
-            for row in rows} == {(series, flags[country], language)
-                                 for series, country, language in SHOWN}
+    assert {(row_series(row), row[2].strip()) for row in rows} == SHOWN
 
 
 @pytest.mark.parametrize('page', PAGES)
-@pytest.mark.parametrize('column, ascending, descending', [
-    ('country',
-     ['B 2005', 'D 2000', 'A 1980', 'C 1985', 'C 1990'],
-     ['A 1980', 'C 1985', 'C 1990', 'B 2005', 'D 2000']),
-    ('language',
-     ['A 1980', 'D 2000', 'B 2005', 'C 1985', 'C 1990'],
-     ['B 2005', 'C 1985', 'C 1990', 'A 1980', 'D 2000']),
-])
-def test_headings_sort_by_name_then_series_and_year(client, publisher, page,
-                                                    column, ascending,
-                                                    descending):
-    """Clicking a new heading sorts by the name shown; ties by series, year."""
-    url = publisher.get_absolute_url() + page
-    first_click = click_heading(client, url, client.get(url), column)
-    assert series_order(first_click) == ascending
+def test_one_language_keeps_the_list_as_it_was(client, one_language_publisher,
+                                               page):
+    """With series in one language the list has no new column, nor query."""
+    with CaptureQueriesContext(connection) as context:
+        response = client.get(one_language_publisher.get_absolute_url() +
+                              page)
 
-    second_click = click_heading(client, url, first_click, column)
-    assert series_order(second_click) == descending
+    assert 'Language' not in table_head(response)
+    assert 'Country' not in table_head(response)
+    rows = table_rows(response)
+    assert [len(row) for row in rows] == [COLUMNS - 1] * 3
+    assert series_order(response) == ONE_LANGUAGE_ORDER
+    assert [query['sql'] for query in context.captured_queries
+            if 'stddata_language' in query['sql']] == []
+
+
+@pytest.mark.parametrize('page', PAGES)
+def test_language_heading_sorts_by_name_then_series_and_year(client,
+                                                             publisher, page):
+    """Clicking Language sorts by the name shown; ties by series and year."""
+    url = publisher.get_absolute_url() + page
+    first_click = click_heading(client, url, client.get(url), 'language')
+    assert series_order(first_click) == ['A 1980', 'D 2000', 'B 2005',
+                                         'C 1985', 'C 1990']
+
+    second_click = click_heading(client, url, first_click, 'language')
+    assert series_order(second_click) == ['B 2005', 'C 1985', 'C 1990',
+                                          'A 1980', 'D 2000']
 
 
 @pytest.mark.parametrize('page', PAGES)
 @pytest.mark.parametrize('export', ['csv', 'json'])
-def test_download_has_the_names_not_the_flag(client, publisher, page, export):
-    """The download of the list gives plain names for the new columns."""
-    body = client.get(publisher.get_absolute_url() + page,
-                      {'_export': export}).content.decode()
-
-    rows = (json.loads(body) if export == 'json'
-            else list(csv.DictReader(io.StringIO(body))))
-    assert '<img' not in body
+def test_download_has_the_language_when_the_page_has_it(
+        client, publisher, one_language_publisher, page, export):
+    """The download has the language by name only when the page shows it."""
+    rows = download(client, publisher.get_absolute_url() + page, export)
     assert {('%s %s' % (row.get('Series'), row.get('Year')),
-             row.get('Country'), row.get('Language'))
-            for row in rows} == SHOWN
+             row.get('Language')) for row in rows} == SHOWN
+    assert [row for row in rows if 'Country' in row] == []
 
-
-def country_language_queries(client, url):
-    """Return a page and its queries that read only country or language."""
-    with CaptureQueriesContext(connection) as context:
-        response = client.get(url)
-    return response, [query['sql'] for query in context.captured_queries
-                      if re.search(r'FROM .stddata_(country|language)\b.',
-                                   query['sql'])]
+    rows = download(client, one_language_publisher.get_absolute_url() + page,
+                    export)
+    assert len(rows) == 3
+    assert [row for row in rows
+            if 'Language' in row or 'Country' in row] == []
 
 
 @pytest.mark.parametrize('page', PAGES)
-def test_new_columns_need_no_query_per_series(client, publisher, page):
-    """Country and language come with the series, not one query per row."""
+def test_deleted_series_does_not_count(client, one_language_publisher, page):
+    """A deleted series in a second language does not bring the column."""
+    add_series(one_language_publisher, 'H', 2001, 'Zzland', 'Bbish',
+               deleted=True)
+
+    response = client.get(one_language_publisher.get_absolute_url() + page)
+    assert 'Language' not in table_head(response)
+    assert series_order(response) == ONE_LANGUAGE_ORDER
+
+
+def test_current_series_list_looks_at_current_series_only(
+        client, one_language_publisher):
+    """A series no longer current brings the column to the full list only."""
+    add_series(one_language_publisher, 'H', 2001, 'Zzland', 'Bbish',
+               is_current=False)
+    url = one_language_publisher.get_absolute_url()
+
+    assert 'Language' in table_head(client.get(url))
+    assert 'Language' not in table_head(client.get(url + 'current_series/'))
+
+
+@pytest.mark.parametrize('page', PAGES)
+def test_sorting_by_a_language_not_shown_is_ignored(client,
+                                                    one_language_publisher,
+                                                    page):
+    """A sort on the language of a one-language list gives the plain list."""
+    response = client.get(one_language_publisher.get_absolute_url() + page,
+                          {'sort': 'language'})
+
+    assert response.status_code == 200
+    assert 'Language' not in table_head(response)
+    assert series_order(response) == ONE_LANGUAGE_ORDER
+
+
+@pytest.mark.parametrize('page', PAGES)
+def test_language_needs_no_query_per_series(client, publisher, page):
+    """The language comes with the series; the check runs once a page."""
     url = publisher.get_absolute_url() + page
     client.get(url)
-    _, before = country_language_queries(client, url)
+    _, before, checks = language_queries(client, url)
+    assert len(checks) == 1, checks
 
     for number in range(5):
-        add_series(publisher, 'E%d' % number, 1970 + number,
-                   Country.objects.get(name='Aaland'),
-                   Language.objects.get(name='Yyish'))
-    response, after = country_language_queries(client, url)
+        add_series(publisher, 'E%d' % number, 1970 + number, 'Aaland',
+                   'Yyish')
+    response, after, checks = language_queries(client, url)
 
     rows = table_rows(response)
     assert [len(row) for row in rows] == [COLUMNS] * (len(SERIES) + 5)
     assert len(after) == len(before), after
+    assert len(checks) == 1, checks
 
 
-def test_only_the_publisher_lists_gain_the_columns(client, publisher):
+def test_only_the_publisher_lists_gain_the_column(client, publisher):
     """Another page that lists series keeps the columns it had."""
-    publisher_head = table_head(client.get(publisher.get_absolute_url()))
-    assert 'Country' in publisher_head and 'Language' in publisher_head
+    assert 'Language' in table_head(client.get(publisher.get_absolute_url()))
 
-    publisher.active_series().first().keywords.add('kw')
+    for series in publisher.active_series():
+        series.keywords.add('kw')
     keyword_head = table_head(client.get('/keyword/kw/series/'))
     assert 'Series' in keyword_head
-    assert 'Country' not in keyword_head and 'Language' not in keyword_head
+    assert 'Language' not in keyword_head
+    assert 'Country' not in keyword_head
