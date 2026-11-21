@@ -142,7 +142,8 @@ origin trust, or by exposing the sample environment publicly.
 
 This editor path does not import the authenticated public dump or enable the
 optional search stack. Use the separate Docker workflows in
-[Core setup](CORE_SETUP.md) for those tasks. Expanded native installation guides
-are still awaiting integration into the repository; the current
-[native setup section](CORE_SETUP.md#native-docker-free) is separate from this
-container workflow.
+[Core setup](CORE_SETUP.md) for those tasks. For Docker-free development, use
+[native macOS](NATIVE_MACOS.md) or [native Ubuntu](NATIVE_UBUNTU.md), then
+[shared native setup](NATIVE_COMMON.md). Those workflows install Python and
+MySQL directly on the host and are separate from this container configuration.
+See [troubleshooting](TROUBLESHOOTING.md) for runtime-specific diagnostics.

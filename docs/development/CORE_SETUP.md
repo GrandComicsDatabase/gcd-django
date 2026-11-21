@@ -1,20 +1,63 @@
 # Core development environment
 
-This is the supported one-clone setup for working on `gcd-django`. It runs the
-application with Python 3.13 and MySQL 8.0. Elasticsearch and optional service
-integrations remain opt-in.
+Start with Docker Compose for the shortest setup. Choose a native guide to run
+Python and MySQL directly on your computer without Docker. These are local
+development workflows, not production deployment instructions.
+
+| Your preference | Start here |
+| --- | --- |
+| One container-based setup with sample data | [Docker quick start](#docker-default) |
+| No Docker on macOS | [Native macOS](NATIVE_MACOS.md), then [shared native setup](NATIVE_COMMON.md) |
+| No Docker on Ubuntu 24.04 LTS | [Native Ubuntu](NATIVE_UBUNTU.md), then [shared native setup](NATIVE_COMMON.md) |
+| VS Code manages the container environment | [Dev Container](DEV_CONTAINER.md) |
+
+The native sample recipes have passed clean Ubuntu 24.04 ARM64 and Apple Silicon
+macOS walkthroughs; the actual VS Code walkthrough passed on Apple Silicon.
+Other architectures, real WSL2 ownership/networking and hosted Codespaces have
+not been rehearsed. Codespaces also needs development host/CSRF work; it is not
+a ready-to-use hosted option. See [Dev Container limits](DEV_CONTAINER.md#codespaces-and-remaining-limits).
+
+Use Python 3.13 and the [supported version contract](SUPPORTED_VERSIONS.md).
+Docker supplies MySQL 8.0; the native guides use their verified platform packages
+within the MySQL 8.0-or-newer contract. Elasticsearch and integrations are opt-in.
 
 ## Docker (default)
 
-Install Docker Desktop, clone this repository, and run:
+Install [Docker with Compose](https://docs.docker.com/compose/install/) and start
+it. In a directory for a new checkout, run:
 
 ```bash
-./bin/dev up
+git clone --branch beta https://github.com/GrandComicsDatabase/gcd-django.git
+cd gcd-django
+./bin/dev setup
 ```
 
-The application is available at <http://127.0.0.1:8000>. MySQL is available
-only on `127.0.0.1:3308` from the local machine. The database data lives in the
-Docker volume named `gcd-django-dev_mysql_data`.
+For a fresh environment, no `.env` or custom Django settings file is required.
+Use `./bin/dev up` for later starts without refreshing the sample. Do not clone
+over existing work. A new checkout alone does not isolate Docker data: ordinary
+Compose uses the same default project name across checkouts. If another GCD
+stack exists, select a distinct `COMPOSE_PROJECT_NAME` and unused host ports in
+the new checkout's `.env` before running any command, and retain those settings.
+The editor workflow has its own [isolation rules](DEV_CONTAINER.md#isolation-and-existing-databases).
+
+With default ports, the application is available at <http://127.0.0.1:8000>.
+MySQL is available only on `127.0.0.1:3308` from the local machine. Database data
+lives in the Docker volume named `gcd-django-dev_mysql_data` with the default
+project name.
+Keep the environment local; its fixture credentials are public.
+
+Confirm it works, then log in with a sample account below. If you selected other
+ports, substitute them in the URLs and checks; querying port 8000 could otherwise
+reach an older environment rather than this checkout's service:
+
+```bash
+./bin/dev doctor
+curl --fail --silent --show-error http://127.0.0.1:8000/health/
+./bin/dev test apps/gcd/tests/test_health.py -q
+```
+
+A successful health request does not by itself verify editing or approval.
+For failures, start with [troubleshooting](TROUBLESHOOTING.md), not a database reset.
 
 ## Ready-to-use development data
 
@@ -30,6 +73,12 @@ development accounts, seeds a small relationship-rich catalog, creates a
 dummy cover image and approved change-history comment, initializes global
 statistics, and starts the application. The sample records are marked
 `[GCD DEV]` so they are easy to find and safe to recreate.
+
+In the Docker runtime, setup can replace existing data after confirmation.
+Replacement removes the selected project's MySQL, Elasticsearch and Redis
+volumes, not just sample rows. Review the project and preserve local work before
+accepting; do not add `--replace --yes` to bypass a prompt without that review.
+Native setup instead seeds in place as described in the shared native guide.
 
 The seeded accounts are deliberately public local-development fixtures. They
 work only in this local database and must never be used for beta or production:
@@ -87,8 +136,8 @@ production configuration.
 ##### Docker
 
 The Docker setup configures a 1 GiB buffer pool automatically. To use less
-memory on a constrained machine, copy `.env.example` to `.env` and set a lower
-value:
+memory on a constrained machine, copy `.env.example` to `.env` only if `.env`
+does not exist, then edit the existing file to set a lower value:
 
 ```dotenv
 GCD_MYSQL_BUFFER_POOL_SIZE=512M
@@ -118,6 +167,11 @@ Restart MySQL after changing its option file. File locations and service
 commands differ by operating system and package manager. The
 `GCD_MYSQL_BUFFER_POOL_SIZE` environment variable configures only the Docker
 service; it does not change a native MySQL installation.
+
+The [macOS](NATIVE_MACOS.md#2-start-and-configure-local-mysql) and
+[Ubuntu](NATIVE_UBUNTU.md#3-configure-local-mysql) guides show the
+platform-specific option files, backups and readiness checks for dedicated
+local servers.
 
 Useful commands:
 
@@ -165,7 +219,8 @@ search disabled and does not start Elasticsearch, Redis, or the worker.
 
 To change local ports or other development-only settings, including the
 Elasticsearch host port and MySQL buffer-pool size, copy `.env.example` to
-`.env` and edit literal `KEY=VALUE` entries. Shell expressions are deliberately
+`.env` only if it does not exist; otherwise edit the existing file. Use literal
+`KEY=VALUE` entries. Shell expressions are deliberately
 not evaluated. Do not use production credentials in this file.
 
 `./bin/dev reset --yes` removes the local Docker database, Elasticsearch, and
@@ -174,67 +229,45 @@ confirmation-gated.
 
 ## Native (Docker-free)
 
-Docker is not required. Install Python 3.13, MySQL 8.0 or newer, Git, and the
-system packages needed to compile the project dependencies. Create a database
-and user, then point the launcher at it. The native defaults expect a MySQL
-server exposed on local port 3308 so they work with the Docker database too.
+For a new installation, follow [macOS](NATIVE_MACOS.md) or
+[Ubuntu 24.04](NATIVE_UBUNTU.md), then [shared native setup](NATIVE_COMMON.md).
+The guides cover build tools, a separate Python 3.13 virtualenv, a local MySQL
+server, database/test-schema grants, connection settings and sample logins.
+Docker is not required.
 
-On Ubuntu 24.04, install the build prerequisites with:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y build-essential default-libmysqlclient-dev git libicu-dev pkg-config
-```
-
-On macOS with Homebrew, install them with:
+Once those prerequisites and the repository-root `.env` are ready:
 
 ```bash
-brew install icu4c@78 mysql-client pkgconf
-export PKG_CONFIG_PATH="$(brew --prefix icu4c@78)/lib/pkgconfig:$(brew --prefix mysql-client)/lib/pkgconfig"
+PYTHON=.venv/bin/python ./bin/dev --runtime native setup
 ```
 
-Keep the `export` line in the shell session used for dependency installation,
-or add it to the environment activation script for your local virtual
-environment. Do not set `ICU_VERSION`: PyICU uses `pkg-config` to obtain the
-required compiler and linker flags on macOS.
+Native setup applies migrations, seeds the sample and fixture accounts, checks
+the environment and runs Django in the foreground. It accepts no options and
+only permits Django's selected database to be named `gcd_dev`, `gcd_django_dev`,
+or `gcd_dev_*` with a lowercase letter/digit/underscore suffix. It does not
+create the database or require MySQL root credentials. A name guard does not
+replace verifying the connection destination.
+
+Repeating native setup refreshes sample data, fixture accounts and global
+statistics without dropping or flushing the database; unrelated catalog data
+remains. Use daily `up` when you do not intend to reseed:
 
 ```bash
-python3.13 -m venv .venv
-.venv/bin/python -m pip install --upgrade pip "setuptools<81"
-.venv/bin/python -m pip install -r requirements.txt
-
-MYSQL_PORT=3306 PYTHON=.venv/bin/python ./bin/dev --runtime native setup
+PYTHON=.venv/bin/python ./bin/dev --runtime native up
 ```
 
-Native `setup` applies migrations, seeds the deterministic sample and public
-local accounts listed above, verifies the environment, and starts Django in
-the foreground. Stop it with Ctrl+C. It accepts no options and only permits
-the database Django selects to be named `gcd_dev`, `gcd_django_dev`, or
-`gcd_dev_*` with a lowercase letter/digit/underscore suffix. Create that
-database and grant your local application user access before running setup;
-the command does not create databases or need MySQL root credentials.
-
-Re-running native setup refreshes the sample and fixture accounts without
-dropping or flushing the database; unrelated local catalog records remain.
-The fixture accounts and global statistics are deliberately refreshed, so
-this is not a production-data workflow. Search is disabled for native setup,
-including when the calling shell has `USE_ELASTICSEARCH=true`. Full-dump
-imports and managed search remain Docker-only.
-
-For daily startup without refreshing sample data, use
-`./bin/dev --runtime native up` with the same Python/database configuration.
-For native setup, a relative `PYTHON` path is resolved from the repository
-root, even when the launcher is called from another directory.
-
-The equivalent native commands are:
+Leave the foreground server running and use a second terminal for checks:
 
 ```bash
-MYSQL_PORT=3306 PYTHON=.venv/bin/python ./bin/dev --runtime native doctor
-MYSQL_PORT=3306 PYTHON=.venv/bin/python ./bin/dev --runtime native test
-MYSQL_PORT=3306 PYTHON=.venv/bin/python ./bin/dev --runtime native manage createsuperuser
+PYTHON=.venv/bin/python ./bin/dev --runtime native doctor
+PYTHON=.venv/bin/python ./bin/dev --runtime native test apps/gcd/tests/test_health.py -q
 ```
 
-Native `reset --yes` only operates on a database named `gcd_dev` or
-`gcd_django_dev`; it flushes that database and reapplies migrations. Set
-`MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` in your shell or `.env`
-when your local MySQL credentials differ from the development defaults.
+Ctrl-C stops Django, not MySQL. Native MySQL normally uses port 3306; configure
+`MYSQL_PORT=3306` explicitly in `.env`, since the launcher otherwise falls
+back to the Docker host port 3308. Native setup disables search even if the
+calling shell enabled it. Full-dump import and managed search remain Docker-only.
+
+Native `reset --yes` flushes local edits and reapplies migrations, and only
+permits `gcd_dev` or `gcd_django_dev`. It is not a stop command or a
+troubleshooting shortcut. See [daily use and preservation](NATIVE_COMMON.md#daily-use-and-preservation).
