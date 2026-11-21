@@ -66,8 +66,8 @@ def _page(client, item):
 def _targets(page):
     """The ids of the date fields filled by the Today buttons of the page."""
     return re.findall(r'<button type="button" class="btn btn-default"\s+'
-                      r"onclick=\"set_today\('([^']+)'\);\">\s*Today\s*"
-                      r'</button>', page)
+                      r"onclick=\"set_today\('([^']+)'\);\""
+                      r'(?:\s+aria-label="[^"]*")?>\s*Today\s*</button>', page)
 
 
 @pytest.mark.parametrize('dates, targets', [
@@ -84,6 +84,16 @@ def test_each_date_field_in_use_has_a_button(client, item, dates, targets):
     assert 'id="edit-item"' in page and 'function set_today(' in page
     assert _targets(page) == targets
     assert all('id="%s"' % target in page for target in targets)
+
+
+def test_each_button_names_its_date_field(client, item):
+    """A screen reader tells the two Today buttons apart by their names."""
+    Collection.objects.filter(pk=1).update(acquisition_date_used=True,
+                                           sell_date_used=True)
+    names = re.findall(r"onclick=\"set_today\('[^']+'\);\"\s+"
+                       r'aria-label="([^"]+)">\s*Today\s*</button>',
+                       _page(client, item))
+    assert names == ['Today (acquisition date)', 'Today (sell date)']
 
 
 def test_button_for_a_date_of_another_collection(client, item):
