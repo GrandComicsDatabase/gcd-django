@@ -98,6 +98,8 @@ jobs:
           ./bin/dev --runtime native test -q \
             apps/gcd/tests/test_dev_environment_core.py \
             apps/gcd/tests/test_dev_environment.py \
+            apps/gcd/tests/test_devcontainer.py \
+            apps/gcd/tests/test_devcontainer_database.py \
             apps/gcd/tests/test_health.py \
             apps/gcd/tests/test_front_page_search_performance.py \
             apps/gcd/tests/test_search_indexes.py \
