@@ -239,6 +239,15 @@ def test_other_fields_keep_their_stored_values(client, selection,
 
 
 @pytest.mark.django_db
+def test_apply_stores_a_price_as_the_preview_shows_it(client, selection):
+    """A ';' at the end of a new price goes, as in the edit form."""
+    _apply(client, **dict(PRICE, new_value='0.12 USD;'))
+
+    revisions = _change().issuerevisions.all()
+    assert [revision.price for revision in revisions] == ['0.12 USD'] * 3
+
+
+@pytest.mark.django_db
 def test_object_already_invalid_is_blocked(client, selection):
     """An issue that already fails its edit form is left out, blocked."""
     _approved(selection[1], page_count=None, page_count_uncertain=True)

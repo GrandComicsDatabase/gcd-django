@@ -10,6 +10,7 @@ from apps.gcd.templatetags.display import field_name
 from apps.oi import bulk
 from apps.oi.forms.issue import IssueRevisionForm
 from apps.oi.forms.series import SeriesRevisionForm
+from apps.oi.forms.support import _strip_list
 from apps.oi.models import IssueRevision, SeriesRevision
 
 # The edit form of each revision class: the order of the fields and the
@@ -26,6 +27,11 @@ def offered_fields(rev_class, publisher):
     natures = bulk.policy_fields(rev_class)
     return [name for name in REVISION_FORMS[rev_class].base_fields
             if name in natures and (publisher or natures[name] != 'L')]
+
+
+# The fields whose value the clean method of the edit form strips as a
+# list: spaces and a ';' at the end go.
+STRIPPED_AS_LISTS = ('price',)
 
 
 class BulkOperationForm(forms.Form):
@@ -78,14 +84,18 @@ class BulkOperationForm(forms.Form):
         """
         Return the new value as the edit form stores it: after its field,
         the clean method of the edit form for the field, if any, as for
-        the dashes of a key date, and the validators of the model field,
-        as for the pattern of a key date; a linked object as its id.
+        the dashes of a key date, the strip of a list that its clean
+        method makes, as for a ';' at the end of a price, and the
+        validators of the model field, as for the pattern of a key date;
+        a linked object as its id.
         """
         value = self.cleaned_data['new_value']
         if hasattr(self.edit_form_class, 'clean_' + self.name):
             edit_form = self.edit_form_class()
             edit_form.cleaned_data = {self.name: value}
             value = getattr(edit_form, 'clean_' + self.name)()
+        if self.name in STRIPPED_AS_LISTS:
+            value = _strip_list(value)
         self.model_field.run_validators(value)
         if isinstance(value, models.Model):
             return value.pk

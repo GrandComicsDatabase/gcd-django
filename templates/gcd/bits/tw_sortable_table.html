@@ -2,7 +2,7 @@
 {% load i18n %}
 
 <div class="sm:justify-center"> 
-  {% if table.bulk_change and not table.context.json_download_url %}
+  {% if table.bulk_change %}
   <div>
     <a class="btn-blue-editing inline-block visited:text-black"
        href="{% export_url "bulk" %}">

@@ -673,7 +673,15 @@ def start_from_list(request, items):
     """
     ids = items.filter(deleted=False).order_by() \
                .values_list('id', flat=True).distinct()
-    count = ids.count()
+    # One read gives the ids that are checked and kept.  One id
+    # beyond the larger limit shows a list that is too long for
+    # anyone; only its message needs its size.
+    most = max(settings.BULK_CHANGE_MAX,
+               settings.BULK_CHANGE_MAX_NEW)
+    kept = sorted(ids[:most + 1])
+    count = len(kept)
+    if count > most:
+        count = max(count, ids.count())
     if not count:
         return render_error(request, 'This list has no objects for a bulk '
                                      'change.', redirect=False)
@@ -685,7 +693,7 @@ def start_from_list(request, items):
     source = escape_uri_path(request.path)
     if query:
         source += '?' + query.urlencode()
-    return _keep_selection(request, items.model, ids, source)
+    return _keep_selection(request, items.model, kept, source)
 
 
 def _keep_selection(request, model, ids, source, change=None):
