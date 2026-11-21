@@ -5171,7 +5171,8 @@ def copy_cached_sequences(request, data, select_key):
                      if s.type_id == STORY_TYPES['cover']]
     if any(pk not in actual_covers for pk in cover_ids):
         return HttpResponseBadRequest('A selected cover is no longer a cover.')
-    # A cover reprint ticked as a story goes to a variant only with Select.
+    # A variant issue takes only cover sequences. A cover reprint ticked
+    # under Stories reaches this point, so it is refused here.
     if issue_revision.variant_of and len(actual_covers) < len(stories):
         return render_error(request, 'Only a cover sequence can be copied '
                                      'into a variant issue.')
