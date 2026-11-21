@@ -100,6 +100,8 @@ jobs:
             apps/gcd/tests/test_dev_environment.py \
             apps/gcd/tests/test_devcontainer.py \
             apps/gcd/tests/test_devcontainer_database.py \
+            apps/gcd/tests/test_markdown_startup.py \
+            apps/gcd/tests/test_notes_rendering.py \
             apps/gcd/tests/test_health.py \
             apps/gcd/tests/test_front_page_search_performance.py \
             apps/gcd/tests/test_search_indexes.py \

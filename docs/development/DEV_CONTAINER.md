@@ -4,9 +4,11 @@ The Dev Container uses the repository's existing Docker Compose application,
 MySQL service and Python image. It adds an editor environment with sample data;
 it does not require Python, Node.js or MySQL to be installed on your host.
 
-This is the local Phase 5 implementation. The actual VS Code editor lifecycle,
-WSL2 walkthrough and hosted Codespaces rehearsal are still pending. Those checks
-are separate from configuration tests and local Dev Container CLI validation.
+This is the local Phase 5 implementation. The actual VS Code editor walkthrough
+has passed on Apple Silicon macOS, including file saves, tests, forwarded login
+and rebuild persistence. Linux/WSL2 ownership, Intel macOS and hosted Codespaces
+rehearsals remain pending. Those checks are separate from configuration tests
+and local Dev Container CLI validation.
 For the established command-line Docker workflow, use [Core setup](CORE_SETUP.md).
 
 ## Prerequisites
@@ -120,8 +122,9 @@ catalog data. A rebuild is not a database reset.
 The configuration sets `shutdownAction` to `stopCompose`: closing the editor
 connection stops this Compose project while retaining named volumes. Do not use
 volume-deleting cleanup commands as a routine stop or troubleshooting step.
-The real VS Code reopen/rebuild/close and extension-permission checks still need
-to be completed before editor acceptance is claimed.
+Reopen/rebuild/close, extension permissions and GUI file saves have been checked
+in the Apple Silicon macOS walkthrough. This does not verify Linux/WSL2 file
+ownership or other untested host platforms.
 
 ## Codespaces and remaining limits
 
