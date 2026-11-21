@@ -5508,7 +5508,8 @@ class StoryCharacterRevision(Revision):
         but a different translation. A translation in kept, a set of pairs
         of character id and universe id, gets no revision.
         """
-        language = story_revision.issue.series.language
+        issue = story_revision.issue or story_revision.my_issue_revision
+        language = issue.series.language
         translations = character.character.character.translations(
             language)
         if translations.count() == 0 and \
