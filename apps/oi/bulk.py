@@ -551,11 +551,13 @@ def start_from_list(request, items):
     ids = items.filter(deleted=False).order_by() \
                .values_list('id', flat=True).distinct()
     # One read gives the ids that are checked and kept.  One id
-    # beyond the limit shows a list that is too long; only its
-    # message needs its size.
-    kept = sorted(ids[:settings.BULK_CHANGE_MAX + 1])
+    # beyond the larger limit shows a list that is too long for
+    # anyone; only its message needs its size.
+    most = max(settings.BULK_CHANGE_MAX,
+               settings.BULK_CHANGE_MAX_NEW)
+    kept = sorted(ids[:most + 1])
     count = len(kept)
-    if count > settings.BULK_CHANGE_MAX:
+    if count > most:
         count = max(count, ids.count())
     if not count:
         return render_error(request, 'This list has no objects for a bulk '

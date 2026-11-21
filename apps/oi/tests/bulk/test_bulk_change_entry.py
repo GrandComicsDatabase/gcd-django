@@ -347,6 +347,30 @@ def test_selection_keeps_the_ids_that_were_counted(settings,
         [issue.id for issue in approved_issues[1:]]
 
 
+@pytest.mark.django_db
+def test_selection_within_the_limit_of_a_new_indexer_is_kept_whole(
+      settings, reserving_indexer, approved_issues):
+    """
+    A new indexer may start a bulk change of up to BULK_CHANGE_MAX_NEW
+    objects, also when that limit is above BULK_CHANGE_MAX: such a list
+    is kept whole.
+    """
+    settings.BULK_CHANGE_ENABLED = True
+    settings.BULK_CHANGE_MAX = 1
+    settings.BULK_CHANGE_MAX_NEW = 3
+    reserving_indexer.indexer.is_new = True
+    reserving_indexer.indexer.save()
+    request = RequestFactory().get('/list/', {'_export': 'bulk'})
+    request.user = reserving_indexer
+    request.session = import_module(settings.SESSION_ENGINE).SessionStore()
+
+    response = bulk.start_from_list(request, Issue.objects.all())
+
+    assert response.status_code == 302
+    assert request.session[bulk.SELECTION_KEY]['ids'] == \
+        [issue.id for issue in approved_issues]
+
+
 def _counts():
     """Count the changes, locks and errors."""
     return [model.objects.count()
