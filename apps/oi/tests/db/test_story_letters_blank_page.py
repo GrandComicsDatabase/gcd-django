@@ -11,6 +11,8 @@ from apps.oi.models import StoryRevision
 
 LETTERS_PAGE = 'letters page'
 LETTERS_RULE = 'If there is no response, then the NO script check-box'
+BLANK_PAGE = 'blank page(s)'
+BLANK_RULE = 'Empty page with no content.'
 
 
 def _clean(user, type_name, instance=None, data=None, **values):
@@ -112,3 +114,56 @@ def test_type_changed_to_letters_page_needs_script(any_added_story,
                     script='', no_script=True)
     _rejected(any_indexer, LETTERS_PAGE, LETTERS_RULE, instance=rev)
     assert _clean(any_indexer, LETTERS_PAGE, instance=rev, no_script=True)
+
+
+@pytest.mark.django_db
+def test_blank_page_has_no_content(any_indexer):
+    """A new blank page has no credits, characters or synopsis."""
+    assert _clean(any_indexer, BLANK_PAGE)
+    _rejected(any_indexer, BLANK_PAGE, 'cannot have credits', pencils='?')
+    _rejected(any_indexer, BLANK_PAGE, BLANK_RULE,
+              data=_row('story_credit_revisions', 'credit_type', '2'))
+    _rejected(any_indexer, BLANK_PAGE, 'cannot have characters',
+              characters='Test Character')
+    _rejected(any_indexer, BLANK_PAGE, BLANK_RULE,
+              data=_row('story_character_revisions', 'character', '1'))
+    _rejected(any_indexer, BLANK_PAGE, BLANK_RULE,
+              data=_row('story_group_revisions', 'group_name', '1'))
+    _rejected(any_indexer, BLANK_PAGE, 'cannot have a synopsis',
+              synopsis='Nothing happens.')
+
+
+@pytest.mark.django_db
+def test_blank_page_deleted_rows_are_ignored(any_indexer):
+    """Credit and character rows marked for deletion do not count."""
+    data = _row('story_credit_revisions', 'credit_type', '2', deleted=True)
+    data.update(_row('story_character_revisions', 'character', '1',
+                     deleted=True))
+    assert _clean(any_indexer, BLANK_PAGE, data=data)
+    _rejected(any_indexer, BLANK_PAGE, BLANK_RULE,
+              data=_row('story_credit_revisions', 'credit_type', '2'))
+
+
+@pytest.mark.django_db
+def test_blank_page_with_old_content_stays_editable(any_added_story,
+                                                    any_editing_changeset,
+                                                    any_indexer):
+    """An approved blank page keeps its content, but cannot get more."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, BLANK_PAGE,
+                    pencils='? (logo)', synopsis='', characters='',
+                    feature='', genre='')
+    assert _clean(any_indexer, BLANK_PAGE, instance=rev, pencils='? (logo)',
+                  notes='Corrected elsewhere.')
+    _rejected(any_indexer, BLANK_PAGE, 'cannot have a synopsis',
+              instance=rev, pencils='? (logo)', synopsis='Nothing happens.')
+
+
+@pytest.mark.django_db
+def test_type_changed_to_blank_page_drops_content(any_added_story,
+                                                  any_editing_changeset,
+                                                  any_indexer):
+    """A sequence becoming a blank page must drop its content."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story')
+    _rejected(any_indexer, BLANK_PAGE, BLANK_RULE, instance=rev,
+              pencils='Test Person Two')
+    assert _clean(any_indexer, BLANK_PAGE, instance=rev)

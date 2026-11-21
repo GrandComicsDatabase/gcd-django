@@ -638,6 +638,30 @@ def _has_script(story):
               credit_type_id__in=SCRIPT_CREDIT_TYPES).exists())
 
 
+def _formset_has_rows(data, prefix, field):
+    """Whether a not deleted row of the posted formset has a value in field."""
+    for i in range(int(data.get('%s-TOTAL_FORMS' % prefix, 0))):
+        if data.get('%s-%d-DELETE' % (prefix, i)):
+            continue
+        if data.get('%s-%d-%s' % (prefix, i, field)):
+            return True
+    return False
+
+
+def _blank_page_content(story):
+    """The kinds of content of the approved story a blank page cannot have."""
+    content = []
+    if any(getattr(story, credit) for credit in CREDIT_TYPES) or \
+       story.active_credits.exists():
+        content.append('credits')
+    if story.characters or story.active_characters.exists() or \
+       story.active_groups.exists():
+        content.append('characters')
+    if story.synopsis:
+        content.append('a synopsis')
+    return content
+
+
 # TODO check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, context, renderer=None,
@@ -1366,6 +1390,31 @@ class StoryRevisionForm(KeywordBaseForm):
                      'Wiki "Letters and Fan Art", Letter Column Script and '
                      'Editorial Comment Credits: "If there is no response, '
                      'then the NO script check-box must be checked."'])
+
+        if cd['type'].id == STORY_TYPES['blank']:
+            content = []
+            if any(cd[credit] or credits_found[credit]
+                   for credit in CREDIT_TYPES):
+                content.append('credits')
+            if cd['characters'] or cd['appearing_characters'] or \
+               cd['group_name'] or cd['group_members'] or \
+               _formset_has_rows(self.data, 'story_character_revisions',
+                                 'character') or \
+               _formset_has_rows(self.data, 'story_group_revisions',
+                                 'group_name'):
+                content.append('characters')
+            if cd['synopsis']:
+                content.append('a synopsis')
+            # older blank pages with such content stay editable
+            if story is not None and story.type_id == STORY_TYPES['blank']:
+                approved = _blank_page_content(story)
+                content = [c for c in content if c not in approved]
+            if content:
+                raise forms.ValidationError(
+                    ['A blank page cannot have %s. Wiki "Type", Blank '
+                     'Page(s): "Empty page with no content." If the page '
+                     'shows art, a logo or text, choose a matching type, '
+                     'e.g. Illustration.' % ' or '.join(content)])
 
         synopsis_length = len(' '.join(cd['synopsis'].split()))
         if (synopsis_length > settings.LIMIT_SYNOPSIS_LENGTH and
