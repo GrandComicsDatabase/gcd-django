@@ -883,12 +883,14 @@ a:hover {
     --tw-text-opacity: 1;
     color: rgb(0 0 0 / var(--tw-text-opacity));
   }
-  a:visited {
-    color: rgb(0 0 0 );
-  }
   a:hover {
     text-decoration-line: none;
   }
+}
+
+.btn-blue-editing:visited {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity));
 }
 
 .btn-blue {

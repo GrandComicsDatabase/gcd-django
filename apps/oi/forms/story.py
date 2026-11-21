@@ -11,7 +11,6 @@ from crispy_forms.layout import Layout, Field, HTML
 from crispy_forms.utils import render_field
 from crispy_forms.bootstrap import (
     Tab,
-    TabHolder,
 )
 from markdownx.widgets import MarkdownxWidget
 from taggit.models import Tag
@@ -33,7 +32,7 @@ from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
 from apps.gcd.models.support import GENRES
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 
-from .custom_layout_object import Formset
+from .custom_layout_object import Formset, FormsetTabHolder
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     _strip_list,
@@ -133,7 +132,8 @@ def get_story_revision_form(revision=None, user=None,
 
     # for variants we can only have cover sequences (for now)
     if (revision and (revision.issue is None or revision.issue.variant_of))\
-       or (revision is None and issue_revision.issue is None):
+       or (revision is None and (issue_revision.issue is None
+                                 or issue_revision.variant_of)):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
@@ -547,7 +547,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Cannot select a group universe without a group.'])
 
-        if cd['group_name'] and cd['character']:
+        if cd['group_name'] and 'character' in cd and cd['character']:
             character_groups = cd['character'].character.active_memberships()
             character_groups = character_groups.values_list('group', flat=True)
             for group in cd['group_name']:
@@ -831,7 +831,7 @@ class StoryRevisionForm(KeywordBaseForm):
             # The layout is organized into tabs for better user experience.
             # When counting the fields, we need to account for the added
             # hidden fields and formsets that are included in the field_list.
-            self.helper.layout = Layout(TabHolder(
+            self.helper.layout = Layout(FormsetTabHolder(
               Tab('Sequence Details',
                   *(f for f in field_list[:credits_start-5]),
                   *(f for f in field_list[characters_end:-3]),

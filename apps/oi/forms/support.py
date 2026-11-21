@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import date
 
 from django import forms
 from django.conf import settings
@@ -728,6 +729,22 @@ def _get_comments_form_field():
                                      'rows': 5}), required=False,
         help_text='Information about the changes submitted. Will not be '
                   'displayed, but is stored in the change history.')
+
+
+def _check_year_range(form):
+    """
+    Raise a ValidationError if a year began or ended that was changed is
+    not between 1700 and next year. A year already stored stays allowed,
+    so that old data does not block an unrelated change.
+    """
+    last_year = date.today().year + 1
+    for field in ('year_began', 'year_ended'):
+        year = form.cleaned_data.get(field)
+        if year is not None and field in form.changed_data and \
+           not 1700 <= year <= last_year:
+            raise forms.ValidationError(
+              '%s must be between 1700 and %d.' % (
+                field.replace('_', ' ').capitalize(), last_year))
 
 
 def _check_year_order(cleaned_data):

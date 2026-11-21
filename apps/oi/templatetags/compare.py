@@ -50,6 +50,27 @@ def valid_barcode(barcode):
     return stdean.is_valid(barcode)
 
 
+def key_date_years_note(revision, item, label):
+    '''
+    Note when the key date of an issue revision is outside the years of
+    its indicia publisher or brand emblem. A missing or uncertain year
+    cannot show a problem, so that side is not compared.
+    '''
+    year = getattr(revision, 'key_date', '')[:4]
+    if not item or not year.isdecimal() or int(year) < 1000:
+        return ''
+    year = int(year)
+    if item.year_began and not item.year_began_uncertain \
+       and year < item.year_began:
+        return '<br><br>Note: %s "%s" used in %d, before its first year ' \
+               '%d.' % (label, esc(item), year, item.year_began)
+    if item.year_ended and not item.year_ended_uncertain \
+       and year > item.year_ended:
+        return '<br><br>Note: %s "%s" used in %d, after its last year ' \
+               '%d.' % (label, esc(item), year, item.year_ended)
+    return ''
+
+
 # check to return True for yellow css compare highlighting
 @register.filter
 def check_changed(changed, field):
@@ -115,7 +136,10 @@ def field_value(revision, field):
                                      (res_holder.first_name,
                                       res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
-    elif field in ['publisher', 'indicia_publisher', 'series',
+    elif field == 'indicia_publisher':
+        return mark_safe(absolute_url(value) + key_date_years_note(
+          revision, value, 'Indicia publisher'))
+    elif field in ['publisher', 'series',
                    'origin_issue', 'target_issue', 'award',
                    'from_feature', 'to_feature', 'character',
                    'from_group', 'to_group', 'from_character', 'to_character']:
@@ -133,7 +157,10 @@ def field_value(revision, field):
         return absolute_url(value)
     elif field == 'brand_emblem':
         brand_emblems = ''
+        notes = ''
         for brand_emblem in value.all():
+            notes += key_date_years_note(revision, brand_emblem,
+                                         'Brand emblem')
             if settings.FAKE_IMAGES or not brand_emblem.emblem:
                 brand_emblems += absolute_url(brand_emblem) + '; '
             else:
@@ -142,7 +169,7 @@ def field_value(revision, field):
                                            + absolute_url(brand_emblem)) + '; '
         if brand_emblems:
             brand_emblems = brand_emblems[:-2]
-        return mark_safe(brand_emblems)
+        return mark_safe(brand_emblems + notes)
     elif (field in ['feature', 'feature_name'] and
           revision._meta.model_name == 'featurelogorevision'):
         features = ''
@@ -581,6 +608,13 @@ def compare_current_reprints(object_type, changeset):
                 .filter(changeset=changeset)
             active_target = object_type.source.target_reprint_revisions\
                 .filter(changeset=changeset)
+            if type(object_type) is StoryRevision:
+                # moved sequence: linked by origin_/target_revision only,
+                # see move_story_revision
+                active_origin |= object_type.origin_reprint_revisions\
+                    .filter(changeset=changeset)
+                active_target |= object_type.target_reprint_revisions\
+                    .filter(changeset=changeset)
     if type(object_type) is IssueRevision:
         active_origin = active_origin.filter(origin=None, origin_revision=None)
         active_target = active_target.filter(target=None, target_revision=None)
