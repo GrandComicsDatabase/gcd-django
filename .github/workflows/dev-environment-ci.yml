@@ -100,6 +100,10 @@ jobs:
             apps/gcd/tests/test_dev_environment.py \
             apps/gcd/tests/test_devcontainer.py \
             apps/gcd/tests/test_devcontainer_database.py \
+            apps/gcd/tests/test_devcontainer_ci.py \
+            apps/gcd/tests/test_development_docs.py \
+            apps/gcd/tests/test_native_reset_safety.py \
+            apps/gcd/tests/test_native_reset_reference_data.py \
             apps/gcd/tests/test_markdown_startup.py \
             apps/gcd/tests/test_notes_rendering.py \
             apps/gcd/tests/test_health.py \
@@ -118,6 +122,23 @@ jobs:
           if [ -d apps/api_v2/tests ]; then
             ./bin/dev --runtime native test apps/api_v2/tests/ -q
           fi
+
+  devcontainer-smoke:
+    name: Dev Container CLI lifecycle and Linux ownership
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node for the pinned Dev Container CLI
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Rehearse an isolated Dev Container clone
+        run: python3 .github/scripts/smoke_devcontainer.py
 
   compose-smoke:
     name: Docker Compose core setup

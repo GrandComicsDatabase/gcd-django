@@ -9,13 +9,20 @@ development workflows, not production deployment instructions.
 | One container-based setup with sample data | [Docker quick start](#docker-default) |
 | No Docker on macOS | [Native macOS](NATIVE_MACOS.md), then [shared native setup](NATIVE_COMMON.md) |
 | No Docker on Ubuntu 24.04 LTS | [Native Ubuntu](NATIVE_UBUNTU.md), then [shared native setup](NATIVE_COMMON.md) |
+| Windows, with or without Docker | [Ubuntu 24.04 under WSL2](WSL2.md) |
 | VS Code manages the container environment | [Dev Container](DEV_CONTAINER.md) |
 
-The native sample recipes have passed clean Ubuntu 24.04 ARM64 and Apple Silicon
-macOS walkthroughs; the actual VS Code walkthrough passed on Apple Silicon.
-Other architectures, real WSL2 ownership/networking and hosted Codespaces have
-not been rehearsed. Codespaces also needs development host/CSRF work; it is not
-a ready-to-use hosted option. See [Dev Container limits](DEV_CONTAINER.md#codespaces-and-remaining-limits).
+The native sample recipes have passed Ubuntu 24.04 ARM64, Apple Silicon macOS,
+and Ubuntu 24.04 x86_64 under WSL2 walkthroughs. The WSL2 run used a pinned source
+archive and verified Linux file ownership, Windows-browser access and restart
+persistence. It does not establish Docker Desktop or VS Code WSL integration.
+The actual VS Code Dev Container walkthrough passed on Apple Silicon. Dev
+Container CLI lifecycle checks also passed on macOS and Linux x86_64; that is
+not a Linux/WSL2 VS Code GUI result. See each platform guide for the precise
+coverage and remaining limits.
+
+Codespaces is deferred to a separate follow-up and is not a supported hosted
+option. See [Dev Container limits](DEV_CONTAINER.md#codespaces-and-remaining-limits).
 
 Use Python 3.13 and the [supported version contract](SUPPORTED_VERSIONS.md).
 Docker supplies MySQL 8.0; the native guides use their verified platform packages

@@ -531,7 +531,7 @@ case "$command" in
     fi
     compose logs --follow "$service" ;;
   reset)
-    if [[ "${1:-}" != "--yes" ]]; then
+    if [[ $# -ne 1 || "${1:-}" != "--yes" ]]; then
       echo "reset is destructive; rerun with: ./bin/dev reset --yes" >&2; exit 2
     fi
     if [[ "$runtime" == "docker" ]]; then
@@ -540,12 +540,17 @@ case "$command" in
       compose up --build --wait
     else
       require_native_python; native_environment
-      database_name="$(native_database_name)"
+      # As in setup, retain newlines belonging to the configured name. A
+      # normalized name must not authorize flushing a different database.
+      database_name="$(native_database_name && printf '.')"
+      database_name="${database_name%.}"
+      database_name="${database_name%$'\n'}"
       if [[ "$database_name" != "gcd_dev" && "$database_name" != "gcd_django_dev" ]]; then
         echo "Native reset only permits gcd_dev or gcd_django_dev (got $database_name)." >&2; exit 2
       fi
       "$PYTHON_BIN" manage.py flush --noinput
       "$PYTHON_BIN" manage.py migrate --noinput
+      "$PYTHON_BIN" manage.py restore_development_reference_data
     fi ;;
   *) echo "Unknown command: $command" >&2; usage >&2; exit 2 ;;
 esac

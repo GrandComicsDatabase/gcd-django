@@ -23,7 +23,8 @@ http://groups.google.com/group/gcd-tech/
 
 Start with the [development environment chooser](docs/development/CORE_SETUP.md).
 It links to Docker Compose, [native macOS](docs/development/NATIVE_MACOS.md),
-[native Ubuntu 24.04](docs/development/NATIVE_UBUNTU.md), and the
+[native Ubuntu 24.04](docs/development/NATIVE_UBUNTU.md),
+[Windows with WSL2](docs/development/WSL2.md), and the
 [VS Code Dev Container](docs/development/DEV_CONTAINER.md). Native setup does
 not require Docker; the platform guides identify the combinations tested so far.
 
@@ -31,9 +32,9 @@ For the default Docker setup with deterministic development data, run
 `./bin/dev setup`. Contributors who have manually downloaded an authenticated
 GCD catalog archive can use `./bin/dev setup --dump ~/Downloads/current.zip`.
 
-The core guide is the canonical setup path. Platform-specific notes in the
-older `docs/Getting_Started*.md` files are retained for reference and may describe
-obsolete workflows; do not combine their installation steps with these guides.
+The core guide is the canonical setup path. The older `docs/Getting_Started*.md`
+pages are retired redirects, so existing links still lead to current guidance.
+Codespaces is deferred to a separate follow-up, not a supported setup option.
 For failures, use [setup troubleshooting](docs/development/TROUBLESHOOTING.md).
 
 ## Workflow

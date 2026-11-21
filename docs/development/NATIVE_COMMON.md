@@ -1,11 +1,14 @@
 # Shared native setup and daily use
 
-Start with [native macOS](NATIVE_MACOS.md) or [native Ubuntu 24.04](NATIVE_UBUNTU.md).
+Start with [native macOS](NATIVE_MACOS.md), [native Ubuntu 24.04](NATIVE_UBUNTU.md),
+or [Windows with WSL2](WSL2.md).
 This page assumes Python 3.13, the platform build dependencies, a running local
 MySQL server, a new checkout, and its `.venv` already exist. Docker is not required.
 
-The core sample workflow has been rehearsed on clean Ubuntu 24.04 ARM64 and
-Apple Silicon macOS guests. Full-dump imports and managed search are separate
+The core sample workflow has been rehearsed on Ubuntu 24.04 ARM64, Apple Silicon
+macOS, and Ubuntu 24.04 x86_64 under WSL2. The WSL2 run used a pinned source
+archive; it verified native runtime behavior, not Docker Desktop or editor
+integration. Full-dump imports and managed search are separate
 [Docker workflows](CORE_SETUP.md); these native instructions do not implement them.
 
 ## 1. Install Python dependencies
@@ -189,7 +192,9 @@ disables Elasticsearch, even if the calling shell enabled it. Use daily `up`
 when you do not intend to reseed.
 
 Native `reset --yes` is different: it flushes the selected database, including
-local edits, and reapplies migrations. It only permits `gcd_dev` or
+local edits, checks migrations and restores the initial reference tables needed
+for the next sample setup. Run `setup` afterward to recreate the sample and
+development logins. Reset only permits `gcd_dev` or
 `gcd_django_dev`. Use it only after verifying the exact host, port and database,
 and confirming all data is disposable or backed up. Stopping the server,
 changing branches and resolving dependency errors do not require a reset.

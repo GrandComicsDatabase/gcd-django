@@ -8,8 +8,10 @@ other choices, see [Core setup](CORE_SETUP.md).
 The clean sample-data walkthrough passed on **Ubuntu 24.04.5 ARM64**, using
 Python 3.13.18 and Ubuntu's MySQL 8.0.46. It covered dependency installation,
 tests, sample login/edit/approval, repeat setup and MySQL restart persistence.
-The clean x86_64 and Windows/WSL2 walkthroughs have not been completed;
-ordinary Linux CI does not establish those installation results. This guide
+The same native recipe also passed on Ubuntu 24.04.5 x86_64 under Windows WSL2,
+including Windows-browser access, file saves and distro-restart persistence.
+That run used a pinned source archive. A standalone x86_64 Ubuntu installation
+has not had a clean walkthrough; ordinary Linux CI is separate evidence. This guide
 does not validate native full-dump import or native search. Consult the
 [supported version policy](SUPPORTED_VERSIONS.md) when selecting packages.
 
@@ -108,9 +110,9 @@ a few seconds and retry the check. If it persists, inspect the service and
 error log rather than resetting data or repeatedly restarting the service.
 
 If `systemctl` reports that the system was not booted with systemd, stop and
-check the actual host environment before proceeding. Windows/WSL2 setup is
-a separate, unrehearsed path; do not assume this Ubuntu walkthrough validates
-its service management or Windows-browser access.
+check the actual host environment before proceeding. Windows contributors
+should follow [the WSL2 guide](WSL2.md), including its systemd and
+Windows-browser checks, before continuing this native recipe.
 
 ## 4. Get the project and create a virtual environment
 

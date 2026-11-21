@@ -6,9 +6,12 @@ it does not require Python, Node.js or MySQL to be installed on your host.
 
 This is the local Phase 5 implementation. The actual VS Code editor walkthrough
 has passed on Apple Silicon macOS, including file saves, tests, forwarded login
-and rebuild persistence. Linux/WSL2 ownership, Intel macOS and hosted Codespaces
-rehearsals remain pending. Those checks are separate from configuration tests
-and local Dev Container CLI validation.
+and rebuild persistence. Actual Dev Container CLI lifecycle checks also passed
+on Apple Silicon Docker Desktop and Linux x86_64, including non-root file writes,
+sample login, tests, reopen/recreate persistence and scoped stop. The Linux run
+verified host/bind ownership at UID 1000, not remapping from another UID.
+Linux/WSL2 VS Code GUI integration and Intel macOS remain unverified.
+Codespaces is deferred to a separate follow-up.
 For the established command-line Docker workflow, use [Core setup](CORE_SETUP.md).
 
 ## Prerequisites
@@ -23,6 +26,10 @@ For the established command-line Docker workflow, use [Core setup](CORE_SETUP.md
 The Compose version can be checked with `docker compose version`. The editor
 override clears inherited host port mappings using Compose's
 [`!reset` merge behavior](https://docs.docker.com/reference/compose-file/merge/#reset-value).
+If startup reports `additional privileges requested` for a generated
+`Dockerfile-with-features`, check the
+[Compose/Buildx compatibility note](TROUBLESHOOTING.md#editor-containers-and-unverified-platforms)
+before changing permissions.
 
 ## Open the environment
 
@@ -39,7 +46,9 @@ This uses the standard VS Code
 The editor opens `/workspace` as the non-root `gcd` user, with Python and
 Pylance extensions and `/usr/local/bin/python` selected. On Linux, the Dev
 Containers integration is configured to align the editor user's UID with the
-local user; actual Linux/WSL2 ownership checks remain part of the release gate.
+local user. The Linux CLI check confirmed writable files owned by the host's
+UID 1000. Non-1000 UID remapping and WSL2 Dev Container editor ownership have
+not yet been verified.
 
 Startup waits for MySQL health and successful migrations. The finite post-create
 hook then runs `seed_development_data` and the environment doctor. Django remains
@@ -123,13 +132,15 @@ The configuration sets `shutdownAction` to `stopCompose`: closing the editor
 connection stops this Compose project while retaining named volumes. Do not use
 volume-deleting cleanup commands as a routine stop or troubleshooting step.
 Reopen/rebuild/close, extension permissions and GUI file saves have been checked
-in the Apple Silicon macOS walkthrough. This does not verify Linux/WSL2 file
-ownership or other untested host platforms.
+in the Apple Silicon macOS walkthrough. The Linux CLI rehearsal separately
+verified UID-1000 file ownership, reopen/recreate persistence and scoped stop;
+it did not exercise VS Code GUI forwarding or WSL2 editor integration.
 
 ## Codespaces and remaining limits
 
-Codespaces implementation and validation remain pending. Do not treat this local
-configuration as a validated hosted setup. A real rehearsal requires approval
+Codespaces is deferred to a separate follow-up and is not supported by this
+local setup. Do not treat the configuration as a validated hosted environment.
+The follow-up must implement and test the hosted path; a real rehearsal requires approval
 for any billable resources and a cleanup plan. It must use sample data only,
 with port `8000` kept **private** and no forwarded database port. GitHub documents
 how [forwarded port visibility works](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace).
@@ -143,7 +154,8 @@ origin trust, or by exposing the sample environment publicly.
 This editor path does not import the authenticated public dump or enable the
 optional search stack. Use the separate Docker workflows in
 [Core setup](CORE_SETUP.md) for those tasks. For Docker-free development, use
-[native macOS](NATIVE_MACOS.md) or [native Ubuntu](NATIVE_UBUNTU.md), then
+[native macOS](NATIVE_MACOS.md), [native Ubuntu](NATIVE_UBUNTU.md), or
+[Windows with WSL2](WSL2.md), then
 [shared native setup](NATIVE_COMMON.md). Those workflows install Python and
 MySQL directly on the host and are separate from this container configuration.
 See [troubleshooting](TROUBLESHOOTING.md) for runtime-specific diagnostics.
