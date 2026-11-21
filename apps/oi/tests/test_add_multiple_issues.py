@@ -275,3 +275,13 @@ def test_volume_continuation_needs_a_whole_number_volume(
     assert ('must have a whole number as volume' in
             str(response.context['form'].non_field_errors()))
     assert _added_numbers(issue.series) == []
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method', ['unknown', 'bulk_edit'])
+def test_unknown_method_shows_an_error_page(
+      adding_client, any_added_series, method):
+    response = adding_client.get(_url(any_added_series, method), follow=True)
+
+    assert response.status_code == 200
+    assert 'Unknown method of adding issues.' in response.content.decode()

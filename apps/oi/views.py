@@ -3031,6 +3031,8 @@ def add_issues(request, series_id, method=None):
         return oi_render(request, 'oi/edit/add_issues.html',
                          {'series': series,
                           'issue_adds': issue_adds})
+    if method not in ('number', 'volume', 'year', 'year_volume'):
+        return render_error(request, 'Unknown method of adding issues.')
 
     form_class = get_bulk_issue_revision_form(series=series, method=method,
                                               user=request.user)

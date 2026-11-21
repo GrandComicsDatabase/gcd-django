@@ -685,11 +685,7 @@ def get_bulk_issue_revision_form(series, method, user=None):
     elif method == 'bulk_edit':
         base = BulkEditIssueRevisionForm
     else:
-        # TODO: render_error and request are not in scope in this module,
-        #       nor were they in the single-file forms module.
-        #       Marking this line noqa for flake8 for now.
-        return render_error(request,                             # noqa
-                            'Unknown method of adding issues.')
+        raise ValueError('Unknown method of adding issues: %s' % method)
 
     year_from, year_to = series.year_range()
 
