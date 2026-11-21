@@ -83,8 +83,11 @@ statistics, and starts the application. The sample records are marked
 
 In the Docker runtime, setup can replace existing data after confirmation.
 Replacement removes the selected project's MySQL, Elasticsearch and Redis
-volumes, not just sample rows. Review the project and preserve local work before
-accepting; do not add `--replace --yes` to bypass a prompt without that review.
+volumes, not just sample rows. When MySQL has no tables, setup skips confirmation
+but still removes the selected project's MySQL, Elasticsearch and Redis volumes.
+Review the project and preserve local work before running setup, even when
+MySQL is empty. If confirmation is requested, do not add `--replace --yes` to
+bypass it without that review.
 Native setup instead seeds in place as described in the shared native guide.
 
 The seeded accounts are deliberately public local-development fixtures. They

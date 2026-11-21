@@ -5,8 +5,9 @@ import base64
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
-from django.core.management import BaseCommand, call_command
+from django.core.management import BaseCommand, CommandError, call_command
 from django.db import transaction
+from django.db.models import Q
 
 from apps.gcd.models import (
     Character,
@@ -46,6 +47,7 @@ from apps.stats.models import CountStats
 
 
 SAMPLE_PREFIX = '[GCD DEV]'
+SAMPLE_USERS = {1: 'admin', 2: 'editor', 3: 'dexter_1234', 4: 'anon'}
 SAMPLE_COMMENT = (
     '[GCD DEV] Seeded sample change history for local development. ✅'
 )
@@ -66,6 +68,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Seed data safely on a new database or refresh it on an existing one."""
         with transaction.atomic():
+            self._validate_sample_accounts()
             call_command('loaddata', 'users', verbosity=options['verbosity'])
             self._seed_catalog()
             self._seed_change_history()
@@ -76,6 +79,19 @@ class Command(BaseCommand):
                 'Development accounts, sample catalog data, and statistics are ready.'
             )
         )
+
+    def _validate_sample_accounts(self):
+        """Refuse conflicting fixture identities before changing accounts."""
+        accounts = User.objects.select_for_update().filter(
+            Q(pk__in=SAMPLE_USERS) | Q(username__in=SAMPLE_USERS.values()),
+        )
+        for account in accounts:
+            if SAMPLE_USERS.get(account.pk) != account.username:
+                raise CommandError(
+                    'Refusing to overwrite existing accounts: sample user IDs '
+                    'or usernames conflict. Use a separate empty development '
+                    'database; no fixture data was changed.'
+                )
 
     def _seed_catalog(self):
         """Create a compact, relationship-rich catalog sample idempotently."""

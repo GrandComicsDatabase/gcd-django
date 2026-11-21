@@ -127,6 +127,13 @@ requires Django's selected database name to be `gcd_dev`, `gcd_django_dev`, or
 `gcd_dev_*` with a lowercase letter/digit/underscore suffix. This name check
 does not establish that a server is local or safe; verify the connection first.
 
+The sample reserves user IDs 1–4 for `admin`, `editor`, `dexter_1234` and `anon`.
+Setup refuses to load its account fixture if one of those IDs belongs to a
+different username, or a sample username belongs to another ID. Existing sample
+identities can be refreshed normally. On a conflict, preserve the database and
+use a separate empty development database; do not delete or rename accounts to
+bypass the guard.
+
 Wait for Django's `Starting development server at http://127.0.0.1:8000/`
 line and a successful health response before opening the site. The earlier
 `GCD is available at ...` message announces the intended address before Django

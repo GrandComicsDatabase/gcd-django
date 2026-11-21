@@ -84,12 +84,10 @@ In the **Ubuntu terminal**, follow [Native Ubuntu 24.04](NATIVE_UBUNTU.md), then
 Python 3.13 and MySQL, clone the repository, create a normal `.venv`, and
 provision a dedicated database and non-root application/test account.
 
-Docker Desktop is not required for this choice. After those prerequisites,
-the single sample-setup command is:
-
-```bash
-PYTHON=.venv/bin/python ./bin/dev --runtime native setup
-```
+Docker Desktop is not required for this choice. Start the application once at
+[step 4 of the shared native guide](NATIVE_COMMON.md#4-start-the-sample-environment).
+If that foreground server is already running, leave it running and continue
+with the verification checks below; do not run setup a second time.
 
 Use the native guide's `.env`, including `MYSQL_PORT=3306` for its local server.
 The launcher's default port 3308 is for a Docker-managed database accessed from

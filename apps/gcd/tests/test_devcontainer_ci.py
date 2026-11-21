@@ -171,6 +171,37 @@ def test_compose_uses_explicit_workspace_files_and_project(smoke, tmp_path):
     ]
 
 
+def test_probe_reads_assertions_from_the_selected_clone(smoke, tmp_path):
+    probe = tmp_path / '.github/scripts/smoke_devcontainer_probe.py'
+    probe.parent.mkdir(parents=True)
+    committed_probe = "print('assertions from the selected committed clone')\n"
+    probe.write_text(committed_probe)
+    (tmp_path / '.devcontainer-smoke-marker').write_text(
+        'non-root Dev Container persistence\n',
+    )
+    calls = []
+    result = {'uid': os.getuid()}
+
+    def run(command, **kwargs):
+        calls.append(command)
+        return 'GCD_DEVCONTAINER_RESULT=' + json.dumps(result)
+
+    smoke.run = run
+    assert smoke.probe(tmp_path, 'verify') == result
+    assert calls == [[
+        *smoke.CLI, 'exec', '--workspace-folder', str(tmp_path),
+        'python', '-c', committed_probe, 'verify',
+    ]]
+
+
+def test_probe_never_falls_back_to_the_invoking_checkout(smoke, tmp_path):
+    smoke.run = lambda *args, **kwargs: pytest.fail(
+        'Missing committed probe must fail before invoking the CLI',
+    )
+    with pytest.raises(FileNotFoundError):
+        smoke.probe(tmp_path, 'verify')
+
+
 @pytest.mark.parametrize('changes', [
     {'com.docker.compose.project': 'another-project'},
     {'com.docker.compose.project.working_dir': '/another-checkout'},

@@ -16,7 +16,6 @@ import tempfile
 
 CLI = ['npx', '--yes', '@devcontainers/cli@0.91.0']
 ROOT = Path(__file__).resolve().parents[2]
-PROBE = Path(__file__).with_name('smoke_devcontainer_probe.py')
 
 
 def clean_environment(environment):
@@ -115,9 +114,10 @@ def identities(workspace, project):
 
 
 def probe(workspace, phase):
+    probe_path = workspace / '.github/scripts/smoke_devcontainer_probe.py'
     output = run([
         *CLI, 'exec', '--workspace-folder', str(workspace),
-        'python', '-c', PROBE.read_text(), phase,
+        'python', '-c', probe_path.read_text(), phase,
     ], timeout=180)
     results = [line.removeprefix('GCD_DEVCONTAINER_RESULT=')
                for line in output.splitlines()

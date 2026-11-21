@@ -94,13 +94,31 @@ def test_wsl2_guide_separates_native_success_from_editor_and_docker_coverage():
     text = ' '.join((ROOT / 'docs/development/WSL2.md').read_text().split())
     assert 'wsl --install -d Ubuntu-24.04' in text
     assert 'wsl --list --verbose' in text
-    assert 'PYTHON=.venv/bin/python ./bin/dev --runtime native setup' in text
+    assert '(NATIVE_COMMON.md#4-start-the-sample-environment)' in text
     assert 'Linux filesystem' in text
     assert 'pinned source archive' in text
     assert 'Docker Desktop' in text and 'not yet been validated' in text
     assert 'systemd' in text and 'localhost' in text
     assert 'Do not disable the firewall' in text
     assert 'wsl --unregister' not in text
+
+
+def test_wsl2_native_route_uses_one_canonical_startup_step():
+    section = (ROOT / 'docs/development/WSL2.md').read_text().split(
+        '## 3A. Native Ubuntu without Docker',
+    )[1].split('## 3B.')[0]
+    assert '(NATIVE_COMMON.md#4-start-the-sample-environment)' in section
+    commands = re.findall(r'^```bash\n(.*?)^```', section, re.M | re.S)
+    assert not any('--runtime native setup' in command for command in commands)
+
+
+def test_docker_setup_warning_explains_unprompted_empty_database_replacement():
+    text = ' '.join(
+        (ROOT / 'docs/development/CORE_SETUP.md').read_text().split(),
+    )
+    assert 'When MySQL has no tables, setup skips confirmation' in text
+    assert 'still removes' in text
+    assert 'MySQL, Elasticsearch and Redis volumes' in text
 
 
 def test_codespaces_is_explicitly_deferred_not_a_supported_setup_choice():
