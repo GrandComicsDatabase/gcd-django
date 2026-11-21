@@ -4178,11 +4178,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_credit.save()
                 else:
                     existing_credit.delete()
-    if revision.issue and (compare_revision.issue.series.language ==
-                           revision.issue.series.language):
-        same_language = True
-    else:
-        same_language = False
+    same_language = compare_revision.language == revision.language
 
     if 'characters' in selected_fields:
         characters = compare_revision.story_character_revisions\
@@ -4261,7 +4257,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_groups = existing_groups.exclude(
                       id=new_group.id)
             else:
-                language = revision.issue.series.language
+                language = revision.language
 
                 translations = group.group_name.group.translations(language)
                 if translations.count() == 0 and \
