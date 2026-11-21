@@ -11,7 +11,7 @@ from stdnum import isbn as stdisbn
 from random import randint
 
 from django.db.models import Q, Count, Min, Case, When, Value, F, Exists, \
-                             OuterRef
+                             OuterRef, CharField, TextField, Lookup
 from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
@@ -72,6 +72,24 @@ from functools import reduce
 
 class SearchError(Exception):
     pass
+
+
+@CharField.register_lookup
+@TextField.register_lookup
+class CaseSensitiveExact(Lookup):
+    """
+    Exact match that respects case and accents.
+
+    The collation of the database makes 'exact' ignore both, so the
+    value is compared as bytes, as 'LIKE BINARY' does for 'contains'.
+    """
+    lookup_name = 'case_sensitive_exact'
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        return ('%s = CAST(%s AS BINARY)' % (lhs, rhs),
+                (*lhs_params, *rhs_params))
 
 
 def generic_by_name(request, name, q_obj, sort,
@@ -1374,6 +1392,8 @@ def do_advanced_search(request):
 
     data = form.cleaned_data
     op = str(data['method'] or 'iregex')
+    if op == 'exact':
+        op = CaseSensitiveExact.lookup_name
 
     try:
         stq_obj, linked_credits_q_objs, other_stq_obj = search_stories(data,

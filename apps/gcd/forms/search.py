@@ -83,12 +83,13 @@ class AdvancedSearch(forms.Form):
                                initial='sequence',
                                label='Search For')
 
-    method_help = "All methods case-insensitive."
+    method_help = ("Only the methods marked case sensitive tell upper and "
+                   "lower case apart.")
     method = forms.ChoiceField(choices=[
                                ['iexact', 'Matches Exactly'],
                                ['istartswith', 'Starts With'],
                                ['icontains', 'Contains'],
-                              #  ['exact', 'Matches Exactly (case sensitive)'],
+                               ['exact', 'Matches Exactly (case sensitive)'],
                                ['startswith', 'Starts With (case sensitive)'],
                                ['contains', 'Contains (case sensitive)'],
                                ],
