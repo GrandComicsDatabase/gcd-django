@@ -2,7 +2,7 @@
 
 import base64
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group as AuthGroup, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.core.management import BaseCommand, CommandError, call_command
@@ -50,6 +50,24 @@ from apps.stats.models import CountStats
 
 SAMPLE_PREFIX = '[GCD DEV]'
 SAMPLE_USERS = {1: 'admin', 2: 'editor', 3: 'dexter_1234', 4: 'anon'}
+SAMPLE_GROUPS = {
+    1: 'editor', 2: 'indexer', 3: 'admin', 4: 'member', 5: 'board',
+}
+SAMPLE_MEMBERSHIPS = {
+    1: (1, 3), 2: (2, 2), 3: (2, 1),
+    4: (2, 4), 5: (3, 2), 6: (4, 2),
+}
+SAMPLE_GROUP_PERMISSIONS = {
+    1: (2, ('can_reserve', 'indexer', 'indexer')),
+    2: (2, ('can_upload_cover', 'indexer', 'indexer')),
+    3: (2, ('can_upload_cover', 'gcd', 'cover')),
+    4: (1, ('can_approve', 'indexer', 'indexer')),
+    5: (1, ('can_mentor', 'indexer', 'indexer')),
+    6: (4, ('can_vote', 'indexer', 'indexer')),
+    7: (5, ('on_board', 'indexer', 'indexer')),
+    8: (3, ('change_user', 'auth', 'user')),
+    9: (3, ('change_indexer', 'indexer', 'indexer')),
+}
 SAMPLE_PROFILE_OWNERS = {user_id: user_id for user_id in SAMPLE_USERS}
 SAMPLE_COLLECTION_OWNERS = {
     collection_id: user_id
@@ -83,6 +101,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             self._validate_sample_accounts()
             self._validate_sample_related_rows()
+            self._validate_sample_groups()
             call_command('loaddata', 'users', verbosity=options['verbosity'])
             self._seed_catalog()
             self._seed_change_history()
@@ -126,6 +145,50 @@ class Command(BaseCommand):
                         'Use a separate empty development database; '
                         'no fixture data was changed.'
                     )
+
+    def _validate_sample_groups(self):
+        """Check group identities and both fixed-ID association tables."""
+        groups = AuthGroup.objects.select_for_update().filter(
+            Q(pk__in=SAMPLE_GROUPS) | Q(name__in=SAMPLE_GROUPS.values()),
+        )
+        for group in groups:
+            if SAMPLE_GROUPS.get(group.pk) != group.name:
+                raise CommandError(
+                    'Refusing to overwrite existing groups: sample group IDs '
+                    'or names conflict. Use a separate empty development '
+                    'database; no fixture data was changed.'
+                )
+
+        self._validate_sample_associations(
+            User.groups.through, ('user_id', 'group_id'), SAMPLE_MEMBERSHIPS,
+        )
+        # Permission IDs vary between databases; resolve fixture natural keys.
+        permissions = {
+            pk: (group_id,
+                 Permission.objects.get_by_natural_key(*permission_key).pk)
+            for pk, (group_id, permission_key)
+            in SAMPLE_GROUP_PERMISSIONS.items()
+        }
+        self._validate_sample_associations(
+            AuthGroup.permissions.through, ('group_id', 'permission_id'),
+            permissions,
+        )
+
+    def _validate_sample_associations(self, model, fields, expected):
+        """Reject reassigned rows and conflicting pairs before loading."""
+        candidates = Q(pk__in=expected)
+        for values in expected.values():
+            candidates |= Q(**dict(zip(fields, values)))
+        rows = model.objects.select_for_update().filter(candidates)
+        for pk, *values in rows.values_list('pk', *fields):
+            if expected.get(pk) != tuple(values):
+                raise CommandError(
+                    'Refusing to overwrite existing group associations: '
+                    'reserved sample relationships conflict in '
+                    f'{model._meta.label}. '
+                    'Use a separate empty development database; '
+                    'no fixture data was changed.'
+                )
 
     def _seed_catalog(self):
         """Create a compact, relationship-rich catalog sample idempotently."""

@@ -134,10 +134,16 @@ identities can be refreshed normally. The fixture also reserves profile and
 collector IDs 1–4 and collection IDs 1–4 and 101–104. Setup refuses to reassign
 those rows to different owners, even if the existing user's ID is not reserved.
 It also refuses a sample user's profile or collector at a different ID, instead
-of creating a conflicting one-to-one record. Unrelated collections outside the
-reserved IDs are retained. On a conflict, preserve the database and
-use a separate empty development database; do not delete or rename accounts to
-bypass the guard.
+of creating a conflicting one-to-one record. The fixture reserves group IDs
+1–5 for `editor`, `indexer`, `admin`, `member` and `board`, membership row IDs
+1–6, and group-permission row IDs 1–9. Setup checks group IDs/names and both
+association endpoints before loading. It refuses mismatched rows or a sample
+group name or association pair at a different ID. Permission identities are
+matched by codename, app and model, not database-specific numeric IDs.
+Unrelated collections, groups and associations outside these reservations are
+retained. On a conflict, preserve the database and use a separate empty
+development database; do not delete or rename accounts, groups or associations
+to bypass the guard.
 
 Wait for Django's `Starting development server at http://127.0.0.1:8000/`
 line and a successful health response before opening the site. The earlier
