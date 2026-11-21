@@ -543,6 +543,7 @@ def test_forms_as_rendered(client, settings, reserving_indexer,
 @pytest.mark.django_db
 @pytest.mark.parametrize('name, params, stored', [
     ('price', {'operation': 'set', 'new_value': ' 0.12 USD '}, '0.12 USD'),
+    ('price', {'operation': 'set', 'new_value': '0.12 USD; '}, '0.12 USD'),
     ('key_date', {'operation': 'replace_exact', 'old_value': '=1947-01-00',
                   'new_value': '1947.02.00'}, '1947-02-00'),
 ])
@@ -550,8 +551,9 @@ def test_preview_shows_the_value_as_stored(started, approved_issues, name,
                                            params, stored):
     """
     The new value is cleaned as in the edit form, which drops the outer
-    spaces and writes a key date with dashes, and shown so.  A key date
-    is only replaced, so the three issues first get the same one.
+    spaces and a ';' at the end of a price and writes a key date with
+    dashes, and shown so.  A key date is only replaced, so the three
+    issues first get the same one.
     """
     Issue.objects.filter(id__in=[issue.id for issue in approved_issues]) \
                  .update(key_date='1947-01-00')
