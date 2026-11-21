@@ -1,5 +1,6 @@
 """Contracts for the real, checkout-isolated Dev Container CLI rehearsal."""
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -48,6 +49,7 @@ def test_cli_workflow_runs_actual_lifecycle_and_scoped_cleanup():
 def test_environment_does_not_import_a_personal_database_or_project(smoke):
     environment = smoke.clean_environment({
         'PATH': '/tools', 'HOME': '/user', 'DOCKER_CONTEXT': 'chosen',
+        'DOCKER_CONFIG': '/isolated/docker-config',
         'COMPOSE_PROJECT_NAME': 'preserve', 'COMPOSE_FILE': '/preserve.yml',
         'MYSQL_PASSWORD': 'private', 'MYSQL_HOST': 'production',
         'GCD_WEB_PORT': '8001', 'DEV_UID': '0', 'USE_ELASTICSEARCH': 'true',
@@ -55,7 +57,98 @@ def test_environment_does_not_import_a_personal_database_or_project(smoke):
     })
     assert environment == {
         'PATH': '/tools', 'HOME': '/user', 'DOCKER_CONTEXT': 'chosen',
+        'DOCKER_CONFIG': '/isolated/docker-config',
     }
+
+
+def test_ci_pins_verified_compose_only_for_the_editor_job():
+    jobs = yaml.safe_load(
+        (ROOT / '.github/workflows/dev-environment-ci.yml').read_text(),
+    )['jobs']
+    job = jobs['devcontainer-smoke']
+    assert job['env']['DOCKER_CONFIG'] == (
+        '${{ runner.temp }}/gcd-devcontainer-docker'
+    )
+    steps = job['steps']
+    install = next(step for step in steps
+                   if step['name'] == 'Install the tested Compose plugin')
+    assert install['env'] == {
+        'COMPOSE_VERSION': 'v5.7.1',
+        'COMPOSE_SHA256': (
+            'af426722a8af5de812fcee30cc1c39f0639f5f723cbadefb25e5d4db054064cf'
+        ),
+    }
+    assert steps.index(install) < next(
+        index for index, step in enumerate(steps)
+        if step['name'] == 'Rehearse an isolated Dev Container clone'
+    )
+    assert not any('DOCKER_CONFIG' in other.get('env', {})
+                   for name, other in jobs.items()
+                   if name != 'devcontainer-smoke')
+    assert 'BUILDX_BAKE_ENTITLEMENTS_FS' not in install['run']
+
+
+@pytest.mark.parametrize('valid_checksum', [True, False])
+def test_compose_install_checks_checksum_before_running_plugin(
+        tmp_path, valid_checksum):
+    """Run the workflow shell with local download/Docker stand-ins only."""
+    job = yaml.safe_load(
+        (ROOT / '.github/workflows/dev-environment-ci.yml').read_text(),
+    )['jobs']['devcontainer-smoke']
+    install = next(step for step in job['steps']
+                   if step['name'] == 'Install the tested Compose plugin')
+    binaries = tmp_path / 'bin'
+    binaries.mkdir()
+    payload = tmp_path / 'downloaded-compose'
+    payload.write_text("#!/bin/sh\nprintf '5.7.1\\n'\n")
+    calls = tmp_path / 'docker-calls'
+    for name, script in {
+        'curl': '''
+from pathlib import Path
+import os
+import sys
+assert ('https://github.com/docker/compose/releases/download/v5.7.1/'
+        'docker-compose-linux-x86_64') in sys.argv
+destination = sys.argv[sys.argv.index('--output') + 1]
+Path(destination).write_bytes(Path(os.environ['COMPOSE_TEST_PAYLOAD']).read_bytes())
+''',
+        'docker': '''
+from pathlib import Path
+import os
+import subprocess
+import sys
+with open(os.environ['COMPOSE_TEST_CALLS'], 'a') as output:
+    output.write(' '.join(sys.argv[1:]) + '\\n')
+if sys.argv[1] == 'compose':
+    plugin = Path(os.environ['DOCKER_CONFIG']) / 'cli-plugins/docker-compose'
+    raise SystemExit(subprocess.call([str(plugin), *sys.argv[2:]]))
+assert sys.argv[1:] == ['buildx', 'version']
+''',
+    }.items():
+        executable = binaries / name
+        executable.write_text(f'#!{sys.executable}\n' + script)
+        executable.chmod(0o755)
+    environment = {
+        'PATH': f'{binaries}:{os.environ["PATH"]}',
+        'DOCKER_CONFIG': str(tmp_path / 'isolated config'),
+        **install['env'],
+        'COMPOSE_SHA256': (hashlib.sha256(payload.read_bytes()).hexdigest()
+                           if valid_checksum else '0' * 64),
+        'COMPOSE_TEST_PAYLOAD': str(payload),
+        'COMPOSE_TEST_CALLS': str(calls),
+    }
+    result = subprocess.run(
+        ['bash', '-euo', 'pipefail', '-c', install['run']],
+        env=environment, text=True, capture_output=True, check=False,
+    )
+    if valid_checksum:
+        assert result.returncode == 0, result.stderr
+        assert calls.read_text().splitlines() == [
+            'compose version --short', 'buildx version',
+        ]
+    else:
+        assert result.returncode != 0
+        assert not calls.exists(), 'Unverified plugin was executed'
 
 
 def test_compose_uses_explicit_workspace_files_and_project(smoke, tmp_path):
