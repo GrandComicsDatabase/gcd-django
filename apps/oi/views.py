@@ -5,7 +5,10 @@ import re
 from uuid import UUID, uuid4
 import sys
 import glob
+import hashlib
+from collections import namedtuple
 from copy import copy
+from datetime import date
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
@@ -31,6 +34,9 @@ from django.contrib.contenttypes.models import ContentType
 
 from django_filters import FilterSet, MultipleChoiceFilter
 
+from apps.oi.forms.issue import MAX_DATE_ROWS
+from apps.stddata import gcddates
+from apps.stddata.frequency import DAYS, WEEKS, occurrences
 from apps.stddata.models import Country
 
 from apps.indexer.views import ViewTerminationError, render_error
@@ -103,6 +109,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            get_revision_form,
                            get_series_revision_form,
                            IssueRevisionFormSet,
+                           IssueDateRowFormSet,
                            ExternalLinkRevisionFormSet,
                            PublisherCodeNumberFormSet,
                            get_story_revision_form,
@@ -3055,9 +3062,16 @@ def add_issues(request, series_id, method=None):
         return _display_bulk_issue_form(request, series, form,
                                         credits_formset, method)
 
+    dated = bool(form.cleaned_data.get('first_date'))
+    if 'preview' in request.POST and not dated:
+        form.add_error('first_date',
+                       'Enter the first date to preview the dates.')
+        return _display_bulk_issue_form(request, series, form,
+                                        credits_formset, method)
+
+    # Saved only once the issues are sure to be added.
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_add'])
-    changeset.save()
     if method == 'number':
         new_issues = _build_whole_numbered_issues(series, form, changeset)
     elif method == 'volume':
@@ -3069,6 +3083,15 @@ def add_issues(request, series_id, method=None):
     else:
         return render_error(
           request, 'Unknown method for generating issues: %s' % method)
+
+    if dated:
+        dates, page = _issue_dates(request, series, form, credits_formset,
+                                   method, new_issues)
+        if page is not None:
+            return page
+        for revision, issue_dates in zip(new_issues, dates):
+            revision.publication_date, revision.key_date = issue_dates
+    changeset.save()
 
     # "after" for the rest of the issues gets set when they are all
     # committed to display.
@@ -3224,8 +3247,143 @@ def _build_issue(form, revision_sort_code, number,
       revision_sort_code=revision_sort_code)
 
 
+# The posted fields that decide the numbers and the dates of the list.
+DATES_BASIS_FIELDS = ['after', 'number_of_issues', 'first_number',
+                      'first_volume', 'issues_per_volume', 'first_year',
+                      'issues_per_year', 'issues_per_cycle', 'volume',
+                      'no_volume', 'display_volume_with_number',
+                      'first_date', 'date_interval', 'date_unit',
+                      'date_weekdays', 'date_pattern', 'date_month_names']
+
+# A row of the list of the dates: the day, whether it is ticked "No
+# issue", and the two dates of its issue.
+DateRow = namedtuple('DateRow', 'day skip publication_date key_date')
+
+
+def _dates_basis(form):
+    """
+    Return a fingerprint of the posted fields the list is made from.
+
+    It tells whether a posted list still belongs to the form above it.
+    It is a check, not a secret.
+    """
+    values = [(name, form.data.getlist(form.add_prefix(name)))
+              for name in DATES_BASIS_FIELDS]
+    return hashlib.sha1(repr(values).encode(),
+                        usedforsecurity=False).hexdigest()
+
+
+def _issue_date_rows(cd, count, skipped, typed):
+    """
+    Return the rows of the list of the dates, or None if they do not fit.
+
+    Every day of the rule in cd is a row: ticked "No issue" when it is in
+    skipped, else the day of the next of the count issues, until each
+    issue has a day. The dates of a row are those in typed for its day,
+    else they are written from the day. None when the days end (2099) or
+    the rows would be more than MAX_DATE_ROWS.
+    """
+    pattern = cd['date_pattern']
+    precision = gcddates.pattern_precision(pattern)
+    rows = []
+    issues = 0
+    for day in occurrences(cd['first_date'], cd['date_unit'],
+                           cd['date_interval'], cd['date_weekdays']):
+        if issues == count:
+            break
+        if len(rows) == MAX_DATE_ROWS:
+            return None
+        texts = typed.get(day) or (
+          gcddates.publication_date(day, pattern, cd['date_month_names']),
+          gcddates.key_date(day, precision))
+        rows.append(DateRow(day, day in skipped, *texts))
+        if day not in skipped:
+            issues += 1
+    if issues < count:
+        return None
+    return rows
+
+
+def _posted_day(row):
+    """Return the day of a posted row, or None if it is not a date."""
+    try:
+        return date.fromisoformat(row['day'].value() or '')
+    except ValueError:
+        return None
+
+
+def _issue_dates(request, series, form, credits_formset, method,
+                 new_issues):
+    """
+    Return the dates of the new issues and None, or None and a page.
+
+    The dates, a publication date and a key date for each issue, come
+    only from a list that was on the screen: one posted with Submit, and
+    made from the form as it is now, row by row. Otherwise the page with
+    the list is returned, and nothing is saved.
+    """
+    cd = form.cleaned_data
+    basis = _dates_basis(form)
+    posted = None
+    marks = []
+    if 'dates-TOTAL_FORMS' in request.POST and \
+       request.POST.get('dates_basis') == basis:
+        posted = IssueDateRowFormSet(request.POST, prefix='dates')
+        marks = [(_posted_day(row), bool(row['skip'].value()))
+                 for row in posted]
+    same = bool(marks) and None not in [day for day, skip in marks]
+    skipped, typed = set(), {}
+    if same:
+        for row, (day, skip) in zip(posted, marks):
+            if skip:
+                skipped.add(day)
+            typed[day] = (row['publication_date'].value() or '',
+                          row['key_date'].value() or '')
+    rows = _issue_date_rows(cd, len(new_issues), skipped, typed)
+    if rows is None:
+        form.add_error('first_date', 'The dates do not fit: they go past '
+                       'the year 2099 or too many dates are left out.')
+        return None, _display_bulk_issue_form(request, series, form,
+                                              credits_formset, method)
+
+    unchanged = same and marks == [(row.day, row.skip) for row in rows]
+    if 'preview' not in request.POST and unchanged:
+        if posted.is_valid():
+            return [(row.cleaned_data['publication_date'],
+                     row.cleaned_data['key_date'])
+                    for row in posted if not row.cleaned_data['skip']], None
+        dates_formset = posted
+    else:
+        dates_formset = IssueDateRowFormSet(prefix='dates', initial=[
+          {'day': row.day.isoformat(), 'skip': row.skip,
+           'publication_date': row.publication_date,
+           'key_date': row.key_date} for row in rows])
+    revisions = iter(new_issues)
+    issue_days = [row.day for row in rows if not row.skip]
+    # Days or weeks written without their day: the issues of a month get
+    # the same texts, which the list points out.
+    no_day = (cd['date_unit'] in (DAYS, WEEKS) and
+              gcddates.pattern_precision(cd['date_pattern']) != gcddates.DAY)
+    return None, _display_bulk_issue_form(
+      request, series, form, credits_formset, method, dates={
+        'dates_formset': dates_formset,
+        'dates_rows': [(row_form, row.day,
+                        None if row.skip else next(revisions))
+                       for row_form, row in zip(dates_formset, rows)],
+        'dates_basis': basis,
+        'dates_summary': {'count': len(issue_days),
+                          'first': issue_days[0], 'last': issue_days[-1],
+                          'no_day': no_day},
+      })
+
+
 def _display_bulk_issue_form(request, series, form, credits_formset,
-                             method=None):
+                             method=None, dates=None):
+    """
+    Show the form to add several issues.
+
+    dates is the context of the list of their dates, when there is one.
+    """
     kwargs = {
         'series_id': series.id,
     }
@@ -3234,17 +3392,22 @@ def _display_bulk_issue_form(request, series, form, credits_formset,
         kwargs['method'] = method
         url_name = 'add_multiple_issues'
     url = urlresolvers.reverse(url_name, kwargs=kwargs)
+    if dates:
+        # The answer to a post from the list opens at the list.
+        url += '#dates-preview'
     extra_adding_info = 'to %s' % series
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
+    context = {
         'object_name': 'Issues',
         'object_url': url,
         'extra_adding_info': extra_adding_info,
         'action_label': 'Submit new',
         'form': form,
         'credits_formset': credits_formset,
-      })
+        'alternative_action': 'preview',
+        'alternative_label': 'Preview Dates',
+      }
+    context.update(dates or {})
+    return oi_render(request, 'oi/edit/add_frame.html', context)
 
 
 @permission_required('indexer.can_reserve')
@@ -7109,10 +7272,13 @@ def compare(request, id):
         if changeset.imagerevisions.exists():
             return image_compare(request, changeset,
                                  changeset.imagerevisions.get(), revision)
+    dated_issues = False
     if changeset.change_type == CTYPES['issue_add'] \
        and not (changeset.issuerevisions.count() == 1 and
                 changeset.issuerevisions.get().variant_of is not None):
         template = 'oi/edit/compare_issue_skeletons.html'
+        dated_issues = changeset.issuerevisions.exclude(
+          publication_date='', key_date='').exists()
     elif changeset.change_type == CTYPES['issue_bulk']:
         template = 'oi/edit/compare_bulk_issue.html'
     else:
@@ -7209,6 +7375,7 @@ def compare(request, id):
                           'sourced_fields': sourced_fields,
                           'group_sourced_fields': group_sourced_fields,
                           'moved_issues': moved_issues,
+                          'dated_issues': dated_issues,
                           'source_fields': ['source_description',
                                             'source_type'],
                           'CTYPES': CTYPES},
