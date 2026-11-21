@@ -8,10 +8,13 @@ import pytest
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 
+from apps.gcd.models import CreditType
+from apps.gcd.models.creator import Creator, CreatorNameDetail
+from apps.gcd.models.story import CREDIT_TYPES
 from apps.oi import states
 from apps.oi.forms import get_bulk_issue_revision_form, IssueDateRowForm
 from apps.oi.models import CTYPES, Changeset, IssueRevision
-from apps.stddata.models import Language
+from apps.stddata.models import Date, Language, Script
 
 METHODS = ['number', 'volume', 'year', 'year_volume']
 
@@ -870,3 +873,82 @@ def test_compare_page_of_an_add_without_dates(
     assert '<th> Display Number </th>\n  <th> Preview </th>' in content
     assert ('Keep in mind\nthat publication date, key date and notes will '
             'always be blank.\n</p>') in content
+
+
+# What the credits row of the add form shows when it is checked with
+# nothing in it: no creator, no credit description, and the credit type
+# taken away by its form.
+EMPTY_CREDIT_ERRORS = ['This field is required.',
+                       'This field cannot be null.']
+CREDIT_ROW = 'issue_credit_revisions-0-'
+
+
+@pytest.fixture
+def editing_credit_type():
+    """The credit type of the credits of an issue: the only choice of the
+    list of the credits row, which a browser posts."""
+    return CreditType.objects.get_or_create(
+      id=CREDIT_TYPES['editing'],
+      defaults={'name': 'editing', 'sort_code': CREDIT_TYPES['editing']})[0]
+
+
+def _creator_name(name):
+    """Return a creator name to credit, of a creator of its own."""
+    return CreatorNameDetail.objects.create(
+      name=name, in_script=Script.objects.get_or_create(
+        id=Script.LATIN_PK,
+        defaults={'code': 'Latn', 'number': Script.LATIN_PK,
+                  'name': 'Latin'})[0],
+      creator=Creator.objects.create(
+        gcd_official_name=name, sort_name=name,
+        birth_date=Date.objects.create()))
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('button, dated, shown', [
+  ('preview', True, '12 issues, from 1990-01-15 to 1990-12-15.'),
+  ('add', True, '12 issues, from 1990-01-15 to 1990-12-15.'),
+  ('preview', False, 'Enter the first date to preview the dates.')])
+def test_untouched_credits_row_shows_no_errors(
+      adding_client, any_added_series, add_values, editing_credit_type,
+      button, dated, shown):
+    """The page shown again by the dates has no error on the credits row
+    the person left untouched, though its credit type is posted."""
+    action = _url(any_added_series)
+    page = adding_client.get(action)
+    assert _rendered(page, action)[CREDIT_ROW + 'credit_type'] == \
+        [str(editing_credit_type.id)]
+
+    response = _post(adding_client, page, action,
+                     _dated(add_values) if dated else add_values,
+                     button=button)
+
+    assert response.status_code == 200
+    assert shown in _words(response)
+    for error in EMPTY_CREDIT_ERRORS:
+        assert error not in response.content.decode()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('credit, field, error', [
+  ({}, 'credit_name', 'This field is required.'),
+  ({'credit_name': 'associate editor', 'credited_as': 'Some Name'},
+   '__all__',
+   'Is credited needs to be selected when entering a name as credited.')])
+def test_filled_credit_is_checked_when_the_issues_are_submitted(
+      adding_client, any_added_series, add_values, editing_credit_type,
+      credit, field, error):
+    """A credit filled in on the page of the list is checked when the
+    issues are submitted: its error is shown and nothing is saved."""
+    action = _url(any_added_series)
+    page = _list(adding_client, any_added_series, add_values)
+    before = _counts()
+    credit = dict(credit, creator=str(_creator_name('Some Editor').id))
+
+    response = _post(adding_client, page, action, {
+      CREDIT_ROW + name: value for name, value in credit.items()})
+
+    assert response.status_code == 200
+    assert response.context['credits_formset'][0].errors[field] == [error]
+    assert error in response.content.decode()
+    assert _counts() == before
