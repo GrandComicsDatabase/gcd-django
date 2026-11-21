@@ -5907,6 +5907,10 @@ def move_issue(request, issue_revision_id, series_id):
     if request.user != issue_revision.changeset.indexer:
         return render_error(
           request, 'Only the reservation holder may move issues.')
+    if issue_revision.issue is None:
+        return render_error(
+          request, 'A new issue cannot be moved before it is approved.',
+          redirect=False)
 
     if series_id == 0:
         if 'series_id' in request.GET:

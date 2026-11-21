@@ -154,3 +154,62 @@ def test_compare_warns_about_second_issue_of_two_issues(
     content = _compare(client, changeset)
     assert BARCODE_WARNING in content
     assert _moved_header('#1', any_added_series, target) in content
+
+
+NOT_APPROVED = 'A new issue cannot be moved before it is approved.'
+
+
+@pytest.fixture
+def new_variant(client, logged_in_indexer, any_added_issue):
+    """The revision of a new variant, added to the change of its issue."""
+    response = client.post(reverse(
+      'reserve_revision', kwargs={'model_name': 'issue',
+                                  'id': any_added_issue.id}))
+    assert response.status_code == 302
+    changeset = Changeset.objects.get(state=states.OPEN,
+                                      change_type=CTYPES['issue'])
+    revision = IssueRevision.objects.create(
+      changeset=changeset, series=any_added_issue.series,
+      variant_of=any_added_issue, variant_name='Shiny',
+      number=any_added_issue.number,
+      indicia_publisher=any_added_issue.indicia_publisher,
+      no_title=True, no_volume=True, no_isbn=True, no_rating=True,
+      no_brand=True, no_indicia_frequency=True,
+      publication_date='February 1947', key_date='1947-02-00', page_count=32)
+    changeset.change_type = CTYPES['variant_add']
+    changeset.save()
+    return revision
+
+
+def _move_url(revision, series_id):
+    """Return the address which moves the issue of the revision."""
+    return reverse('move_issue', kwargs={'issue_revision_id': revision.id,
+                                         'series_id': series_id})
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method', ('get', 'post'))
+def test_move_issue_refuses_an_issue_not_approved_yet(
+        client, new_variant, any_added_series, method):
+    """A new variant has no issue to move: it is refused, with no error."""
+    response = getattr(client, method)(
+      _move_url(new_variant, any_added_series.id))
+
+    assert NOT_APPROVED in response.content.decode()
+    revision = IssueRevision.objects.get(id=new_variant.id)
+    assert revision.series == new_variant.series
+
+
+@pytest.mark.django_db
+def test_edit_page_offers_the_move_for_approved_issues_only(
+        client, new_variant):
+    """The move form is shown for the base issue, not for its new variant."""
+    changeset = new_variant.changeset
+    base = changeset.issuerevisions.get(issue__isnull=False)
+
+    response = client.get(reverse('edit', kwargs={'id': changeset.id}))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert _move_url(base, 0) in content
+    assert _move_url(new_variant, 0) not in content
