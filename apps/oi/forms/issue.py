@@ -418,7 +418,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 # can add after one of the variants
                 if 'after' in self.fields:
                     self.fields['after'].queryset = (
-                        variant_of.variant_set.filter(deleted=False) |
+                        variant_of.active_variants() |
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
 
@@ -456,7 +456,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
     # the other issuerevision from 'variant_add' was taken care of above
     if (revision.changeset.change_type == CTYPES['variant_add']) or \
-            revision.issue.variant_set.count():
+            revision.issue.active_variants().exists() or revision.variant_name:
         class RuntimeBaseIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
@@ -990,13 +990,13 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
                     'have a whole number for the issue number (even if it '
                     'displays like "v1#1")')
 
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, the '
                     'issue after which you are inserting the new issues '
-                    'must have a volume.')
-
-            cd['first_volume'] = cd['after'].volume
+                    'must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 
@@ -1123,12 +1123,13 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         if cd['first_number'] is None and cd['after'] is not None:
             cd = self._parse_year_and_number(cd, cd['issues_per_cycle'])
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, '
                     'the issue after which you are inserting '
-                    'the new issues must have a volume.')
-            cd['first_volume'] = cd['after'].volume
+                    'the new issues must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 

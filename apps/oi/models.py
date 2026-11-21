@@ -199,7 +199,7 @@ def set_series_first_last(series):
     else:
         series.first_issue = issues[0]
         series.last_issue = issues[len(issues) - 1]
-    series.save()
+    series.save(update_fields=['first_issue', 'last_issue', 'modified'])
 
 
 def validated_isbn(entered_isbn):
@@ -1889,28 +1889,47 @@ class Revision(models.Model):
                 if multi:
                     for v in old_value:
                         v.update_cached_counts(old_counts, negate=True)
-                        v.save()
+                        self._save_counts(v)
                 else:
                     old_value.update_cached_counts(old_counts, negate=True)
-                    old_value.save()
+                    self._save_counts(old_value)
             if new_value:
                 if multi:
                     for v in new_value:
                         v.update_cached_counts(new_counts)
-                        v.save()
+                        self._save_counts(v)
                 else:
                     new_value.update_cached_counts(new_counts)
-                    new_value.save()
+                    self._save_counts(new_value)
 
         elif old_counts != new_counts:
             # Doesn't matter whether we use old or new as they are the same.
             if multi:
                 for v in new_value:
                     v.update_cached_counts(deltas)
-                    v.save()
+                    self._save_counts(v)
             elif new_value:
                 new_value.update_cached_counts(deltas)
-                new_value.save()
+                self._save_counts(new_value)
+
+    @staticmethod
+    def _save_counts(parent):
+        """
+        Saves only the counts that update_cached_counts() set on parent,
+        and the time of the change.
+
+        The parent was read at the start of the commit, so saving all of
+        its row would put back older values that another request may
+        have committed in the meantime.
+        """
+        # update_cached_counts() sets each count that it changes to an F()
+        # expression, such as F('issue_count') + 1, and touches no other
+        # field: the others keep the plain values read from the database.
+        # So the fields that hold an expression are the counts to write.
+        counts = [field.name for field in parent._meta.concrete_fields
+                  if hasattr(getattr(parent, field.attname),
+                             'resolve_expression')]
+        parent.save(update_fields=counts + ['modified'])
 
     # #####################################################################
     # Methods for processing the indexer edits, in particular involving
@@ -3315,7 +3334,7 @@ class CoverRevision(Revision):
             if cover.issue.series.scan_count == 0:
                 series = cover.issue.series
                 series.has_gallery = False
-                series.save()
+                series.save(update_fields=['has_gallery', 'modified'])
             return
 
         if self.cover and self.is_replacement is False:
@@ -3340,10 +3359,12 @@ class CoverRevision(Revision):
                                      country=issue_rev.series.country)
                     if not issue_rev.series.has_gallery:
                         issue_rev.series.has_gallery = True
-                        issue_rev.series.save()
+                        issue_rev.series.save(
+                            update_fields=['has_gallery', 'modified'])
                     if old_issue.series.scan_count == 0:
                         old_issue.series.has_gallery = False
-                        old_issue.series.save()
+                        old_issue.series.save(
+                            update_fields=['has_gallery', 'modified'])
             else:
                 # implement in case we do different kind if cover moves
                 raise NotImplementedError
@@ -3358,7 +3379,7 @@ class CoverRevision(Revision):
                 if not cover.issue.series.has_gallery:
                     series = cover.issue.series
                     series.has_gallery = True
-                    series.save()
+                    series.save(update_fields=['has_gallery', 'modified'])
             copy_approved_cover(self)
             cover.marked = self.marked
             cover.last_upload = self.changeset.comments \
@@ -4335,7 +4356,7 @@ class IssueRevision(Revision):
 
         for later_issue in later_issues:
             later_issue.sort_code += num_issues
-            later_issue.save()
+            later_issue.save(update_fields=['sort_code', 'modified'])
 
     def _handle_prerequisites(self, changes):
         if self.edited and not self.series_changed:
@@ -4606,6 +4627,8 @@ class IssueRevision(Revision):
             old_credits = ''
             for credit in credits:
                 credit = credit.strip()
+                if not credit:
+                    continue
                 save_credit = credit
                 credit = credit.replace('  ', ' ')
                 if credit.strip()[-1] == '?':
@@ -5186,6 +5209,8 @@ class PreviewIssue(Issue):
         if self.can_have_cover():
             if self.id != 0:
                 return self._active_covers()
+            elif self.variant_of and self.variant_cover_status == 1:
+                return self.variant_of.active_covers()
         return Cover.objects.none()
 
     @property
@@ -5243,10 +5268,12 @@ class PreviewIssue(Issue):
             if (len(stories) > 0) and stories[0].type_id == 6:
                 cover_story = stories.pop(0)
                 if self.variant_of:
-                    # can have only one sequence, the variant cover
-                    own_stories = self.active_stories()
-                    if own_stories:
-                        cover_story = own_stories[0]
+                    if self.variant_cover_status == 3:
+                        cover_story = None
+                        # can have only one sequence, the variant cover
+                        own_stories = self.active_stories()
+                        if own_stories:
+                            cover_story = own_stories[0]
             elif self.variant_of and len(self.active_stories()):
                 cover_story = self.active_stories()[0]
 
@@ -5474,21 +5501,22 @@ class StoryCharacterRevision(Revision):
         self.story_revision = kwargs['story_revision']
 
     @classmethod
-    def copied_translation(cls, character, story_revision):
+    def copied_translation(cls, character, story_revision, kept=frozenset()):
         """
         Given an existing character appearance, create a new revision based
         on it for a new character appearance with the copied character and data
-        but a different translation.
+        but a different translation. A translation in kept, a set of pairs
+        of character id and universe id, gets no revision.
         """
-        issue = story_revision.issue or story_revision.my_issue_revision
-        language = issue.series.language
+        language = story_revision.language
         translations = character.character.character.translations(
             language)
         if translations.count() == 0 and \
            character.character.character.translated_from():
             translations = character.character.character.translated_from()\
                                               .translations(language)
-        if translations.count() == 1:
+        if translations.count() == 1 and \
+           (translations.get().id, character.universe_id) not in kept:
             character.character = translations.get()\
                                               .official_name()
             new_character = StoryCharacterRevision.clone(
@@ -6610,6 +6638,8 @@ class StoryRevision(Revision):
                 old_credits = ''
                 for credit in credits:
                     credit = credit.strip()
+                    if not credit:
+                        continue
                     if credit in ['Typeset', 'Computer']:
                         credit = 'typeset'
                     save_credit = credit
@@ -6861,6 +6891,17 @@ class StoryRevision(Revision):
             self._saved_my_issue_revision = \
                 self.changeset.issuerevisions.filter(issue=self.issue)[0]
         return self._saved_my_issue_revision
+
+    @property
+    def language(self):
+        """
+        The language of the series of this sequence.
+
+        The sequence of a variant that is not approved yet has no issue, so
+        the series comes from the issue revision of the variant.
+        """
+        issue = self.issue or self.my_issue_revision
+        return issue.series.language
 
     def moveable(self):
         """

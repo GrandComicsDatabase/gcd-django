@@ -376,8 +376,9 @@ def validate_changeset_revisions(changeset, request):
            page_count_sum > issue.page_count:
             invalid.append((issue,
                             ['Sum of the page count of all sequences is %d, '
-                             'which exceeds the issue page count of %d.' % (
-                              page_count_sum, issue.page_count)]))
+                             'which exceeds the issue page count of %d. In '
+                             'doubt, flag page count uncertain for the '
+                             'issue.' % (page_count_sum, issue.page_count)]))
     return invalid
 
 
@@ -2190,7 +2191,8 @@ def edit_issues_in_bulk(request):
     if credits_formset:
         cd_credits = []
         for form in credits_formset:
-            if form.is_valid():
+            # a removed credit is left out, so it gets deleted below
+            if form.is_valid() and not form.cleaned_data.get('DELETE'):
                 cd_credits.append(form.cleaned_data)
     for issue in items:
         revision_lock = _get_revision_lock(issue, changeset)
@@ -3812,7 +3814,8 @@ def add_story(request, issue_revision_id, changeset_id):
           request.POST or None)
 
         if not form.is_valid() or not credits_formset.is_valid() or \
-           not characters_formset.is_valid():
+           not characters_formset.is_valid() or \
+           not groups_formset.is_valid():
             kwargs = {
                 'issue_revision_id': issue_revision_id,
                 'changeset_id': changeset_id,
@@ -4027,12 +4030,6 @@ def story_select_compare(request, story_revision_id):
          'cached_covers': cached_covers, 'other_revisions': other_revisions})
 
 
-def _revision_language(revision):
-    """Return the language of a sequence, even if its issue is still new."""
-    issue = revision.issue or revision.my_issue_revision
-    return issue.series.language
-
-
 @permission_required('indexer.can_reserve')
 def compare_stories_copy(request, story_revision_id, story_id=None,
                          other_revision_id=None):
@@ -4114,10 +4111,14 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
           'edit', kwargs={'id': revision.changeset_id}))
 
     selected_fields = request.POST.getlist('field_to_copy')
+    keep_characters = 'keep_characters' in request.POST
     fields_to_copy = revision._get_single_value_fields().copy()
     fields_to_copy.update(revision._get_meta_fields())
     fields_to_set = revision._get_multi_value_fields()
     for field in selected_fields:
+        # the text of the characters is kept like their records
+        if field == 'characters' and keep_characters and revision.characters:
+            continue
         # single value fields
         if field in fields_to_copy:
             setattr(revision, field, getattr(compare_revision, field))
@@ -4177,16 +4178,23 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_credit.save()
                 else:
                     existing_credit.delete()
-    same_language = (_revision_language(compare_revision) ==
-                     _revision_language(revision))
+    same_language = compare_revision.language == revision.language
 
     if 'characters' in selected_fields:
         characters = compare_revision.story_character_revisions\
                                      .exclude(deleted=True)
         existing_characters = revision.story_character_revisions\
                                       .exclude(deleted=True)
+        kept = frozenset()
+        if keep_characters:
+            kept = frozenset(existing_characters.values_list(
+              'character__character_id', 'universe_id'))
+            existing_characters = existing_characters.none()
 
         for character in characters:
+            if kept and (character.character.character_id,
+                         character.universe_id) in kept:
+                continue
             if same_language:
                 q_vals = {}
                 for field in character._get_single_value_fields():
@@ -4209,7 +4217,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             else:
                 new_character_revision = \
                   StoryCharacterRevision.copied_translation(character,
-                                                            revision)
+                                                            revision, kept)
                 if new_character_revision:
                     existing_characters = existing_characters.exclude(
                       id=new_character_revision.id)
@@ -4225,7 +4233,14 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                                  .exclude(deleted=True)
         existing_groups = revision.story_group_revisions\
                                   .exclude(deleted=True)
+        kept = frozenset()
+        if keep_characters:
+            kept = frozenset(existing_groups.values_list(
+              'group_name__group_id', 'universe_id'))
+            existing_groups = existing_groups.none()
         for group in groups:
+            if kept and (group.group_name.group_id, group.universe_id) in kept:
+                continue
             if same_language:
                 q_vals = {}
                 for field in group._get_single_value_fields():
@@ -4242,14 +4257,15 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_groups = existing_groups.exclude(
                       id=new_group.id)
             else:
-                language = _revision_language(revision)
+                language = revision.language
 
                 translations = group.group_name.group.translations(language)
                 if translations.count() == 0 and \
                    group.group_name.group.translated_from():
                     translations = group.group_name.group.translated_from()\
                                                    .translations(language)
-                if translations.count() == 1:
+                if translations.count() == 1 and \
+                   (translations.get().id, group.universe_id) not in kept:
                     group.group_name = translations.get().official_name()
                     new_group = StoryGroupRevision.clone(
                       group, revision.changeset, fork=True,
@@ -5797,21 +5813,19 @@ def move_series(request, series_revision_id, publisher_id):
               'edit', kwargs={'id': series_revision.changeset.id}))
         else:
             if series_revision.changeset.issuerevisions.count() == 0:
-                for issue in series_revision.series.active_issues():
-                    if not _do_reserve(series_revision.changeset.indexer,
-                                       issue, 'issue',
-                                       changeset=series_revision.changeset):
-                        for issue_rev in series_revision.changeset\
-                                                        .issuerevisions.all():
-                            _free_revision_lock(issue_rev.issue)
-                            issue_rev.delete()
-                        for story_rev in series_revision.changeset\
-                                                        .storyrevisions.all():
-                            _free_revision_lock(story_rev.story)
-                            story_rev.delete()
-                        return show_error_with_return(
-                          request, 'Error while reserving issues.',
-                          series_revision.changeset)
+                try:
+                    # All or nothing: a failure takes back the locks and the
+                    # revisions of the issues reserved so far.
+                    with transaction.atomic():
+                        for issue in series_revision.series.active_issues():
+                            if not _do_reserve(
+                              series_revision.changeset.indexer, issue,
+                              'issue', changeset=series_revision.changeset):
+                                raise IntegrityError('issue not reservable')
+                except IntegrityError:
+                    return show_error_with_return(
+                      request, 'Error while reserving issues.',
+                      series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions\
                                                      .all():
                     for brand in issue_revision.brand_emblem.all():
@@ -6209,6 +6223,102 @@ def remove_story_revision(request, id):
                                 kwargs={'id': story.changeset.id}))
 
 
+def _detach_comments(revision):
+    """
+    Keep the comments of a revision that is about to be deleted.
+
+    They stay on the changeset with a note, while the GenericRelation would
+    delete them together with the revision. Returns how many there were.
+    """
+    comments = list(revision.comments.all())
+    for comment in comments:
+        comment.text += '\nThe %s "%s" for which this comment was entered ' \
+                        'was removed.' % (
+                          type(revision).__name__,
+                          show_revision_short(revision, markup=False))
+        comment.revision_id = None
+        comment.save()
+    return len(comments)
+
+
+@permission_required('indexer.can_reserve')
+def remove_variant_revision(request, id):
+    """
+    Remove a variant newly added to the issue edited in a changeset.
+
+    Its sequences go with it and the changeset turns back into a plain
+    edit of the base issue.
+    """
+    revision = get_object_or_404(IssueRevision, id=id)
+    changeset = Changeset.objects.select_for_update().get(
+      id=revision.changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(
+          request, 'Only the reservation holder may remove variants.')
+    if changeset.state != states.OPEN:
+        return render_error(
+          request, 'This changeset is no longer open for editing.')
+    if changeset.change_type != CTYPES['variant_add'] \
+       or not revision.variant_of or revision.issue:
+        return render_error(
+          request, 'Only a new variant added to an issue can be removed.')
+    if changeset.coverrevisions.exists():
+        return render_error(
+          request, 'Please undo the cover move before removing the variant.')
+    stories = revision.ordered_story_revisions()
+    if stories.filter(story__isnull=False).exists():
+        return render_error(
+          request, 'A sequence was moved to this variant. Please use Move To'
+                   ' Other Issue to move it back before removing the variant.')
+
+    if request.method != 'POST':
+        names = [show_revision_short(story, markup=False) for story in stories]
+        warning = ''
+        if names:
+            warning = 'These new sequences will be removed with it: %s' \
+                      % '; '.join(names)
+        return oi_render(
+          request, 'oi/edit/confirm.html',
+          {
+            'type': 'Variant Removal',
+            'header_text': 'Do you want to remove the new variant %s ?'
+                           % revision.full_name(),
+            'warning': warning,
+            'url': urlresolvers.reverse('remove_variant_revision',
+                                        kwargs={'id': id}),
+            'cancel_button': 'Cancel',
+            'confirm_button': 'removal of variant %s' % revision,
+          })
+
+    edit_url = urlresolvers.reverse('edit', kwargs={'id': changeset.id})
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(edit_url)
+
+    for story in stories:
+        _detach_comments(story)
+    if not _detach_comments(revision) and changeset.approver:
+        # changeset already was submitted once since it has an approver
+        changeset.comments.create(
+          commenter=changeset.indexer,
+          text='The IssueRevision "%s" was removed.' % revision,
+          old_state=changeset.state,
+          new_state=changeset.state)
+    # A sequence has no foreign key to its new variant, only issue=None. If
+    # left behind, the approval would attach it to the base issue.
+    stories.delete()
+    revision.delete()
+    changeset.change_type = CTYPES['issue']
+    changeset.save()
+
+    # Under variant_add the form of the base issue offers a variant name.
+    # An issue without variants has none.
+    base_revision = changeset.issuerevisions.get()
+    if not base_revision.issue.active_variants().exists():
+        base_revision.variant_name = ''
+        base_revision.save()
+    return HttpResponseRedirect(edit_url)
+
+
 @permission_required('indexer.can_reserve')
 def toggle_delete_story_revision(request, id):
     story = get_object_or_404(StoryRevision, id=id)
@@ -6544,6 +6654,19 @@ def reorder_characters(request, character_order_id):
         return vte.response
 
 
+def _save_sort_field(child, sort_field):
+    """
+    Save only sort_field of child, and the time of the change if it keeps
+    one: its row was read earlier, so the other columns may be older than
+    what another request has committed.
+    """
+    fields = [sort_field]
+    if any(field.name == 'modified'
+           for field in child._meta.concrete_fields):
+        fields.append('modified')
+    child.save(update_fields=fields)
+
+
 def _reorder_children(request, parent, children, sort_field, child_set,
                       commit, unique=True, skip=None, extras=None):
     """
@@ -6609,7 +6732,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
                 current_code += 1
         if commit:
             setattr(child, sort_field, current_code)
-            child.save()
+            _save_sort_field(child, sort_field)
         else:
             child_list.append((child, current_code))
         current_code += 1
@@ -6621,7 +6744,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
     if commit and extras:
         for child in extras:
             setattr(child, sort_field, current_code)
-            child.save()
+            _save_sort_field(child, sort_field)
             current_code += 1
 
     return child_list

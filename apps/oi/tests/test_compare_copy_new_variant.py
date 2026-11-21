@@ -166,3 +166,13 @@ def test_copy_from_another_language_uses_the_translations(
 
     assert response.status_code == 302
     assert _copied_names(target) == ('Hero', 'Team')
+
+
+@pytest.mark.django_db
+def test_language_of_a_sequence(
+  new_variant_story, base_story, french_story, any_language):
+    """The language comes from the issue, or from the issue revision."""
+    assert new_variant_story.issue is None
+    assert new_variant_story.language == any_language
+    assert base_story.language == any_language
+    assert french_story.language.code == 'XZF'

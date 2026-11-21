@@ -547,7 +547,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Cannot select a group universe without a group.'])
 
-        if cd['group_name'] and cd['character']:
+        if cd['group_name'] and 'character' in cd and cd['character']:
             character_groups = cd['character'].character.active_memberships()
             character_groups = character_groups.values_list('group', flat=True)
             for group in cd['group_name']:
