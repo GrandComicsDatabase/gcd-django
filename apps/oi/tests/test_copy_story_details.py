@@ -218,6 +218,27 @@ def test_choice_survives_the_review_of_a_cover_copy(
 
 
 @pytest.mark.django_db
+def test_label_of_the_option_names_its_checkbox(
+  indexer_client, story_with_details, issue_revision):
+    """The text of the option is the label of its checkbox."""
+    story_with_details.type = StoryType.objects.get(name='cover')
+    story_with_details.save()
+
+    response = indexer_client.post(
+      _confirm_copy_url(issue_revision, story_with_details),
+      {'confirm': 'Confirm Copy'})
+
+    html = response.content.decode()
+    label = re.search(r'<label for="([^"]+)">\s*Leave out first line', html)
+    checkbox = re.search(r'<input type="checkbox"[^>]*'
+                         r'name="omit_story_details"[^>]*>', html)
+    assert label, 'the label of the option has no for'
+    assert checkbox
+    assert 'id="%s"' % label.group(1) in checkbox.group(0)
+    assert html.count('id="%s"' % label.group(1)) == 1
+
+
+@pytest.mark.django_db
 def test_copy_of_a_revision_leaves_out_the_details_when_ticked(
   indexer_client, story_with_details, any_edit_story_rev):
     """The confirmation page of a revision copy passes the option on."""

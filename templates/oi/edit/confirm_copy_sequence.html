@@ -135,12 +135,13 @@
             <td><input type="checkbox" name="copy_characters" value=True {% if copy_characters %}checked{% endif %}></td>
           </tr>
           <tr>
-            <th><label>
+            <th><label for="omit_story_details">
               Leave out first line, job number, story arcs, universe, keywords,
               synopsis, notes and reprint notes:
             </label></th>
             <td>
               <input type="checkbox" name="omit_story_details" value=True
+                     id="omit_story_details"
                      {% if omit_story_details %}checked{% endif %}>
             </td>
           </tr>
