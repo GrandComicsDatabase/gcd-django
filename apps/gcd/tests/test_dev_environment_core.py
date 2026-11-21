@@ -301,6 +301,22 @@ def test_development_search_settings_enable_existing_queue_backend():
     }
 
 
+def test_ci_exercises_native_setup_and_tests_as_a_scoped_user():
+    """The compatibility job must exercise the launcher, not just manage.py."""
+    job = _load_dev_environment_workflow()['jobs']['compatibility']
+    env = job['env']
+    assert env['MYSQL_USER'] != 'root'
+    assert env['MYSQL_DATABASE'].startswith('gcd_dev_')
+    assert job['services']['mysql']['env']['MYSQL_DATABASE'] == (
+        env['MYSQL_DATABASE']
+    )
+    steps = [step.get('run', '') for step in job['steps']]
+    smoke = steps.index('python .github/scripts/smoke_native_setup.py')
+    assert not any('manage.py migrate' in step for step in steps[:smoke])
+    assert any('./bin/dev --runtime native test' in step
+               for step in steps[smoke + 1:])
+
+
 def test_ci_rebuilds_and_verifies_the_optional_search_environment():
     """CI exercises indexing, queries, and queued updates on Ubuntu 24.04."""
     workflow = _load_dev_environment_workflow()
