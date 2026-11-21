@@ -688,6 +688,33 @@ def test_copy_selected_takes_no_cover_reprint(variant_copy, destination):
     c.receipts.delete.assert_not_called()
 
 
+@pytest.mark.parametrize('destination', [new_variant, approved_variant])
+def test_copy_selected_takes_no_cover_reprint_as_a_story(variant_copy,
+                                                         destination):
+    """A cover reprint ticked as a story is turned down and not copied."""
+    c = variant_copy
+    destination(c)
+    cover_reprint(c)
+    assert bulk_copy(c).status_code == 403
+    c.error.assert_called_once()
+    assert c.error.call_args.args[1] == \
+        'Only a cover sequence can be copied into a variant issue.'
+    c.render.assert_not_called()
+    c.copier.assert_not_called()
+    c.receipts.delete.assert_not_called()
+
+
+def test_copy_selected_keeps_cover_reprints_for_other_issues(variant_copy):
+    """An issue which is not a variant still takes a cover reprint."""
+    c = variant_copy
+    c.issue.variant_of = None
+    c.issue.issue = MagicMock()
+    cover_reprint(c)
+    assert bulk_copy(c).status_code == 200
+    c.error.assert_not_called()
+    c.render.assert_called_once()
+
+
 @pytest.mark.parametrize('count', [1, 2])
 def test_global_copy_controls_only_render_for_multiple_sequences(count):
     template = get_template('oi/edit/confirm_copy_sequence.html').template
