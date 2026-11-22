@@ -121,6 +121,11 @@ def _year_value(revision_class, field, years, publisher_years):
      '1965 (note: before the first year 1970 of the publisher)'),
     ('year_ended', {'year_ended': 2005},
      '2005 (note: after the last year 2000 of the publisher)'),
+    # each year is compared with both years of the publisher
+    ('year_began', {'year_began': 2005},
+     '2005 (note: after the last year 2000 of the publisher)'),
+    ('year_ended', {'year_ended': 1965},
+     '1965 (note: before the first year 1970 of the publisher)'),
 ])
 def test_note_when_year_outside_publisher_years(revision_class, field, years,
                                                 expected):
@@ -143,6 +148,13 @@ def test_note_when_year_outside_publisher_years(revision_class, field, years,
      {'year_began': 1970}),
     ('year_ended', {'year_ended': 2005},
      {'year_ended': 2000, 'year_ended_uncertain': True}),
+    # the other year of the publisher: equal, or uncertain
+    ('year_began', {'year_began': 2000}, {'year_ended': 2000}),
+    ('year_ended', {'year_ended': 1970}, {'year_began': 1970}),
+    ('year_began', {'year_began': 2005},
+     {'year_ended': 2000, 'year_ended_uncertain': True}),
+    ('year_ended', {'year_ended': 1965},
+     {'year_began': 1970, 'year_began_uncertain': True}),
 ])
 def test_no_note_when_years_show_no_problem(revision_class, field, years,
                                             publisher_years):

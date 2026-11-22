@@ -74,21 +74,22 @@ def key_date_years_note(revision, item, label):
 def publisher_years_note(revision, field):
     '''
     Note when a year of an indicia publisher or brand group revision is
-    outside the years of its publisher. A missing or uncertain year
-    cannot show a problem, so it is not compared.
+    outside the years of its publisher. The year is compared with both
+    years of the publisher. A missing or uncertain year cannot show a
+    problem, so that side is not compared.
     '''
     year = getattr(revision, field)
-    publisher_year = getattr(revision.parent, field, None)
-    if not year or not publisher_year \
-       or getattr(revision, field + '_uncertain') \
-       or getattr(revision.parent, field + '_uncertain'):
+    publisher = revision.parent
+    if not year or not publisher or getattr(revision, field + '_uncertain'):
         return ''
-    if field == 'year_began' and year < publisher_year:
+    if publisher.year_began and not publisher.year_began_uncertain \
+       and year < publisher.year_began:
         return ' (note: before the first year %d of the publisher)' % \
-               publisher_year
-    if field == 'year_ended' and year > publisher_year:
+               publisher.year_began
+    if publisher.year_ended and not publisher.year_ended_uncertain \
+       and year > publisher.year_ended:
         return ' (note: after the last year %d of the publisher)' % \
-               publisher_year
+               publisher.year_ended
     return ''
 
 
