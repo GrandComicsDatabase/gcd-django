@@ -4629,6 +4629,13 @@ class IssueRevision(Revision):
                                                 remainder_note.find(']')]
                             else:
                                 note = remainder_note
+                    elif (note.startswith('credited as ')
+                          and end_note != -1
+                          and '(' not in note):
+                        # "(credited as X)" is how the site shows a credit
+                        is_credited = True
+                        credited_as = note[len('credited as '):].strip()
+                        note = remainder_note
                     else:
                         note = with_note[with_note.find('('):].strip()
                 else:
@@ -4668,6 +4675,9 @@ class IssueRevision(Revision):
                         note = note[1:-1]
                     if note == '':
                         note = 'editor'
+                    if credited_as == creator.name:
+                        # the credit form refuses the creator name here
+                        credited_as = ''
                     credit_revision = IssueCreditRevision(
                         changeset=self.changeset,
                         issue_revision_id=self.id,
@@ -6648,6 +6658,13 @@ class StoryRevision(Revision):
                                                   remainder_note.find(']')]
                                 else:
                                     note = remainder_note
+                        elif (note.startswith('credited as ')
+                              and end_note != -1
+                              and '(' not in note):
+                            # "(credited as X)" is how the site shows a credit
+                            is_credited = True
+                            credited_as = note[len('credited as '):].strip()
+                            note = remainder_note
                         elif note in ['signed', 'signert', 'signiert']:
                             is_signed = True
                             note = ''
@@ -6658,6 +6675,15 @@ class StoryRevision(Revision):
                                                 remainder_note.find(']')]
                                 else:
                                     note = remainder_note
+                        elif (note.startswith('signed as ')
+                              and end_note != -1
+                              and '(' not in note
+                              and '[' not in credit):
+                            # "(signed as X)" is how the site shows a
+                            # signature; a name in [as ...] would replace X
+                            is_signed = True
+                            signed_as = note[len('signed as '):].strip()
+                            note = remainder_note
                         elif note == 'painted':
                             note = 'painting'
                         elif (note == 'signed, credited' or
@@ -6713,6 +6739,9 @@ class StoryRevision(Revision):
                                                   is_official_name=True)
                         if note and note[0] == '(' and note[-1] == ')':
                             note = note[1:-1]
+                        if credited_as == creator.name:
+                            # the credit form refuses the creator name here
+                            credited_as = ''
                         credit_revision = StoryCreditRevision(
                           changeset=self.changeset,
                           story_revision_id=self.id,
