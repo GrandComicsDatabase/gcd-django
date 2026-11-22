@@ -154,3 +154,113 @@ def test_compare_warns_about_second_issue_of_two_issues(
     content = _compare(client, changeset)
     assert BARCODE_WARNING in content
     assert _moved_header('#1', any_added_series, target) in content
+
+
+@pytest.fixture
+def new_variant(client, logged_in_indexer, any_added_issue):
+    """The revision of a new variant, added to the change of its issue."""
+    response = client.post(reverse(
+      'reserve_revision', kwargs={'model_name': 'issue',
+                                  'id': any_added_issue.id}))
+    assert response.status_code == 302
+    changeset = Changeset.objects.get(state=states.OPEN,
+                                      change_type=CTYPES['issue'])
+    revision = IssueRevision.objects.create(
+      changeset=changeset, series=any_added_issue.series,
+      variant_of=any_added_issue, variant_name='Shiny',
+      number=any_added_issue.number,
+      indicia_publisher=any_added_issue.indicia_publisher,
+      no_title=True, no_volume=True, no_isbn=True, no_rating=True,
+      no_brand=True, no_indicia_frequency=True,
+      publication_date='February 1947', key_date='1947-02-00', page_count=32)
+    changeset.change_type = CTYPES['variant_add']
+    changeset.save()
+    return revision
+
+
+def _move_url(revision, series_id):
+    """Return the address which moves the issue of the revision."""
+    return reverse('move_issue', kwargs={'issue_revision_id': revision.id,
+                                         'series_id': series_id})
+
+
+def _confirmation(issue_name, series):
+    """Return the question of the page which confirms a move."""
+    return escape('Do you want to move %s to %s ?'
+                  % (issue_name, series.full_name()))
+
+
+@pytest.mark.django_db
+def test_move_issue_moves_a_new_variant(
+        client, new_variant, any_added_issue, any_added_series):
+    """A new variant is moved like an approved issue, with no error."""
+    target = any_added_series
+    url = _move_url(new_variant, target.id)
+
+    confirm = client.get(url)
+    assert confirm.status_code == 200
+    name = '%s #42 [Shiny]' % any_added_issue.series.full_name()
+    assert _confirmation(name, target) in confirm.content.decode()
+
+    response = client.post(url)
+    assert response.status_code == 302
+    assert IssueRevision.objects.get(id=new_variant.id).series == target
+    edit = client.get(response.url)
+    assert edit.status_code == 200
+
+
+@pytest.mark.django_db
+def test_move_issue_confirmation_of_an_approved_issue_is_unchanged(
+        client, logged_in_indexer, any_added_issue, any_added_series):
+    """The page names the issue as the issue itself does."""
+    response = client.post(reverse(
+      'reserve_revision', kwargs={'model_name': 'issue',
+                                  'id': any_added_issue.id}))
+    assert response.status_code == 302
+    revision = Changeset.objects.get(
+      state=states.OPEN, change_type=CTYPES['issue']).issuerevisions.get()
+    target = any_added_series
+
+    confirm = client.get(_move_url(revision, target.id))
+
+    content = confirm.content.decode()
+    assert _confirmation(any_added_issue.full_name(), target) in content
+    assert escape('Confirm move of issue %s to series %s'
+                  % (any_added_issue, target)) in content
+
+
+@pytest.mark.django_db
+def test_edit_page_offers_the_move_for_a_new_variant_too(
+        client, new_variant):
+    """The move form is shown for the base issue and for its new variant."""
+    changeset = new_variant.changeset
+    base = changeset.issuerevisions.get(issue__isnull=False)
+
+    response = client.get(reverse('edit', kwargs={'id': changeset.id}))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert _move_url(base, 0) in content
+    assert _move_url(new_variant, 0) in content
+
+
+@pytest.mark.django_db
+def test_moved_new_variant_is_first_in_its_new_series(
+        client, logged_in_indexer, new_variant, any_added_issue,
+        any_added_series):
+    """The issue of the old series it was added after does not place it."""
+    target = any_added_series
+    for number in ('1', '2'):
+        _add_issue(target, logged_in_indexer,
+                   any_added_issue.indicia_publisher, number)
+    # the add form puts a new variant after its base issue
+    new_variant.after = any_added_issue
+    new_variant.save()
+    _move(client, new_variant, target)
+
+    _approve(new_variant.changeset, logged_in_indexer)
+
+    variant = IssueRevision.objects.get(id=new_variant.id).issue
+    assert variant.series == target
+    # first, like an approved issue moved to another series
+    assert target.active_issues().order_by('sort_code').first() == variant
