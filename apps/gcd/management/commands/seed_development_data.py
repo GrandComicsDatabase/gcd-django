@@ -39,7 +39,12 @@ from apps.oi.models import (
     CTYPES,
     Changeset,
     ChangesetComment,
+    IssueRevision,
     SeriesRevision,
+    StoryCharacterRevision,
+    StoryCreditRevision,
+    StoryGroupRevision,
+    StoryRevision,
 )
 from apps.stddata.models import Country, Date, Language, Script
 from apps.stats.models import CountStats
@@ -377,7 +382,43 @@ class Command(BaseCommand):
 
         series = Series.objects.get(name=f'{SAMPLE_PREFIX} Adventures')
         if not changeset.seriesrevisions.filter(series=series).exists():
-            revision = SeriesRevision.clone(series, changeset, fork=True)
-            revision.source = series
-            revision.created = series.modified
-            revision.save()
+            self._approved_revision(SeriesRevision, series, changeset)
+        for issue in series.active_issues():
+            self._seed_issue_history(issue, admin)
+
+    def _seed_issue_history(self, issue, admin):
+        """Give an issue the approved revisions of an issue saved on the site.
+
+        Editing an issue starts from the latest approved revision of the
+        issue and of each of its sequences, credits, characters and groups.
+        """
+        if issue.revisions.filter(changeset__state=states.APPROVED).exists():
+            return
+        changeset = Changeset.objects.create(
+            state=states.APPROVED,
+            indexer=admin,
+            approver=admin,
+            change_type=CTYPES['issue'],
+        )
+        self._approved_revision(IssueRevision, issue, changeset)
+        for story in issue.active_stories():
+            story_revision = self._approved_revision(StoryRevision, story,
+                                                     changeset)
+            for revision_class, links in (
+                    (StoryCreditRevision, story.active_credits),
+                    (StoryCharacterRevision, story.active_characters),
+                    (StoryGroupRevision, story.active_groups)):
+                for link in links:
+                    self._approved_revision(revision_class, link, changeset,
+                                            story_revision=story_revision)
+
+    def _approved_revision(self, revision_class, data_object, changeset,
+                           **kwargs):
+        """Save a committed revision of a seeded object in changeset."""
+        revision = revision_class.clone(data_object, changeset, fork=True,
+                                        **kwargs)
+        revision.source = data_object
+        revision.committed = True
+        revision.created = data_object.modified
+        revision.save()
+        return revision
