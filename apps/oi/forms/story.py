@@ -37,7 +37,7 @@ from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     _strip_list,
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
-    KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
+    KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS, CREDIT_NAME_LABEL,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
     BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
@@ -319,7 +319,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'A concise and clear description of the external source of '
                 'the credit.'
         }
-        labels = {'credit_name': 'Credit description'}
+        labels = {'credit_name': CREDIT_NAME_LABEL}
         widgets = {
             'sourced_by': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
