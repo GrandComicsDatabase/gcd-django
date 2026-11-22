@@ -178,7 +178,7 @@ def field_value(revision, field):
             if settings.FAKE_IMAGES:
                 return absolute_url(value)
             else:
-                return mark_safe('<img class="inline"src="' +
+                return mark_safe('<img class="inline" src="' +
                                  value.emblem.icon.url + '"> '
                                  + absolute_url(value))
         return absolute_url(value)

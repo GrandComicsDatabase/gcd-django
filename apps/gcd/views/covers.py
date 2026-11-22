@@ -53,14 +53,14 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
     if cover is None:
         if not can_have_cover:
             return mark_safe(no_cover_url + 'img/noupload_' + size + '.png" '
-                             + 'alt="No image"' + 'class="' + img_class + '">')
+                             + 'alt="No image" class="' + img_class + '">')
         return mark_safe(no_cover_url + 'img/nocover_' + size + '.png" '
-                         + 'alt="No image yet"' + 'class="' + img_class + '">')
+                         + 'alt="No image yet" class="' + img_class + '">')
 
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
         return mark_safe(no_cover_url + 'img/nocover_' + size + '.png" '
-                         + 'alt="No image yet"' + 'class="' + img_class + '">')
+                         + 'alt="No image yet" class="' + img_class + '">')
 
     if title:
         add_info = ' title="%s" alt="%s" ' % (esc(title), esc(alt_text))
