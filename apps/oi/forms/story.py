@@ -429,6 +429,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
                      'Please tick "Is credited" instead.']
                 )
 
+            elif cd['credit_name'].strip().startswith("credited as"):
+                raise forms.ValidationError(
+                    ['"Credit description" cannot start with "credited as". '
+                     'Please use the "credited as" field and '
+                     'tick "Is credited" instead.']
+                )
 
 class StoryFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
