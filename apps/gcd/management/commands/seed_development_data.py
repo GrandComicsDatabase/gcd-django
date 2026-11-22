@@ -41,7 +41,7 @@ from apps.oi.models import (
     ChangesetComment,
     SeriesRevision,
 )
-from apps.stddata.models import Country, Language, Script
+from apps.stddata.models import Country, Date, Language, Script
 from apps.stats.models import CountStats
 
 
@@ -213,6 +213,12 @@ class Command(BaseCommand):
                 'death_city': '',
             },
         )
+        # A creator saved through the site always has birth and death dates,
+        # even empty ones, and the code reads them without a check.
+        if creator.birth_date is None or creator.death_date is None:
+            creator.birth_date = creator.birth_date or Date.objects.create()
+            creator.death_date = creator.death_date or Date.objects.create()
+            creator.save(update_fields=['birth_date', 'death_date'])
         script = Script.objects.filter(number=37).first()
         if script is None:
             script = Script.objects.filter(code='latn').first()
