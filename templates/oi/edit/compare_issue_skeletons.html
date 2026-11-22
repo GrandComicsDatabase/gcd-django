@@ -2,6 +2,7 @@
 {% load static %}
 {% load display %}
 {% load editing %}
+{% load compare %}
 
 {% block title %}
 Reviewing :: {{ revision }}
@@ -63,6 +64,7 @@ Highlighted fields represent <span class="added p-1">added</span> data.
 {% endwith %}
 
 <hr>
+{{ revision|same_number_issues }}
 <h3>Current issues</h3>
 {% with revision.series as series %}
 {% with '[&>a]:px-2' as issue_status_width %}

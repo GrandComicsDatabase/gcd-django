@@ -854,6 +854,28 @@ def same_name_series(revision):
 
 
 @register.filter
+def same_number_issues(revision):
+    '''
+    Links to the base issues of the series with a number that the
+    changeset adds, [nn] left out, and to such new base issues in the
+    queue.  Nothing once the changeset has left the queue.
+    '''
+    if revision.changeset.state not in states.ACTIVE:
+        return ''
+    numbers = list(revision.changeset.issuerevisions.exclude(number='[nn]')
+                   .values_list('number', flat=True))
+    return _same_box(
+      'Issues of this series with the same number',
+      revision.series.active_issues().filter(
+        variant_of=None, number__in=numbers).select_related('series'),
+      revision.series.issue_revisions.filter(
+        previous_revision=None, variant_of=None, number__in=numbers,
+        changeset__state__in=states.ACTIVE)
+      .exclude(changeset=revision.changeset_id)
+      .select_related('changeset', 'series'))
+
+
+@register.filter
 def lookup(d, key):
     return d[key]
 
