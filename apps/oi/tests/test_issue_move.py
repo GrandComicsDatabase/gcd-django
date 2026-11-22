@@ -156,9 +156,6 @@ def test_compare_warns_about_second_issue_of_two_issues(
     assert _moved_header('#1', any_added_series, target) in content
 
 
-NOT_APPROVED = 'A new issue cannot be moved before it is approved.'
-
-
 @pytest.fixture
 def new_variant(client, logged_in_indexer, any_added_issue):
     """The revision of a new variant, added to the change of its issue."""
@@ -187,23 +184,55 @@ def _move_url(revision, series_id):
                                          'series_id': series_id})
 
 
-@pytest.mark.django_db
-@pytest.mark.parametrize('method', ('get', 'post'))
-def test_move_issue_refuses_an_issue_not_approved_yet(
-        client, new_variant, any_added_series, method):
-    """A new variant has no issue to move: it is refused, with no error."""
-    response = getattr(client, method)(
-      _move_url(new_variant, any_added_series.id))
-
-    assert NOT_APPROVED in response.content.decode()
-    revision = IssueRevision.objects.get(id=new_variant.id)
-    assert revision.series == new_variant.series
+def _confirmation(issue_name, series):
+    """Return the question of the page which confirms a move."""
+    return escape('Do you want to move %s to %s ?'
+                  % (issue_name, series.full_name()))
 
 
 @pytest.mark.django_db
-def test_edit_page_offers_the_move_for_approved_issues_only(
+def test_move_issue_moves_a_new_variant(
+        client, new_variant, any_added_issue, any_added_series):
+    """A new variant is moved like an approved issue, with no error."""
+    target = any_added_series
+    url = _move_url(new_variant, target.id)
+
+    confirm = client.get(url)
+    assert confirm.status_code == 200
+    name = '%s #42 [Shiny]' % any_added_issue.series.full_name()
+    assert _confirmation(name, target) in confirm.content.decode()
+
+    response = client.post(url)
+    assert response.status_code == 302
+    assert IssueRevision.objects.get(id=new_variant.id).series == target
+    edit = client.get(response.url)
+    assert edit.status_code == 200
+
+
+@pytest.mark.django_db
+def test_move_issue_confirmation_of_an_approved_issue_is_unchanged(
+        client, logged_in_indexer, any_added_issue, any_added_series):
+    """The page names the issue as the issue itself does."""
+    response = client.post(reverse(
+      'reserve_revision', kwargs={'model_name': 'issue',
+                                  'id': any_added_issue.id}))
+    assert response.status_code == 302
+    revision = Changeset.objects.get(
+      state=states.OPEN, change_type=CTYPES['issue']).issuerevisions.get()
+    target = any_added_series
+
+    confirm = client.get(_move_url(revision, target.id))
+
+    content = confirm.content.decode()
+    assert _confirmation(any_added_issue.full_name(), target) in content
+    assert escape('Confirm move of issue %s to series %s'
+                  % (any_added_issue, target)) in content
+
+
+@pytest.mark.django_db
+def test_edit_page_offers_the_move_for_a_new_variant_too(
         client, new_variant):
-    """The move form is shown for the base issue, not for its new variant."""
+    """The move form is shown for the base issue and for its new variant."""
     changeset = new_variant.changeset
     base = changeset.issuerevisions.get(issue__isnull=False)
 
@@ -212,4 +241,4 @@ def test_edit_page_offers_the_move_for_approved_issues_only(
     assert response.status_code == 200
     content = response.content.decode()
     assert _move_url(base, 0) in content
-    assert _move_url(new_variant, 0) not in content
+    assert _move_url(new_variant, 0) in content

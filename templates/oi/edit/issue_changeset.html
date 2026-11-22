@@ -151,7 +151,6 @@
     {% endif %}
   </div>
   {% endif %}
-  {% if issue_revision.issue %}
   <form method="GET" action="{% url 'move_issue' issue_revision_id=issue_revision.id series_id=0 %}">
     <div class="my-1">
       <button class="btn-blue-editing inline"><input type="submit" value="Move To Series With ID"></button>
@@ -159,7 +158,6 @@
     <span class="px-1">brand/indicia publisher values might reset</span>
     </div>
   </form>
-  {% endif %}
 </div>
 {% endfor %}
 
