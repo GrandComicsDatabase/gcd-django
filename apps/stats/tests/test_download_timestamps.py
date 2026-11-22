@@ -47,7 +47,8 @@ def test_dump_dates_in_utc(client, member, mysql_dump):
         response = client.get(reverse('stats:download'))
 
     assert response.status_code == 200
-    timestamps = dict(response.context['timestamps'])
+    timestamps = {name: date
+                  for name, date, size in response.context['dumps']}
     assert timestamps == {'MySQL': DUMP_TIME, 'Name-Value': 'never',
                           'SQLite': 'never'}
     assert timestamps['MySQL'].tzinfo is None
