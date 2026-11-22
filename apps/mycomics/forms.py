@@ -1,5 +1,8 @@
 from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect, \
                          ValidationError
+from django.db.models import Q
+
+from apps.gcd.models import Issue
 from apps.mycomics.models import Collector, Collection, CollectionItem, \
                                  Location, PurchaseLocation, ConditionGrade, \
                                  ReadingOrder, ReadingOrderItem
@@ -78,7 +81,7 @@ class PurchaseLocationForm(ModelForm):
 class CollectionItemForm(ModelForm):
     class Meta:
         model = CollectionItem
-        exclude = ('collections', 'issue', 'acquisition_date', 'sell_date')
+        exclude = ('collections', 'acquisition_date', 'sell_date')
         widgets = {'own': Select(choices=((None, "---"),
                                           (True, "I own this comic."),
                                           (False, "I want this comic."))), }
@@ -86,6 +89,17 @@ class CollectionItemForm(ModelForm):
     def __init__(self, user, *args, **kwargs):
         super(CollectionItemForm, self).__init__(*args, **kwargs)
         instance = kwargs['instance']
+        # The item can be moved to the base issue or one of its variants.
+        issue = instance.issue
+        base = issue.variant_of or issue
+        issues = Issue.objects.filter(
+          Q(id=issue.id) |
+          Q(Q(id=base.id) | Q(variant_of=base), deleted=False))
+        if issues.count() > 1:
+            self.fields['issue'].queryset = issues
+            self.fields['issue'].empty_label = None
+        else:
+            self.fields.pop('issue')
         # This generates a query for each check. If problematic these can be
         # avoided by going to python for the checks on an evaluated collections
         collections = instance.collections.all()
