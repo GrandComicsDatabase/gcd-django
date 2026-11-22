@@ -354,6 +354,20 @@ def get_collection_for_owner(request, collection_id):
     return collection, None
 
 
+def remove_item_from_collection(item, collection):
+    """Removes the item from the collection and deletes the item if it is
+    in no other collection. Returns whether the item was deleted."""
+    collection.items.remove(item)
+    if item.collections.exists():
+        return False
+    if item.acquisition_date:
+        item.acquisition_date.delete()
+    if item.sell_date:
+        item.sell_date.delete()
+    item.delete()
+    return True
+
+
 @login_required
 def delete_item(request, item_id, collection_id):
     if request.method != 'POST':
@@ -372,19 +386,12 @@ def delete_item(request, item_id, collection_id):
         .exclude(issue__series_id=item.issue.series.id,
                  issue__sort_code__gte=item.issue.sort_code).count()
 
-    collection.items.remove(item)
     messages.success(
       request,
       mark_safe(_("Item <b>%s</b> removed from %s" % (
                   esc(item.issue.full_name()),
                   esc(collection)))))
-    if not item.collections.count():
-        if item.acquisition_date:
-            item.acquisition_date.delete()
-        if item.sell_date:
-            item.sell_date.delete()
-        item.delete()
-    else:
+    if not remove_item_from_collection(item, collection):
         return HttpResponseRedirect(urlresolvers.reverse(
           'view_item',
           kwargs={'item_id': item.id,
@@ -466,6 +473,52 @@ def move_item(request, item_id, collection_id):
     return HttpResponseRedirect(urlresolvers.reverse('view_item',
                                 kwargs={'item_id': item_id,
                                         'collection_id': collection_id}))
+
+
+@login_required
+def move_or_delete_items(request, collection_id):
+    if request.method != 'POST':
+        raise ErrorWithMessage("This page may only be accessed through the "
+                               "proper form.")
+    collection = get_object_or_404(Collection, id=collection_id,
+                                   collector=request.user.collector)
+    ids = [i for i in request.POST.getlist('items')
+           if i.isascii() and i.isdigit()]
+    items = list(collection.items.filter(id__in=ids))
+    collection_form = CollectionSelectForm(request.user.collector,
+                                           [collection], request.POST)
+    if not items:
+        messages.error(request, _("No items were selected."))
+    elif request.POST.get('action') == 'delete':
+        for item in items:
+            remove_item_from_collection(item, collection)
+        messages.success(request, mark_safe(_(
+          "Items removed from <b>%s</b>: %d") % (esc(collection), len(items))))
+    elif request.POST.get('action') == 'move' and collection_form.is_valid():
+        to_collection = request.user.collector.collections.get(
+          id=collection_form.cleaned_data['collection'])
+        collection.items.remove(*items)
+        to_collection.items.add(*items)
+        messages.success(request, mark_safe(_(
+          "Items moved to <b>%s</b>: %d") % (esc(to_collection), len(items))))
+        moved = CollectionItem.objects.filter(id__in=[i.id for i in items])
+        own_default = to_collection.own_default
+        if to_collection.own_used and own_default is not None and \
+           moved.exclude(own=own_default).update(own=own_default):
+            messages.warning(request, mark_safe(_(
+              "The own/want status of some items differed from the default "
+              "of <b>%s</b> and was changed.") % esc(to_collection)))
+        if to_collection.for_sale_used and to_collection.for_sale_default \
+           and moved.filter(for_sale=False).update(for_sale=True):
+            messages.warning(request, mark_safe(_(
+              "Some items are set to for sale due to the default of "
+              "<b>%s</b>.") % esc(to_collection)))
+    else:
+        messages.error(request, _("Items unchanged"))
+    query = request.GET.urlencode()
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'view_collection', kwargs={'collection_id': collection.id}) +
+      ('?' + query if query else ''))
 
 
 def view_item(request, item_id, collection_id):

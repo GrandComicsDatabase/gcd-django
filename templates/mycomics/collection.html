@@ -32,6 +32,26 @@
             }
             });
         }
+    function move_or_delete_items(action) {
+        var count = $('input[name="items"]:checked').length;
+        if (!count) return BootstrapDialog.alert('{% trans "Please select some items first." %}');
+        BootstrapDialog.confirm({
+            title: '<h4 class="modal-title">{% trans "Selected items" %}: ' + count + '</h4>',
+            message: $('<p>').text(action == 'move' ?
+                '{% trans "Move them to the collection" %} ' + $('#move_to_collection option:selected').text() + ' ?' :
+                '{% trans "Remove them from the collection" %} {{ collection.name|escapejs }} ?'),
+            closable: true,
+            btnCancelLabel: '{% trans "Cancel" %}',
+            btnOKLabel: '{% trans "Confirm" %}',
+            btnOKClass: 'btn-primary',
+            callback: function(result) {
+                if(result) {
+                    $("#selected_items_action").val(action);
+                    $("#selected_items_form").submit();
+                };
+            }
+            });
+        }
   </script>
   {% endif %}
 {% endblock %}
@@ -92,10 +112,24 @@
       </div>
     </div>
     <div class="col-md-10">
+      {% if request.user.collector == collection.collector %}
+      <form action="{% url "move_or_delete_items" collection.id %}?{{ request.GET.urlencode }}" method="POST" id="selected_items_form" class="form-inline">
+        {% csrf_token %}
+        <input type="hidden" name="action" id="selected_items_action">
+        <label class="checkbox-inline"><input type="checkbox" onchange="$('input[name=items]').prop('checked', this.checked);"> {% trans "Select all on this page" %}</label>
+        <label for="move_to_collection">{% trans "Move selected to" %}</label>
+        <select name="collection" id="move_to_collection" class="form-control input-sm">
+          {% for col_item in collection_list %}{% if col_item.id != collection.id %}<option value="{{ col_item.id }}">{{ col_item }}</option>{% endif %}{% endfor %}
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="move_or_delete_items('move');">{% trans "Move" %}</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="move_or_delete_items('delete');">{% trans "Delete selected" %}</button>
+      </form>
+      {% endif %}
       {% include "mycomics/bits/collection_pagination.html" %}
       <div class="row">
         {% for item in items %}
           <div class="col-md-2">
+            {% if request.user.collector == collection.collector %}<input type="checkbox" name="items" value="{{ item.id }}" form="selected_items_form" aria-label="{{ item.issue.full_name }}">{% endif %}
             <div class="btn-group pull-right">
               <button type="button" class="my-btn btn-primary btn-sm"
                       style="display: inline-block;" data-toggle="modal" onclick="remove_issue({{ item.id }}, {{ collection.id }});"
