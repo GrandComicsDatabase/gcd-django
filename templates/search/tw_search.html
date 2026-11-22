@@ -31,6 +31,9 @@
   </div>
   <div class="flex-1"><!-- Search Box -->
     <form class="mt-2" action="." method="get">
+  {% for key, value in kept_filters %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+  {% endfor %}
       <div class="flex rounded-lg border border-gray-500 overflow-hidden max-w-md mx-auto">
         <span class="max-sm:hidden flex">
   {% include "gcd/bits/hs_search_for.html" %}
@@ -86,6 +89,16 @@
   <div class="facet-filter px-1 sm:px-2 flex flex-col w-48 max-sm:mt-8 max-sm:hidden max-sm:absolute max-sm:left-0 bg-white overflow-hidden">
     <form method="GET" class="flex-col">
       <button class="btn btn-blue ml-1 mb-2 h-8">Filter Results</button>
+  {% if keeps_filters %}
+      <button name="keep" value="1" class="btn btn-blue ml-1 mb-2">
+        Keep for my next searches
+      </button>
+    {% if kept_filters %}
+      <button name="forget" value="1" class="btn btn-blue ml-1 mb-2 h-8">
+        Forget
+      </button>
+    {% endif %}
+  {% endif %}
   {% if request.GET.sort %}
       <input type="hidden" name="sort" value="{{ request.GET.sort }}">
   {% endif %}
@@ -279,7 +292,13 @@
 
   {% else %}
     {% if query %}
-      <div class="px-2">No results.</div>
+      <div class="px-2">No results.
+      {% if keeps_filters and selected %}
+        <a href="?q={{ request.GET.q|urlencode }}">
+          Search again without the filters
+        </a>
+      {% endif %}
+      </div>
     {% endif %}
   {% endif %}
       <div class="px-2">Please enter the search word(s) in the box. The search is looking for exact matches for each word.

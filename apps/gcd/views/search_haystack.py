@@ -1,5 +1,6 @@
 import shlex
 from datetime import date
+from urllib.parse import parse_qsl, urlencode
 from django.utils.encoding import smart_str as uni
 
 from haystack.views import FacetedSearchView
@@ -10,6 +11,34 @@ from haystack.backends import SQ
 
 from apps.select.views import filter_facets, form_filter_facets
 from apps.gcd.templatetags.credits import get_native_language_name
+
+# The cookie with the filters a visitor keeps for the next "Everything"
+# searches; only these filters can be kept.
+SEARCH_DEFAULTS_COOKIE = 'search_defaults'
+DEFAULT_FILTER_FIELDS = ('country', 'language')
+ONE_YEAR = 365 * 24 * 60 * 60
+
+
+def default_filters(value):
+    """
+    Return the country and language filters of a query string, such as
+    the value of the cookie, as (field, value) pairs. Other keys and empty
+    values are left out.
+    """
+    return [(key, item) for key, item in parse_qsl(value or '')
+            if key in DEFAULT_FILTER_FIELDS]
+
+
+def set_default_filters(response, filters):
+    """
+    Keep the filters in the cookie for a year, or delete it if none.
+    """
+    if filters:
+        response.set_cookie(SEARCH_DEFAULTS_COOKIE, urlencode(filters),
+                            max_age=ONE_YEAR, httponly=True,
+                            samesite='Lax')
+    else:
+        response.delete_cookie(SEARCH_DEFAULTS_COOKIE, samesite='Lax')
 
 
 def safe_split(value):
@@ -137,8 +166,20 @@ class GcdSearchQuerySet(SearchQuerySet):
 
 
 class PaginatedFacetedSearchView(FacetedSearchView):
+    # Only the "Everything" search keeps filters, not the searches of My
+    # Comics or of a selection.
+    keeps_filters = False
+
     def __call__(self, request, context=None):
         self.request = request
+        self.kept_filters = []
+        if self.keeps_filters:
+            self.kept_filters = default_filters(
+              request.COOKIES.get(SEARCH_DEFAULTS_COOKIE))
+            if 'forget' in request.GET:
+                self.kept_filters = []
+            elif 'keep' in request.GET:
+                self.kept_filters = default_filters(request.GET.urlencode())
 
         self.form = self.build_form()
         self.selected_model = None
@@ -272,13 +313,19 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         get_copy.pop('page', None)
         get_copy.pop('search_object', None)
         get_copy.pop('sort', None)
+        get_copy.pop('keep', None)
+        get_copy.pop('forget', None)
 
         if self.query:
             self.query = get_copy.urlencode()
         self.paginator = ResponsePaginator(self.results,
                                            vars=context)
         self.paginator.vars['page'] = self.paginator.paginate(request)
-        return self.create_response()
+        response = self.create_response()
+        if self.keeps_filters and ('keep' in request.GET or
+                                   'forget' in request.GET):
+            set_default_filters(response, self.kept_filters)
+        return response
 
     def extra_context(self):
         extra = super(PaginatedFacetedSearchView, self).extra_context()
@@ -301,9 +348,19 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                       'filter_form': self.filter_form,
                       'facet_page': facet_page,
                       'selected': self.selected,
-                      'selected_model': self.selected_model})
+                      'selected_model': self.selected_model,
+                      'keeps_filters': self.keeps_filters,
+                      'kept_filters': self.kept_filters})
         if self.sort:
             extra.update({'sort': '&sort=%s' % self.sort})
         else:
             extra.update({'sort': ''})
         return extra
+
+
+class EverythingSearchView(PaginatedFacetedSearchView):
+    """
+    The "Everything" search of the search bar, whose country and language
+    filters a visitor can keep for the next searches.
+    """
+    keeps_filters = True
