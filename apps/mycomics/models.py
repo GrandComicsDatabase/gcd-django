@@ -101,6 +101,10 @@ class Collection(models.Model):
     public = models.BooleanField(
       default=False,
       verbose_name="collection is public and can be viewed by all")
+    # Key of the secret link that lets anyone with it view the collection,
+    # empty without a link. The collection form creates and drops it.
+    share_key = models.CharField(max_length=64, blank=True, default='',
+                                 editable=False)
 
     # Configuration of fields used - notes and keywords are assumed to be
     # always 'on'.
