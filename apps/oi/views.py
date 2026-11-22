@@ -7165,7 +7165,7 @@ def show_commented(request):
                                .distinct().order_by('-last_remark')\
                                .select_related('approver__indexer',
                                                'indexer__indexer')
-    filter = ChangesetTypeFilter(request.GET, changes)
+    filter = EditorLogFilter(request.GET, changes, editor=request.user)
     changes = filter.qs
 
     request_get = request.GET.copy()
