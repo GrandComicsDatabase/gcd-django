@@ -4,7 +4,8 @@ from django.conf import settings
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape as esc
+from django.utils.html import conditional_escape as esc, format_html
+from django.contrib.contenttypes.models import ContentType
 
 from stdnum import ean as stdean
 
@@ -20,7 +21,8 @@ from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
                            ReprintRevision, StoryRevision, IssueRevision, \
                            IssueCreditRevision
-from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
+from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS, \
+                            CreatorSignature, Image
 from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
@@ -837,3 +839,40 @@ def relation_source_is_in(value, relation_objs):
             if str(source.type) == str(value):
                 return True
     return False
+
+
+@register.simple_tag
+def other_signatures(revision):
+    '''
+    The other signatures of the creator of a signature revision, with their
+    images, so that a new signature can be compared with them.
+    '''
+    if getattr(revision, 'source_name', '') != 'creator_signature':
+        return ''
+    signatures = list(CreatorSignature.objects.filter(
+      creator_id=revision.creator_id, deleted=False)
+      .exclude(id=revision.creator_signature_id).order_by('name'))
+    if not signatures:
+        return ''
+    images = {}
+    if not settings.FAKE_IMAGES:
+        # one query for the images of all signatures
+        images = {image.object_id: image for image in Image.objects.filter(
+          content_type=ContentType.objects.get_for_model(CreatorSignature),
+          object_id__in=[signature.id for signature in signatures],
+          type__name='CreatorSignature', deleted=False)}
+    rows = ''
+    for signature in signatures:
+        if signature.generic:
+            shown = ' [generic]'
+        elif signature.id in images:
+            shown = format_html(' <img class="inline" src="{}" alt="{}">',
+                                images[signature.id].thumbnail.url,
+                                signature.name)
+        else:
+            shown = ''
+        rows += format_html('<li>{}{}</li>', absolute_url(
+          signature, descriptor=esc(signature.name)), shown)
+    return format_html('<h3>Other signatures of this creator:</h3>'
+                       '<ol class="object-page-numbered-list">{}</ol>',
+                       mark_safe(rows))
