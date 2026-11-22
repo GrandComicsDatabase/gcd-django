@@ -1,11 +1,48 @@
 # -*- coding: utf-8 -*-
-from django.db import models
+import threading
+from contextlib import contextmanager
+from functools import partial
+
+from django.db import models, transaction
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 
 from apps.stddata.models import Country, Language
 from apps.gcd.models import Publisher, Series, Issue, INDEXED, Story, Cover, \
                             Creator
+
+# The site-wide totals that the approval running in this thread changes,
+# as {name: (before, after)}; None outside announce_milestones().
+_approval = threading.local()
+
+
+@contextmanager
+def announce_milestones():
+    """
+    Mails each multiple of STATS_MILESTONE_STEP, e.g. the 2,000,000th
+    cover, that a site-wide total reaches between the start and the end of
+    the block, once the transaction is committed.
+    """
+    _approval.totals = totals = {}
+    try:
+        yield
+    finally:
+        _approval.totals = None
+    if totals and not settings.BETA:
+        transaction.on_commit(partial(_mail_milestones, totals))
+
+
+def _mail_milestones(totals):
+    step = settings.STATS_MILESTONE_STEP
+    for field, (before, after) in totals.items():
+        for milestone in range(before // step * step + step, after + 1, step):
+            send_mail(from_email=settings.EMAIL_INDEXING,
+                      recipient_list=[settings.EMAIL_STATS_MILESTONE],
+                      subject=f'GCD milestone: {milestone:,} {field}',
+                      message=f'The {settings.SITE_NAME} now has '
+                              f'{milestone:,} {field}.',
+                      fail_silently=True)
 
 
 class CountStatsManager(models.Manager):
@@ -77,6 +114,13 @@ class CountStatsManager(models.Manager):
         stat = self.get(name=field, language=None, country=None)
         stat.count = models.F('count') + delta
         stat.save()
+        totals = getattr(_approval, 'totals', None)
+        if totals is not None:
+            # The update locks the row until the commit, so the value read
+            # back is exact even when other approvals run at the same time.
+            stat.refresh_from_db(fields=['count'])
+            before, _ = totals.get(field, (stat.count - delta, None))
+            totals[field] = (before, stat.count)
 
         if language:
             try:

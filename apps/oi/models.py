@@ -11,7 +11,7 @@ from datetime import timedelta
 from django import forms
 from django.conf import settings
 from django.db import models, transaction, IntegrityError
-from django.db.models import F, Manager
+from django.db.models import Manager
 from django.db.models.fields import Field, related
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -31,7 +31,8 @@ from taggit.managers import TaggableManager
 from apps.oi import states, relpath
 
 from apps.stddata.models import Country, Language, Date, Script
-from apps.stats.models import RecentIndexedIssue, CountStats
+from apps.stats.models import RecentIndexedIssue, CountStats, \
+                               announce_milestones
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
@@ -158,34 +159,6 @@ IMP_COVER_VALUE = 5
 IMP_IMAGE_VALUE = 5
 IMP_APPROVER_VALUE = 3
 IMP_DELETE = 1
-
-
-def update_count(field, delta, language=None, country=None):
-    '''
-    updates statistics, for all, per language, and per country
-    CountStats with language=None is for all languages
-    '''
-    stat = CountStats.objects.get(name=field, language=None, country=None)
-    stat.count = F('count') + delta
-    stat.save()
-
-    if language:
-        stat = CountStats.objects.filter(name=field, language=language)
-        if stat.count():
-            stat = stat[0]
-            stat.count = F('count') + delta
-            stat.save()
-        else:
-            CountStats.objects.init_stats(language=language)
-
-    if country:
-        stat = CountStats.objects.filter(name=field, country=country)
-        if stat.count():
-            stat = stat[0]
-            stat.count = F('count') + delta
-            stat.save()
-        else:
-            CountStats.objects.init_stats(country=country)
 
 
 def set_series_first_last(series):
@@ -837,6 +810,7 @@ class Changeset(models.Model):
         self.state = states.DISCUSSED
         self.save()
 
+    @announce_milestones()
     def approve(self, notes=''):
         """
         Approve a pending index from an approver's queue into production.
@@ -3328,9 +3302,9 @@ class CoverRevision(Revision):
         elif self.deleted:
             cover.delete()
             cover.save()
-            update_count('covers', -1,
-                         language=cover.issue.series.language,
-                         country=cover.issue.series.country)
+            CountStats.objects.update_count(
+              'covers', -1, language=cover.issue.series.language,
+              country=cover.issue.series.country)
             if cover.issue.series.scan_count == 0:
                 series = cover.issue.series
                 series.has_gallery = False
@@ -3351,12 +3325,12 @@ class CoverRevision(Revision):
                         old_issue.series.language) \
                        or (issue_rev.series.country !=
                            old_issue.series.country):
-                        update_count('covers', -1,
-                                     language=old_issue.series.language,
-                                     country=old_issue.series.country)
-                        update_count('covers', 1,
-                                     language=issue_rev.series.language,
-                                     country=issue_rev.series.country)
+                        CountStats.objects.update_count(
+                          'covers', -1, language=old_issue.series.language,
+                          country=old_issue.series.country)
+                        CountStats.objects.update_count(
+                          'covers', 1, language=issue_rev.series.language,
+                          country=issue_rev.series.country)
                     if not issue_rev.series.has_gallery:
                         issue_rev.series.has_gallery = True
                         issue_rev.series.save(
@@ -3373,9 +3347,9 @@ class CoverRevision(Revision):
             if self.cover is None:
                 self.cover = cover
                 self.save()
-                update_count('covers', 1,
-                             language=cover.issue.series.language,
-                             country=cover.issue.series.country)
+                CountStats.objects.update_count(
+                  'covers', 1, language=cover.issue.series.language,
+                  country=cover.issue.series.country)
                 if not cover.issue.series.has_gallery:
                     series = cover.issue.series
                     series.has_gallery = True

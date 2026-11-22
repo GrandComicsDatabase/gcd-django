@@ -423,6 +423,11 @@ EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
 CHAIRMAN = 'Donald Dale Milne'
 EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
+# A site-wide count (covers, issues, stories, ...) that reaches a new
+# multiple of STATS_MILESTONE_STEP is announced to EMAIL_STATS_MILESTONE.
+EMAIL_STATS_MILESTONE = 'gcd-main@googlegroups.com'
+STATS_MILESTONE_STEP = 100000
+
 # Number of days for which a registraton confirmation token is valid.
 REGISTRATION_EXPIRATION_DELTA = 2
 
