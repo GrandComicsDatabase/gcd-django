@@ -19,7 +19,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
-                      _strip_list, TITLE_CASE_LABEL,
+                      _strip_list, _set_title_case_label,
                       HiddenInputWithHelp, PageCountInput)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
@@ -108,6 +108,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
         def __init__(self, *args, **kwargs):
             super(RuntimeIssueRevisionForm, self).__init__(*args, **kwargs)
+            _set_title_case_label(self, series.language)
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
             position = self.helper['editing'].slice[0].positions[0]
@@ -612,7 +613,6 @@ class IssueRevisionForm(KeywordBaseForm):
 
     def __init__(self, *args, **kwargs):
         super(IssueRevisionForm, self).__init__(*args, **kwargs)
-        self.fields['title'].label = TITLE_CASE_LABEL
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.form_class = 'form-horizontal'

@@ -54,7 +54,8 @@ NOTES_HELP = (
 # toTitleCase is in static/js/oi/title_case.js, the media of the forms
 TITLE_CASE_LABEL = (
     '<button type="button" class="mx-0 btn-blue-editing inline" '
-    'title="Capitalizes the words as in an English title" '
+    'title="Capitalizes the words by the English rules of the wiki page '
+    'Title Capitalization. Check the result." '
     'onclick="const field = this.parentElement.control; '
     'field.value = toTitleCase(field.value)">To Title Case</button> Title')
 
@@ -680,6 +681,15 @@ def _set_help_labels(self, help_links):
                 label +
                 ' <a href="%s%s" target=_blank>[?]</a>' %
                 (DOC_URL, help_links[field]))
+
+
+def _set_title_case_label(form, language):
+    """
+    Put the To Title Case button in the label of the title field, only for
+    a series in English: the button applies the English rules.
+    """
+    if language.code == 'en':
+        form.fields['title'].label = TITLE_CASE_LABEL
 
 
 def _init_no_isbn(series, revision):
