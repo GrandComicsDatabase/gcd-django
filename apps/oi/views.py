@@ -5956,16 +5956,16 @@ def move_issue(request, issue_revision_id, series_id):
 
     if request.method != 'POST':
         header_text = "Do you want to move %s to %s ?" % \
-          (issue_revision.issue.full_name(), series.full_name())
+          (issue_revision.full_name(), series.full_name())
         url = urlresolvers.reverse(
           'move_issue',
           kwargs={'issue_revision_id': issue_revision_id,
                   'series_id': series_id})
         cancel_button = "Cancel"
         confirm_button = "move of issue %s to series %s" % (
-          issue_revision.issue, series)
+          issue_revision, series)
         hidden_fields = _fields_hidden_by_series(
-          issue_revision, issue_revision.issue.series, series)
+          issue_revision, issue_revision.series, series)
         if hidden_fields:
             warning = 'The series %s does not show the %s of this issue.' \
                       % (series, ', '.join(hidden_fields))
