@@ -71,6 +71,27 @@ def key_date_years_note(revision, item, label):
     return ''
 
 
+def publisher_years_note(revision, field):
+    '''
+    Note when a year of an indicia publisher or brand group revision is
+    outside the years of its publisher. A missing or uncertain year
+    cannot show a problem, so it is not compared.
+    '''
+    year = getattr(revision, field)
+    publisher_year = getattr(revision.parent, field, None)
+    if not year or not publisher_year \
+       or getattr(revision, field + '_uncertain') \
+       or getattr(revision.parent, field + '_uncertain'):
+        return ''
+    if field == 'year_began' and year < publisher_year:
+        return ' (note: before the first year %d of the publisher)' % \
+               publisher_year
+    if field == 'year_ended' and year > publisher_year:
+        return ' (note: after the last year %d of the publisher)' % \
+               publisher_year
+    return ''
+
+
 # check to return True for yellow css compare highlighting
 @register.filter
 def check_changed(changed, field):
@@ -136,6 +157,11 @@ def field_value(revision, field):
                                      (res_holder.first_name,
                                       res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
+    elif field in ['year_began', 'year_ended'] and \
+            revision.source_name in ['indicia_publisher', 'brand_group']:
+        note = publisher_years_note(revision, field)
+        if note:
+            return '%d%s' % (value, note)
     elif field == 'indicia_publisher':
         return mark_safe(absolute_url(value) + key_date_years_note(
           revision, value, 'Indicia publisher'))
