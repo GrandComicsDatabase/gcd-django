@@ -35,7 +35,7 @@ from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 from .custom_layout_object import Formset, FormsetTabHolder
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
-    _strip_list,
+    _strip_list, TITLE_CASE_LABEL,
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
     KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
@@ -684,6 +684,9 @@ class StoryRevisionForm(KeywordBaseForm):
                 KEYWORDS_HELP,
         }
 
+    class Media:
+        js = ('js/oi/title_case.js',)
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the StoryRevisionForm with custom layout and field
@@ -724,6 +727,7 @@ class StoryRevisionForm(KeywordBaseForm):
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
         self.helper.disable_csrf = True
+        self.fields['title'].label = TITLE_CASE_LABEL
         self.fields['characters'].label = 'd) Characters'
         fields = list(self.fields)
         genres = fields.index('genre')

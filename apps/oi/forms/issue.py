@@ -19,7 +19,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
-                      _strip_list,
+                      _strip_list, TITLE_CASE_LABEL,
                       HiddenInputWithHelp, PageCountInput)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
@@ -607,8 +607,12 @@ class IssueRevisionForm(KeywordBaseForm):
         labels = ISSUE_LABELS
         help_texts = ISSUE_HELP_TEXTS
 
+    class Media:
+        js = ('js/oi/title_case.js',)
+
     def __init__(self, *args, **kwargs):
         super(IssueRevisionForm, self).__init__(*args, **kwargs)
+        self.fields['title'].label = TITLE_CASE_LABEL
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.form_class = 'form-horizontal'

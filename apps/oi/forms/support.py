@@ -51,6 +51,13 @@ NOTES_HELP = (
     'For stories and issues there is also a format to show the date, e.g. '
     '[gcd_link_story_with_date](754).')
 
+# toTitleCase is in static/js/oi/title_case.js, the media of the forms
+TITLE_CASE_LABEL = (
+    '<button type="button" class="mx-0 btn-blue-editing inline" '
+    'title="Capitalizes the words as in an English title" '
+    'onclick="const field = this.parentElement.control; '
+    'field.value = toTitleCase(field.value)">To Title Case</button> Title')
+
 GENERIC_ERROR_MESSAGE = (
     'Please correct the field errors.  Scroll down to see the specific error '
     'message(s) next to each field.')
