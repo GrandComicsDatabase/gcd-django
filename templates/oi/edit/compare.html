@@ -4,6 +4,7 @@
 {% load display %}
 {% load editing %}
 {% load mathfilter %}
+{% load compare %}
 
 {% block title %}
 GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
@@ -77,6 +78,9 @@ The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:re
     {% endif %}
   {% endif %}
 </p>
+  {% if changeset_type == 'series' and revision.added %}
+    {{ revision|same_name_series }}
+  {% endif %}
   {% include 'oi/bits/compare.html' %}
 {% endif %}
 

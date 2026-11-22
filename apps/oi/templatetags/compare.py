@@ -1,6 +1,7 @@
 from django import template
 from diff_match_patch import diff_match_patch
 from django.conf import settings
+from django.urls import reverse
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
@@ -806,6 +807,50 @@ def get_source_revisions(changeset, field):
     for revision in revisions:
         revision.compare_changes()
     return revisions
+
+
+def _sort_name(revision):
+    '''The sort name that a series revision gives its series.'''
+    if revision.leading_article:
+        return remove_leading_article(revision.name)
+    return revision.name
+
+
+def _same_box(heading, existing, queued):
+    '''
+    A box with links to the existing objects, then to the compare pages
+    of the revisions in the queue, with the state of their changeset.
+    '''
+    links = [absolute_url(item) for item in existing] + [
+      '<a href="%s">%s, %s</a>' % (
+        reverse('compare', kwargs={'id': revision.changeset_id}),
+        esc(revision), revision.changeset.display_state())
+      for revision in queued]
+    if not links:
+        return ''
+    return mark_safe('<div class="edit"><h3>%s</h3>'
+                     '<ul class="list-disc ps-4"><li>%s</li></ul></div>'
+                     % (heading, '</li><li>'.join(links)))
+
+
+@register.filter
+def same_name_series(revision):
+    '''
+    Links to the series of the publisher with the sort name of a new
+    series, and to the new series in the queue with that sort name.
+    Nothing once the changeset has left the queue.
+    '''
+    if revision.changeset.state not in states.ACTIVE:
+        return ''
+    name = _sort_name(revision)
+    queued = revision.publisher.series_revisions.filter(
+      previous_revision=None, changeset__state__in=states.ACTIVE)\
+      .exclude(changeset=revision.changeset_id).select_related('changeset')
+    return _same_box(
+      'Series with the same name at this publisher',
+      revision.publisher.active_series().filter(sort_name=name),
+      [series for series in queued
+       if _sort_name(series).casefold() == name.casefold()])
 
 
 @register.filter
