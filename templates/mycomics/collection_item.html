@@ -116,6 +116,12 @@
     {% endif %}
     </h4>
   </div>
+  {% if item.issue.deleted %}
+  <div class="alert alert-warning">
+    {% trans "This issue was deleted from the GCD." %}
+    <a href="{% url "change_history" model_name='issue' id=item.issue.id %}">{% trans "See its change history." %}</a>
+  </div>
+  {% endif %}
 
   <div class="row">
     <div class="col-md-4">
