@@ -29,7 +29,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
-from django_filters import FilterSet, MultipleChoiceFilter
+from django_filters import ChoiceFilter, FilterSet, MultipleChoiceFilter
 
 from apps.stddata.models import Country
 
@@ -7098,6 +7098,30 @@ class ChangesetTypeFilter(FilterSet):
         fields = ['change_type',]
 
 
+class EditorLogFilter(ChangesetTypeFilter):
+    indexer = ChoiceFilter(label='Indexer', empty_label='All indexers')
+
+    def __init__(self, *args, editor, **kwargs):
+        """
+        Offer the indexers of the changes in the log, with the current
+        mentees of the editor in a group of their own on top.
+        """
+        super().__init__(*args, **kwargs)
+        users = User.objects.filter(id__in=self.queryset.values('indexer'))\
+                            .select_related('indexer')\
+                            .order_by('last_name', 'first_name')
+        mentees, others = [], []
+        for user in users:
+            mentee = user.indexer.is_new and \
+                user.indexer.mentor_id == editor.id
+            (mentees if mentee else others).append((user.id,
+                                                    str(user.indexer)))
+        choices = others
+        if mentees:
+            choices = [('Your mentees', mentees), ('Other indexers', others)]
+        self.filters['indexer'].extra['choices'] = choices
+
+
 @login_required
 def show_approved(request):
 
@@ -7166,7 +7190,7 @@ def show_editor_log(request):
                                comments__new_state__in=changed_states,
                                comments__commenter=request.user)\
                        .exclude(indexer=request.user).distinct()
-    filter = ChangesetTypeFilter(request.GET, changes)
+    filter = EditorLogFilter(request.GET, changes, editor=request.user)
     changes = filter.qs
 
     # TODO: check again with django 5
