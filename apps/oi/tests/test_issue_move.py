@@ -242,3 +242,25 @@ def test_edit_page_offers_the_move_for_a_new_variant_too(
     content = response.content.decode()
     assert _move_url(base, 0) in content
     assert _move_url(new_variant, 0) in content
+
+
+@pytest.mark.django_db
+def test_moved_new_variant_is_first_in_its_new_series(
+        client, logged_in_indexer, new_variant, any_added_issue,
+        any_added_series):
+    """The issue of the old series it was added after does not place it."""
+    target = any_added_series
+    for number in ('1', '2'):
+        _add_issue(target, logged_in_indexer,
+                   any_added_issue.indicia_publisher, number)
+    # the add form puts a new variant after its base issue
+    new_variant.after = any_added_issue
+    new_variant.save()
+    _move(client, new_variant, target)
+
+    _approve(new_variant.changeset, logged_in_indexer)
+
+    variant = IssueRevision.objects.get(id=new_variant.id).issue
+    assert variant.series == target
+    # first, like an approved issue moved to another series
+    assert target.active_issues().order_by('sort_code').first() == variant
