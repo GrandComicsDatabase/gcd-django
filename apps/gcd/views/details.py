@@ -9,7 +9,7 @@ from operator import attrgetter
 from random import randint, choice
 
 from django.db.models import F, Q, Min, Count, Sum, Case, When, Value, \
-                             OuterRef, Subquery
+                             Exists, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from django.conf import settings
 import django.urls as urlresolvers
@@ -29,6 +29,7 @@ from django_tables2.export.export import TableExport
 import django_tables2 as tables
 
 from djqscsv import render_to_csv_response
+from django_mysql.models import GroupConcat
 
 from taggit.models import Tag, TaggedItem
 
@@ -79,6 +80,7 @@ from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   IndiciaPublisherIssueCoverTable, \
                                   IssuePublisherTable, PublisherIssueTable, \
                                   SeriesDetailsIssueTable, \
+                                  SeriesIndexStatusTable, \
                                   IssueCoverTable, \
                                   IssueCoverPublisherTable, \
                                   PublisherIssueCoverTable, \
@@ -93,7 +95,7 @@ from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
                                    CharacterSeriesTable, GroupSeriesTable, \
                                    DailyChangesSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
-                                  StoryTable
+                                  STORY_TYPES, StoryTable
 from apps.gcd.views import paginate_response, ORDER_CHRONO, \
                            ResponsePaginator
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -2865,6 +2867,59 @@ def status(request, series_id):
     return HttpResponseRedirect(
       urlresolvers.reverse('show_series',
                            kwargs={'series_id': series_id}) + '#index_status')
+
+
+def series_index_status(request, series_id):
+    """
+    Display a table with the indexing state of each issue of a series.
+    """
+    series = get_gcd_object(Series, series_id)
+    stories = Q(story__deleted=False)
+
+    def pages(*types):
+        story_types = Q(story__type__in=types) if types else Q()
+        return Sum('story__page_count', filter=stories & story_types,
+                   default=0)
+
+    scans = Image.objects.filter(
+      object_id=OuterRef('pk'), deleted=False,
+      content_type__app_label='gcd', content_type__model='issue')\
+      .values('object_id')\
+      .annotate(types=GroupConcat('type__description', separator=', ',
+                                  ordering='asc'))
+    uncertain_credits = Coalesce(Subquery(StoryCredit.objects.filter(
+      story__issue=OuterRef('pk'), story__deleted=False, deleted=False,
+      uncertain=True).values('story__issue').annotate(count=Count('pk'))
+      .values('count')), 0)
+    issues = series.active_issues().order_by('sort_code').annotate(
+      indexed_pages=pages(),
+      comic_pages=pages(STORY_TYPES['comic story']),
+      ad_pages=pages(*AD_TYPES),
+      unknown_credits=sum((Count('story', filter=stories & Q(**{
+        'story__%s__startswith' % credit: '?'})) for credit in CREDIT_TYPES),
+        uncertain_credits),
+      cover_sequence=Count('story', filter=stories & Q(
+        story__type=STORY_TYPES['cover'])),
+      cover_scan=Exists(Cover.objects.filter(issue=OuterRef('pk'),
+                                             deleted=False)),
+      other_scans=Subquery(scans.values('types')))
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': mark_safe('with their indexing state for %s' %
+                             series.full_name_with_link(publisher=True)),
+        'result_disclaimer': 'Indexed pages add up the page counts of all '
+                             'sequences; "?" credits count the credit fields'
+                             ' that start with "?" and the uncertain '
+                             'credits.',
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = SeriesIndexStatusTable(issues,
+                                   template_name=TW_SORT_TABLE_TEMPLATE,
+                                   order_by=('issue'))
+    return generic_sortable_list(request, issues, table, template, context,
+                                 500)
 
 
 def _get_scan_table(series, show_cover=True):
