@@ -1278,7 +1278,7 @@ class KeywordAutocomplete(LoginRequiredMixin,
         if not auth:
             return False
 
-        if request.user.has_perm('gcd.can_vote'):
+        if request.user.has_perm('indexer.can_vote'):
             return True
 
         return False
