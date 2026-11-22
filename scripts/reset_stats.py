@@ -1,7 +1,7 @@
 from django.db.models import Q, F, Count, Case, When
 
 from apps.stats.models import CountStats
-from apps.gcd.models import Series, Issue
+from apps.gcd.models import Publisher, Series, Issue
 from apps.stddata.models import Language, Country
 
 
@@ -42,7 +42,45 @@ def reset_series_issue_count_cache():
     Series.objects.update(issue_count=Coalesce(Subquery(subquery), 0))
 
 
+def reset_publisher_series_issue_count_cache():
+    """
+    Recount Publisher.series_count and Publisher.issue_count.
+
+    Approvals change these counts by steps: Publisher.update_cached_counts()
+    adds the deltas of Series.stat_counts() and Issue.stat_counts().
+    This recount gives the totals of those steps:
+
+    - series_count: the series that are not deleted, comics
+      publications or not ('series' and 'publisher series');
+    - issue_count: the issues that are not deleted and not variants,
+      in series that are not deleted and are comics publications.
+
+    Unlike Series.issue_count, a variant whose base issue is in another
+    series is not counted.
+    """
+    from django.db.models import Subquery, OuterRef
+    from django.db.models.functions import Coalesce
+
+    series = Series.objects.filter(
+        deleted=False, publisher_id=OuterRef('pk'),
+    ).values('publisher_id').annotate(
+        c=Count('id')).values('c').order_by()
+
+    issues = Issue.objects.filter(
+        deleted=False, variant_of__isnull=True, series__deleted=False,
+        series__is_comics_publication=True,
+        series__publisher_id=OuterRef('pk'),
+    ).values('series__publisher_id').annotate(
+        c=Count('id')).values('c').order_by()
+
+    Publisher.objects.update(
+        series_count=Coalesce(Subquery(series), 0),
+        issue_count=Coalesce(Subquery(issues), 0))
+
+
 def run():
     main()
     # only reset the series issue count cache if explicitly requested
     # reset_series_issue_count_cache()
+    # only recount the publishers if explicitly requested
+    # reset_publisher_series_issue_count_cache()
