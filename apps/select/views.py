@@ -1719,7 +1719,7 @@ def filter_issues(request, issues, story_type_filter=False,
                          language_filter=language_filter
                          )
     issues = filter.qs
-    if not issues:
+    if not issues.exists():
         filter.form.fields.pop('publisher', None)
         filter.form.fields.pop('country', None)
         filter.form.fields.pop('language', None)
@@ -1744,7 +1744,7 @@ def filter_sequences(request, sequences, language_filter=True):
                             publisher='issue__series__publisher',
                             language_filter=language_filter)
     sequences = filter.qs
-    if not sequences:
+    if not sequences.exists():
         filter.form.fields.pop('publisher', None)
         filter.form.fields.pop('country', None)
         filter.form.fields.pop('language', None)
