@@ -94,12 +94,10 @@ This ballot did not produce a valid result due to a tie, lack of quorum, or
 other condition.
       {% else %}
 Total number of voters: {{ topic.num_voters }}
-        {% with topic.agenda as agenda %}
 <!-- queues class for CSS.  TODO: refactor CSS -->
 <div class="queues">
-          {% include "voting/tally.html" %}
+        {% include "voting/tally.html" %}
 </div>
-        {% endwith %}
       {% endif %}
     {% endif %}
 </p>

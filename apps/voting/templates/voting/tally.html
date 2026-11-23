@@ -4,7 +4,7 @@
   <tr class="bg-blue-100 md:top-0 [&_th]:px-2">
     <th> Option </th>
     <th> Votes </th>
-{% if not agenda.secret_ballot %}
+{% if show_voters %}
     <th> Voters </th>
   {% if not topic.vote_type.max_votes %}
     <th> Rank </th>
@@ -15,7 +15,7 @@
   <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
     <td class="align-top"> {{ option }} </td>
     <td class="align-top"> {{ option.num_votes}} </td>
-  {% if not agenda.secret_ballot %}
+  {% if show_voters %}
     {% if topic.invalid and option.votes.all.count %}
     <td> Voters hidden for invalid results. </td>
       {% if not topic.vote_type.max_votes %}
@@ -44,7 +44,7 @@
   <tr>
     <td> Absent Voters </td>
     <td> {{ av.count }} </td>
-    {% if not agenda.secret_ballot %}
+    {% if show_voters %}
     <td>
       <ul class="compact">
       {% for exp_voter in av.all %}

@@ -11,8 +11,9 @@ from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import User
+from django.contrib.auth.views import redirect_to_login
 
 from apps.indexer.views import render_error
 from apps.voting.models import Agenda, Option, Receipt, Topic, Vote, \
@@ -259,24 +260,40 @@ def _send_result_email(topic, extra=''):
               message=email_body)
 
 
-@login_required
 def topic(request, id):
+    """
+    Show a ballot. Voting members see every ballot and vote on open ones.
+    Everyone can read a closed ballot; its voters' names are shown to
+    voting members, and to everyone on a Board agenda, never when secret.
+    """
     topic = get_object_or_404(Topic, id=id)
+    is_voter = request.user.has_perm('indexer.can_vote')
+    closed = topic.deadline < timezone.now() or topic.result_calculated
+    # As on the agenda page, a ballot that was never opened has no result.
+    has_result = closed and (topic.open or topic.result_calculated)
 
-    if not request.user.has_perm('indexer.can_vote'):
+    if not is_voter and not has_result:
+        if request.user.is_anonymous:
+            return redirect_to_login(request.get_full_path())
         return render_error(
           request, 'You do not have permission to vote on this topic.')
-    # Note that if this was a secret ballot, this will be an empty
-    # queryset.  That is OK, the UI won't look at it in that case.
-    # But this is why "voted" is not just a check for at least one vote here.
-    votes = topic.options.filter(votes__voter=request.user)
+    if request.user.is_authenticated:
+        voted = topic.has_vote_from(request.user)
+        # Note that if this was a secret ballot, this will be an empty
+        # queryset.  That is OK, the UI won't look at it in that case.
+        # But this is why "voted" is not just a check for at least one vote.
+        votes = topic.options.filter(votes__voter=request.user)
+    else:
+        voted, votes = False, topic.options.none()
+    on_board = topic.agenda.permission.codename == 'on_board'
+    show_voters = not topic.agenda.secret_ballot and (is_voter or on_board)
 
     return render(request, 'voting/topic.html',
                   {'topic': topic,
-                   'voted': topic.has_vote_from(request.user),
+                   'voted': voted,
                    'votes': votes,
-                   'closed': topic.deadline < timezone.now() or
-                      topic.result_calculated,
+                   'closed': closed,
+                   'show_voters': show_voters,
                    'settings': settings})
 
 
