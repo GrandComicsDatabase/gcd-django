@@ -99,7 +99,7 @@ Reviewing :: {{ revision }}
 {% if extra_revision %}
   {% with revision=extra_revision %}
     {% include 'oi/bits/compare.html' %}
-    {% other_signatures revision %}
+    {% objects_to_compare revision %}
   {% endwith %}
 {% endif %}
 

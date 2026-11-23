@@ -79,7 +79,7 @@ The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:re
   {% endif %}
 </p>
   {% include 'oi/bits/compare.html' %}
-  {% other_signatures revision %}
+  {% objects_to_compare revision %}
 {% endif %}
 
 {% if revision.external_link_revisions and not changeset_type == 'issue' %}

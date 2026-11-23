@@ -4,8 +4,8 @@ from django.conf import settings
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape as esc, format_html
-from django.contrib.contenttypes.models import ContentType
+from django.utils.html import conditional_escape as esc, format_html, \
+                              format_html_join
 
 from stdnum import ean as stdean
 
@@ -21,8 +21,7 @@ from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
                            ReprintRevision, StoryRevision, IssueRevision, \
                            IssueCreditRevision
-from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS, \
-                            CreatorSignature, Image
+from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
 from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
@@ -842,37 +841,24 @@ def relation_source_is_in(value, relation_objs):
 
 
 @register.simple_tag
-def other_signatures(revision):
+def objects_to_compare(revision):
     '''
-    The other signatures of the creator of a signature revision, with their
-    images, so that a new signature can be compared with them.
+    The objects that the type of the revision lists on its compare page,
+    each linked and followed by its note or else by its thumbnail.
     '''
-    if getattr(revision, 'source_name', '') != 'creator_signature':
+    heading, rows = revision.objects_to_compare()
+    if not rows:
         return ''
-    signatures = list(CreatorSignature.objects.filter(
-      creator_id=revision.creator_id, deleted=False)
-      .exclude(id=revision.creator_signature_id).order_by('name'))
-    if not signatures:
-        return ''
-    images = {}
-    if not settings.FAKE_IMAGES:
-        # one query for the images of all signatures
-        images = {image.object_id: image for image in Image.objects.filter(
-          content_type=ContentType.objects.get_for_model(CreatorSignature),
-          object_id__in=[signature.id for signature in signatures],
-          type__name='CreatorSignature', deleted=False)}
-    rows = ''
-    for signature in signatures:
-        if signature.generic:
-            shown = ' [generic]'
-        elif signature.id in images:
+    items = []
+    for data_object, name, image, note in rows:
+        if note:
+            shown = format_html(' [{}]', note)
+        elif image:
             shown = format_html(' <img class="inline" src="{}" alt="{}">',
-                                images[signature.id].thumbnail.url,
-                                signature.name)
+                                image.thumbnail.url, name)
         else:
             shown = ''
-        rows += format_html('<li>{}{}</li>', absolute_url(
-          signature, descriptor=esc(signature.name)), shown)
-    return format_html('<h3>Other signatures of this creator:</h3>'
+        items.append((absolute_url(data_object, descriptor=esc(name)), shown))
+    return format_html('<h3>{}:</h3>'
                        '<ol class="object-page-numbered-list">{}</ol>',
-                       mark_safe(rows))
+                       heading, format_html_join('', '<li>{}{}</li>', items))

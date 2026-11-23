@@ -108,7 +108,7 @@ def test_other_signatures_without_a_query_per_signature(
     _signature(creator, 'Plain Name', generic=True)
     revision = CreatorSignatureRevision(creator=creator, name='Edited Name',
                                         creator_signature=edited)
-    template = Template('{% load compare %}{% other_signatures revision %}')
+    template = Template('{% load compare %}{% objects_to_compare revision %}')
 
     with django_assert_num_queries(2):
         html = template.render(Context({'revision': revision}))
@@ -119,7 +119,11 @@ def test_other_signatures_without_a_query_per_signature(
     assert 'Edited Name' not in html
 
 
-def test_no_list_for_other_changes(any_added_publisher_rev):
-    template = Template('{% load compare %}{% other_signatures revision %}')
-    html = template.render(Context({'revision': any_added_publisher_rev}))
+def test_other_revision_types_list_nothing(django_assert_num_queries,
+                                           any_added_publisher_rev):
+    """The generic tag shows nothing for another type, without a query."""
+    template = Template('{% load compare %}{% objects_to_compare revision %}')
+    with django_assert_num_queries(0):
+        html = template.render(Context({'revision': any_added_publisher_rev}))
+    assert any_added_publisher_rev.objects_to_compare() == ('', [])
     assert html == ''
