@@ -179,6 +179,15 @@ system packages needed to compile the project dependencies. Create a database
 and user, then point the launcher at it. The native defaults expect a MySQL
 server exposed on local port 3308 so they work with the Docker database too.
 
+The tests of concurrent changes read two Performance Schema tables, so the
+database user also needs `SELECT` on them (shown for the default user
+`gcd_dev`; use your own user and host):
+
+```sql
+GRANT SELECT ON performance_schema.data_locks TO 'gcd_dev'@'localhost';
+GRANT SELECT ON performance_schema.data_lock_waits TO 'gcd_dev'@'localhost';
+```
+
 On Ubuntu 24.04, install the build prerequisites with:
 
 ```bash
