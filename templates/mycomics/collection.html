@@ -70,9 +70,11 @@
             <input style="width: 100%;" class="btn btn-primary" type="submit" />
         </form>
       </div>
+      {% if request.user.collector == collection.collector %}
       <a href="{% url 'edit_collection_items' collection.id %}?{{ extra_query_string }}">
         <button type="button" class="btn btn-primary">{% trans "Edit Shown Items" %}
       </button></a>
+      {% endif %}
       <h3>{% trans "Collections" %}:</h3>
       <div class="list-group">
         {% for col_item in collection_list %}
@@ -97,11 +99,13 @@
         {% for item in items %}
           <div class="col-md-2">
             <div class="btn-group pull-right">
+              {% if request.user.collector == collection.collector %}
               <button type="button" class="my-btn btn-primary btn-sm"
                       style="display: inline-block;" data-toggle="modal" onclick="remove_issue({{ item.id }}, {{ collection.id }});"
                       id="remove-item-{{ item.id }}" data-issue="{{ item.issue.full_name }}" data-collection="{{ collection.name }}">
                   <span class="glyphicon glyphicon-remove"></span>
               </button>
+              {% endif %}
             </div>
           <a href="{% url "view_item" item.id collection.id %}">
             <div class="thumbnail">
