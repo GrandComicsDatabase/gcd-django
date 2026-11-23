@@ -277,6 +277,10 @@ def topic(request, id):
             return redirect_to_login(request.get_full_path())
         return render_error(
           request, 'You do not have permission to vote on this topic.')
+    if has_result and not topic.result_calculated:
+        # Count the votes as the agenda page does, so that a ballot short
+        # of its quorum or tied shows as invalid, with no names.
+        _calculate_results([topic])
     if request.user.is_authenticated:
         voted = topic.has_vote_from(request.user)
         # Note that if this was a secret ballot, this will be an empty
