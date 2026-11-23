@@ -1,14 +1,28 @@
 # -*- coding: utf-8 -*-
 """A button puts the title of a sequence or an issue in title case."""
 
+import json
 import re
+import shutil
+import subprocess
+from pathlib import Path
 
 import pytest
 
+from django.conf import settings
 from django.urls import reverse
 
 from apps.oi.models import CTYPES
 from apps.stddata.models import Language
+
+TITLE_CASE_JS = Path(settings.STATICFILES_DIRS[0], 'js', 'oi', 'title_case.js')
+NODE = shutil.which('node')
+# loads the script and prints toTitleCase of each title read from stdin
+RUN_SCRIPT = (
+    "const fs = require('fs');"
+    "require('vm').runInThisContext(fs.readFileSync(process.argv[1], 'utf8'));"
+    "const titles = JSON.parse(fs.readFileSync(0, 'utf8'));"
+    "console.log(JSON.stringify(titles.map(toTitleCase)));")
 
 
 @pytest.fixture
@@ -60,6 +74,8 @@ def test_title_has_title_case_button(indexer_client, any_edit_story_rev,
       r'this\.parentElement\.control[^"]*toTitleCase\(', label)
     # the rule of the button comes from a static script
     assert 'src="/static/js/oi/title_case.js"' in page
+    # only the title has it: the feature keeps the spelling it is given
+    assert page.count('toTitleCase(') == 1
 
 
 @pytest.mark.django_db
@@ -73,3 +89,32 @@ def test_title_has_no_button_in_another_language(
 
     assert '<button' not in label
     assert label.strip().startswith('Title')
+
+
+@pytest.mark.skipif(NODE is None, reason='the script runs in Node.js')
+@pytest.mark.parametrize('typed, expected', [
+    # prepositions of fewer than five letters stay in lower case
+    ('journey up the river', 'Journey up the River'),
+    ('war over the world', 'War over the World'),
+    ('the house near the sea', 'The House near the Sea'),
+    ('a step off the edge', 'A Step off the Edge'),
+    ('the man down the hall', 'The Man down the Hall'),
+    ('a walk past the gate', 'A Walk past the Gate'),
+    ('from dusk till dawn', 'From Dusk till Dawn'),
+    ('a day like no other', 'A Day like No Other'),
+    ('running with scissors', 'Running with Scissors'),
+    # prepositions of five or more letters get a capital
+    ('a dialogue between the soul and body',
+     'A Dialogue Between the Soul and Body'),
+    # so does the first word of a compound preposition
+    ('time out of mind', 'Time Out of Mind'),
+    # and a short word with no object after it, here an adverb
+    ('go down, moses', 'Go Down, Moses'),
+])
+def test_prepositions_get_a_capital_from_five_letters(typed, expected):
+    """The wiki capitalizes only the prepositions of five or more letters."""
+    result = subprocess.run([NODE, '-e', RUN_SCRIPT, str(TITLE_CASE_JS)],
+                            input=json.dumps([typed]), capture_output=True,
+                            text=True, check=True)
+
+    assert json.loads(result.stdout) == [expected]

@@ -5,10 +5,14 @@
 // after its first letter, such as USA, X-Men or McCoy, stays as it is; a
 // title entered in capitals only is put in lower case first.
 function toTitleCase(title) {
-    const smallWords = ['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for',
-                        'from', 'in', 'into', 'nor', 'of', 'on', 'onto',
-                        'or', 'per', 'the', 'to', 'upon', 'via', 'vs',
-                        'with'];
+    const prepositions = ['amid', 'as', 'at', 'atop', 'by', 'down', 'for',
+                          'from', 'in', 'into', 'like', 'near', 'of', 'off',
+                          'on', 'onto', 'out', 'over', 'past', 'per',
+                          'till', 'to', 'unto', 'up', 'upon', 'via', 'vs',
+                          'with'];
+    const smallWords = prepositions.concat(['a', 'an', 'and', 'but', 'nor',
+                                            'or', 'the']);
+    const bare = word => word.replace(/\P{L}/gu, '').toLowerCase();
     if (title === title.toUpperCase()) {
         title = title.toLowerCase();
     }
@@ -19,11 +23,17 @@ function toTitleCase(title) {
         // a colon, ! or ? and a dash between spaces start a new part
         const inside = before && !/[:!?]$|\s-+$/.test(before) &&
                        offset + word.length < end;
-        const bare = word.replace(/\P{L}/gu, '').toLowerCase();
         if (/\p{L}.*\p{Lu}/u.test(word)) {
             return word;
         }
-        if (inside && smallWords.includes(bare)) {
+        // a preposition is followed by its object: one of the list before a
+        // comma, as in Go Down, Moses, or before another preposition, as in
+        // Time Out of Mind, gets a capital
+        const next = /[,;:!?]$/.test(word) ? null :
+            title.slice(offset + word.length).match(/^(?:\s+|-)([^\s-]+)/);
+        const object = next && !prepositions.includes(bare(next[1]));
+        if (inside && smallWords.includes(bare(word)) &&
+                (object || !prepositions.includes(bare(word)))) {
             return word.toLowerCase();
         }
         // a word that starts with a digit, such as 2nd, stays as it is
