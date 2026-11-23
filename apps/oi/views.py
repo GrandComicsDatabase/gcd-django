@@ -358,28 +358,36 @@ def validate_changeset_revisions(changeset, request):
     revisions = list(changeset.issuerevisions.filter(deleted=False))
     revisions.extend(changeset.storyrevisions.filter(deleted=False))
     page_count_sum = 0
+    page_count_uncertain = False
+    page_count_changed = False
     for revision in revisions:
         if type(revision) is StoryRevision and revision.page_count is not None:
             page_count_sum += revision.page_count
+            if revision.page_count_uncertain:
+                page_count_uncertain = True
         # A changeset can contain cloned sequences that the indexer did not
         # edit. Recompute comparison state so legacy data in those untouched
         # sequences does not become part of the indexer's required work.
         revision.compare_changes()
         if not revision.is_changed:
             continue
+        elif type(revision) in [StoryRevision, IssueRevision]:
+            if revision.changed['page_count'] or revision.changed['page_count_uncertain']:
+                page_count_changed = True
         messages = validate_revision_for_transition(revision, request)
         if messages:
             invalid.append((revision, messages))
     if changeset.change_type == CTYPES['issue'] and page_count_sum > 0:
         issue = changeset.issuerevisions.first()
-        if issue.page_count is not None and\
+        if issue.page_count is not None and page_count_changed and \
            not issue.page_count_uncertain and \
-           page_count_sum > issue.page_count:
+           page_count_sum > issue.page_count and not page_count_uncertain:
             invalid.append((issue,
                             ['Sum of the page count of all sequences is %d, '
                              'which exceeds the issue page count of %d. In '
                              'doubt, flag page count uncertain for the '
-                             'issue.' % (page_count_sum, issue.page_count)]))
+                             'issue or at least one of the sequences.'
+                             % (page_count_sum, issue.page_count)]))
     return invalid
 
 
