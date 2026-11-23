@@ -15,7 +15,7 @@
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
       <td>{{ creator_award.recipient }}</td>
       <td><a href="{{ creator_award.get_absolute_url }}"> {{ creator_award.award_name }}</a> </td>
-      <td> {{ creator_award.award_year }} </td>
+      <td> {{ creator_award.display_year }} </td>
     </tr>
     {% endwith %}
   {% endfor %}

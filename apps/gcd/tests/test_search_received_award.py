@@ -50,3 +50,9 @@ def test_received_awards_sorted_by_year(client, received_awards):
     """The chronological order follows the year of the award."""
     content = _search(client, sort='chrono')
     assert content.index('Test Prize B') < content.index('Test Prize A')
+
+
+def test_received_awards_uncertain_year(client, received_awards):
+    """An uncertain year is shown with its question mark."""
+    ReceivedAward.objects.filter(award_name='Test Prize B')         .update(award_year_uncertain=True)
+    assert '1999?' in _search(client)
