@@ -526,10 +526,11 @@ ISSUE_LABELS = {
 
 # a migrated text credit can bring a description such as "Editor"
 CREDIT_NAME_LABEL = (
+    'Credit description: '
     '<button type="button" class="mx-0 btn-blue-editing inline" '
     'onclick="const field = this.parentElement.control; '
     'field.value = field.value.toLowerCase()">To Lower Case</button> '
-    'Credit description')
+    )
 
 ISSUE_HELP_TEXTS = {
     'number':

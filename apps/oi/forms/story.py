@@ -336,6 +336,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
         self.helper.form_tag = False
         # self.helper.disable_csrf = True
         self.formset_helper = StoryFormSetHelper()
+        self.fields['creator'].label_suffix = ''
+        self.fields['credit_name'].label_suffix = ''
         fields = list(self.fields)
         fields.append('id')
         field_list = [BaseField(Field(field,
@@ -355,11 +357,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
                 'ghost work.',
-      label='<button hx-get="/select/creator/by_detail/" type="button" '
+      label='Creator: <br class="max-sm:hidden">'
+            '<button hx-get="/select/creator/by_detail/" type="button" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
             'hx-on:htmx:after-request="setSelectValue(event)" '
             'hx-swap="none" class="mx-0 btn-blue-editing inline">To Official'
-            '</button> Creator'
+            '</button>'
     )
 
     signature = forms.ModelChoiceField(
