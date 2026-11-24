@@ -6887,6 +6887,7 @@ def show_queue(request, queue_name):
         'states': states,
         'countries': countries,
         'country_names': country_names,
+        'queue_empty': not changes.exists(),
         'data': [
           {
             'object_name': 'Awards',
