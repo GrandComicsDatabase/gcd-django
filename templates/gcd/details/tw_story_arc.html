@@ -42,6 +42,10 @@ GCD :: Story Arc :: {{ story_arc.name }}
             </tr>
 {% endif %}
           </table>  
+{% url "story_arc_creators" story_arc_id=story_arc.id as creators_url %}
+          <ul class="object-page-link-list">
+            <li><a href="{{ creators_url }}">Creator List</a></li>
+          </ul>
         </div>
       </div> 
     </td>

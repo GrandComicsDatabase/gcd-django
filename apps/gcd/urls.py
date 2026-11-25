@@ -385,6 +385,10 @@ urlpatterns = [
 
     path('story_arc/<int:story_arc_id>/',
       gcd_views.details.story_arc, name='show_story_arc'),
+    path('story_arc/<int:story_arc_id>/creators/',
+      gcd_views.details.story_arc_creators, name='story_arc_creators'),
+    path('story_arc/<int:story_arc_id>/creator/<int:creator_id>/issues/',
+      gcd_views.details.creator_issues, name='story_arc_creator_issues'),
     path('story_arc/search/',
          gcd_views.search.story_arc_search_hx, name='story_arc_search_hx'),
     path('story_arc_relation/<int:story_arc_relation_id>/',
