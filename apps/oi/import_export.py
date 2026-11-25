@@ -48,11 +48,18 @@ def _handle_import_error(request, return_url, error_text):
         is_safe=True)
 
 
-def _file_format(request):
+def _file_format(request, default='tsv'):
+    """
+    The format of the button that sent the file. Without a button, the
+    format that the page read before format 2.0: TSV for an issue and its
+    sequences, CSV for the issues of a series.
+    """
     for file_format in ('csv', 'json', 'yaml'):
         if file_format in request.POST:
             return file_format
-    return 'tsv'
+    if 'tab' in request.POST:
+        return 'tsv'
+    return default
 
 
 def _read_upload(request_file):
@@ -241,7 +248,8 @@ def import_issues_to_series(request, series_id):
         return HttpResponseRedirect(
           urlresolvers.reverse('show_series', kwargs={'series_id': series.id}))
     try:
-        records = _read_records(request.FILES['file'], _file_format(request),
+        records = _read_records(request.FILES['file'],
+                                _file_format(request, default='csv'),
                                 series=True)
         # issues are added without their sequences, only a variant can come
         # with its cover

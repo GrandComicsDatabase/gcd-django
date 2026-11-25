@@ -26,6 +26,8 @@ from apps.oi.interchange import (
 from apps.oi.models import Changeset, IssueRevision, CTYPES
 
 FORMATS = ['csv', 'tsv', 'json', 'yaml']
+# the name of the button of each format on the import forms
+BUTTONS = {'csv': 'csv', 'tsv': 'tab', 'json': 'json', 'yaml': 'yaml'}
 
 
 def _request(user, method='get', data=None):
@@ -128,7 +130,7 @@ def _import_into_new_changeset(user, issue, content, file_format):
     response = import_export.import_issue_from_file(
       _request(user, 'post', {
         'flatfile': SimpleUploadedFile('issue.' + file_format, content),
-        file_format: '1'}),
+        BUTTONS[file_format]: '1'}),
       issue.id, changeset.id)
     return response, issue_revision
 
@@ -312,7 +314,7 @@ def test_series_import_adds_issues_without_sequences(importer, credited_story,
       _request(importer, 'post', {
         'file': SimpleUploadedFile('issue.' + file_format,
                                    _export(importer, issue.id, file_format)),
-        file_format: '1'}),
+        BUTTONS[file_format]: '1'}),
       issue.series.id)
 
     assert 'error' not in response['Location']
