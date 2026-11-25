@@ -62,7 +62,11 @@
 {% endblock %}
 
 {% block content %}
+{% if page.paginator.count %}
 {% render_table table %}
+{% else %}
+<p>No issues found.</p>
+{% endif %}
 {% endblock content %}
 
 {% block editing %}

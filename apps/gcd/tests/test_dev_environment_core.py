@@ -4,8 +4,10 @@ import json
 import os
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -125,6 +127,15 @@ def test_compose_defines_opt_in_search_services():
         set(compose['volumes'])
 
 
+def test_compose_sizes_mysql_for_the_full_catalog_with_an_override():
+    """Docker MySQL avoids the 128 MiB default but remains configurable."""
+    database = _load_compose_file()['services']['db']
+
+    assert database['command'] == [
+        '--innodb-buffer-pool-size=${GCD_MYSQL_BUFFER_POOL_SIZE:-1G}'
+    ]
+
+
 def test_compose_waits_for_database_and_migrations_before_web_starts():
     """Startup is health-gated rather than relying on a polling script."""
     services = _load_compose_file()['services']
@@ -217,13 +228,28 @@ def test_dev_launcher_allows_long_catalog_column_lists():
         in launcher
 
 
+def test_dev_launcher_copies_catalog_keywords_by_content_type():
+    """Dump keywords are linked through matching content types, not raw ids."""
+    launcher = _read_project_file('bin/dev')
+    setup_body = launcher.split('setup_dump_database() {', 1)[1]
+    assert setup_body.index('copy_dump_catalog') < \
+        setup_body.index('copy_dump_keywords')
+    keywords = launcher.split('copy_dump_keywords() {', 1)[1] \
+        .split('setup_dump_database() {', 1)[0]
+    assert 'target_type.app_label = source_type.app_label' in keywords
+    assert 'target_type.model = source_type.model' in keywords
+    assert "WHERE source_type.app_label = 'gcd'" in keywords
+
+
 def test_dev_launcher_handles_crlf_dotenv_and_native_database_overrides():
     """The .env parser supports Windows endings and native DB configuration."""
     launcher = _read_project_file('bin/dev')
     example_environment = _read_project_file('.env.example')
 
+    assert 'GCD_MYSQL_BUFFER_POOL_SIZE' in launcher
     assert 'MYSQL_HOST MYSQL_PORT' in launcher
     assert 'line="${line%$\'\\r\'}"' in launcher
+    assert 'GCD_MYSQL_BUFFER_POOL_SIZE=1G' in example_environment
     assert 'MYSQL_HOST=127.0.0.1' in example_environment
     assert 'MYSQL_PORT=3308' in example_environment
 
@@ -275,6 +301,22 @@ def test_development_search_settings_enable_existing_queue_backend():
     }
 
 
+def test_ci_exercises_native_setup_and_tests_as_a_scoped_user():
+    """The compatibility job must exercise the launcher, not just manage.py."""
+    job = _load_dev_environment_workflow()['jobs']['compatibility']
+    env = job['env']
+    assert env['MYSQL_USER'] != 'root'
+    assert env['MYSQL_DATABASE'].startswith('gcd_dev_')
+    assert job['services']['mysql']['env']['MYSQL_DATABASE'] == (
+        env['MYSQL_DATABASE']
+    )
+    steps = [step.get('run', '') for step in job['steps']]
+    smoke = steps.index('python .github/scripts/smoke_native_setup.py')
+    assert not any('manage.py migrate' in step for step in steps[:smoke])
+    assert any('./bin/dev --runtime native test' in step
+               for step in steps[smoke + 1:])
+
+
 def test_ci_rebuilds_and_verifies_the_optional_search_environment():
     """CI exercises indexing, queries, and queued updates on Ubuntu 24.04."""
     workflow = _load_dev_environment_workflow()
@@ -288,3 +330,251 @@ def test_ci_rebuilds_and_verifies_the_optional_search_environment():
     assert './bin/dev search-rebuild' in commands
     assert 'verify_development_search' in commands
     assert 'docker compose --profile search down --volumes' in commands
+
+
+@pytest.fixture
+def native_launcher(tmp_path):
+    """Run an isolated launcher with recording Python/Docker stand-ins."""
+    project = tmp_path / 'project with spaces'
+    binaries = project / 'bin'
+    binaries.mkdir(parents=True)
+    launcher = binaries / 'dev'
+    launcher.write_text(_read_project_file('bin/dev'), encoding='utf-8')
+    launcher.chmod(0o755)
+    log = tmp_path / 'python-calls.jsonl'
+    docker_log = tmp_path / 'docker-called'
+    python = binaries / 'record-python'
+    python.write_text(f'#!{sys.executable}\n' + textwrap.dedent('''
+        import json
+        import os
+        import sys
+
+        arguments = sys.argv[1:]
+        if arguments[0] == '-c':
+            stage = ('version' if 'sys.version_info' in arguments[1]
+                     else 'database')
+        elif arguments == ['scripts/check_dev_environment.py']:
+            stage = 'verify'
+        else:
+            stage = {'seed_development_data': 'seed',
+                     'runserver': 'server'}.get(arguments[1], arguments[1])
+        with open(os.environ['NATIVE_TEST_LOG'], 'a') as output:
+            output.write(json.dumps({
+                'stage': stage, 'arguments': arguments, 'cwd': os.getcwd(),
+                'environment': {key: os.environ.get(key) for key in (
+                    'DJANGO_SETTINGS_MODULE', 'MYSQL_DATABASE', 'MYSQL_HOST',
+                    'MYSQL_PORT', 'MYSQL_USER', 'MYSQL_PASSWORD',
+                    'USE_ELASTICSEARCH')},
+            }) + '\\n')
+        if stage == os.environ.get('NATIVE_TEST_FAIL_STAGE'):
+            raise SystemExit(42)
+        if stage == 'database':
+            print(os.environ['NATIVE_TEST_DATABASE_NAME'])
+    '''), encoding='utf-8')
+    python.chmod(0o755)
+    docker = binaries / 'docker'
+    docker.write_text(
+        '#!/bin/sh\nprintf called > "$NATIVE_TEST_DOCKER_LOG"\nexit 99\n',
+        encoding='utf-8',
+    )
+    docker.chmod(0o755)
+
+    def run(*arguments, environment=None, dotenv=None, cwd=None):
+        """Keep shell configuration and every executable call test-local."""
+        log.unlink(missing_ok=True)
+        docker_log.unlink(missing_ok=True)
+        env = {
+            'PATH': f'{binaries}:/usr/bin:/bin',
+            'PYTHON': str(python),
+            'NATIVE_TEST_LOG': str(log),
+            'NATIVE_TEST_DOCKER_LOG': str(docker_log),
+            'NATIVE_TEST_DATABASE_NAME': 'gcd_dev',
+        }
+        env.update(environment or {})
+        if dotenv is not None:
+            (project / '.env').write_bytes(dotenv.encode('utf-8'))
+        result = subprocess.run(
+            [str(launcher), '--runtime', 'native', *arguments],
+            env=env, cwd=cwd or project, capture_output=True, text=True,
+            check=False,
+        )
+        calls = [json.loads(line) for line in log.read_text().splitlines()] \
+            if log.exists() else []
+        assert not docker_log.exists(), 'Native command invoked Docker'
+        return result, calls
+
+    return project, run
+
+
+@pytest.mark.parametrize('database', [
+    'gcd_dev', 'gcd_django_dev', 'gcd_dev_phase5_123',
+])
+def test_native_setup_orders_guard_migrate_seed_verify_and_server(
+        native_launcher, database):
+    """Native setup uses the selected DB, core settings, and foreground UI."""
+    project, run = native_launcher
+    result, calls = run('setup', environment={
+        'NATIVE_TEST_DATABASE_NAME': database,
+        'MYSQL_DATABASE': database,
+        'MYSQL_HOST': '127.0.0.1', 'MYSQL_PORT': '13385',
+        'MYSQL_USER': 'limited_user', 'MYSQL_PASSWORD': 'local_fixture',
+        'GCD_WEB_PORT': '18086',
+        'DJANGO_SETTINGS_MODULE': 'must_not_be_used',
+        'USE_ELASTICSEARCH': 'true',
+    })
+
+    assert result.returncode == 0, result.stderr
+    assert [call['stage'] for call in calls] == [
+        'version', 'database', 'migrate', 'seed', 'verify', 'server',
+    ]
+    assert calls[2]['arguments'] == ['manage.py', 'migrate', '--noinput']
+    assert calls[3]['arguments'] == ['manage.py', 'seed_development_data']
+    assert calls[5]['arguments'] == [
+        'manage.py', 'runserver', '127.0.0.1:18086',
+    ]
+    for call in calls[1:]:
+        assert call['cwd'] == str(project)
+        assert call['environment'] == {
+            'DJANGO_SETTINGS_MODULE': 'settings_dev',
+            'MYSQL_DATABASE': database,
+            'MYSQL_HOST': '127.0.0.1', 'MYSQL_PORT': '13385',
+            'MYSQL_USER': 'limited_user', 'MYSQL_PASSWORD': 'local_fixture',
+            'USE_ELASTICSEARCH': 'false',
+        }
+    assert 'http://127.0.0.1:18086' in result.stdout
+    assert 'docs/development/CORE_SETUP.md' in result.stdout
+    assert 'development' in result.stdout.lower()
+
+
+@pytest.mark.parametrize('database', [
+    'production', 'gcd_ci', '', 'gcd_dev_', 'gcd_dev_UPPER',
+    'gcd_dev;DROP', ' gcd_dev', 'gcd_dev\nproduction',
+    'gcd_dev\n', 'gcd_dev_phase5\n\n',
+])
+def test_native_setup_rejects_actual_unsafe_database_before_mutation(
+        native_launcher, database):
+    """A safe environment name cannot mask an unsafe Django-selected DB."""
+    _, run = native_launcher
+    result, calls = run('setup', environment={
+        'MYSQL_DATABASE': 'gcd_dev',
+        'NATIVE_TEST_DATABASE_NAME': database,
+    })
+
+    assert result.returncode == 2
+    assert 'setup only permits' in result.stderr
+    assert [call['stage'] for call in calls] == ['version', 'database']
+
+
+def test_native_setup_guard_uses_django_name_not_environment_name(
+        native_launcher):
+    """The actual configured database is the authority for the guard."""
+    _, run = native_launcher
+    result, calls = run('setup', environment={
+        'MYSQL_DATABASE': 'not_the_selected_database',
+        'NATIVE_TEST_DATABASE_NAME': 'gcd_dev_actual',
+    })
+
+    assert result.returncode == 0, result.stderr
+    assert calls[-1]['stage'] == 'server'
+
+
+@pytest.mark.parametrize('stage', [
+    'version', 'database', 'migrate', 'seed', 'verify', 'server',
+])
+def test_native_setup_stops_at_each_failed_stage(native_launcher, stage):
+    """Failures propagate and no later setup stage is attempted."""
+    _, run = native_launcher
+    result, calls = run('setup', environment={'NATIVE_TEST_FAIL_STAGE': stage})
+    stages = ['version', 'database', 'migrate', 'seed', 'verify', 'server']
+
+    assert result.returncode == (1 if stage == 'version' else 42)
+    assert [call['stage'] for call in calls] == (
+        stages[:stages.index(stage) + 1]
+    )
+    if stage != 'server':
+        assert 'GCD is available' not in result.stdout
+
+
+@pytest.mark.parametrize('arguments', [
+    ('--dump',), ('--dump', ''), ('--dump', 'sample.zip'),
+    ('--replace',), ('--yes',), ('--replace', '--yes'), ('--unknown',),
+])
+def test_native_setup_rejects_options_before_python_or_docker(
+        native_launcher, arguments):
+    """Native bootstrap cannot silently accept destructive/import options."""
+    _, run = native_launcher
+    result, calls = run('setup', *arguments)
+
+    assert result.returncode == 2
+    assert './bin/dev setup --dump ARCHIVE' in result.stderr
+    assert calls == []
+
+
+def test_native_setup_runs_from_other_directory_with_relative_python(
+        native_launcher, tmp_path):
+    """Setup resolves the interpreter and commands within its checkout."""
+    project, run = native_launcher
+    result, calls = run(
+        'setup', environment={'PYTHON': 'bin/record-python'}, cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert all(call['cwd'] == str(project) for call in calls)
+    assert calls[-1]['arguments'][-1] == '127.0.0.1:8000'
+    assert calls[-1]['environment']['MYSQL_PORT'] == '3308'
+
+
+def test_native_setup_dotenv_is_literal_and_shell_overrides_win(
+        native_launcher, tmp_path):
+    """CRLF .env values are literal, with existing shell values preferred."""
+    _, run = native_launcher
+    marker = tmp_path / 'must-not-be-created'
+    password = f'$(touch "{marker}")'
+    result, calls = run(
+        'setup', environment={'MYSQL_PORT': '14444'},
+        dotenv=(f'MYSQL_PASSWORD={password}\r\nMYSQL_PORT=13333\r\n'
+                'MYSQL_HOST=127.0.0.2\r\nGCD_WEB_PORT=18087\r\n'),
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert not marker.exists()
+    assert calls[-1]['environment']['MYSQL_PASSWORD'] == password
+    assert calls[-1]['environment']['MYSQL_PORT'] == '14444'
+    assert calls[-1]['environment']['MYSQL_HOST'] == '127.0.0.2'
+    assert calls[-1]['arguments'][-1] == '127.0.0.1:18087'
+
+
+def test_native_setup_rejects_unallowlisted_dotenv_key(native_launcher):
+    """New setup does not weaken shared configuration parsing."""
+    _, run = native_launcher
+    result, calls = run('setup', dotenv='DJANGO_SETTINGS_MODULE=other\n')
+
+    assert result.returncode == 2
+    assert 'Unsupported .env variable' in result.stderr
+    assert calls == []
+
+
+def test_native_up_still_skips_seeding_and_keeps_explicit_search_setting(
+        native_launcher):
+    """Opting into native setup does not change the existing native up path."""
+    _, run = native_launcher
+    result, calls = run('up', environment={'USE_ELASTICSEARCH': 'true'})
+
+    assert result.returncode == 0, result.stderr
+    assert [call['stage'] for call in calls] == [
+        'version', 'migrate', 'server',
+    ]
+    assert calls[-1]['environment']['USE_ELASTICSEARCH'] == 'true'
+
+
+def test_native_reset_retains_its_narrower_database_guard(native_launcher):
+    """Allowing suffixed setup databases must not authorize flushing them."""
+    _, run = native_launcher
+    result, calls = run('reset', '--yes', environment={
+        'NATIVE_TEST_DATABASE_NAME': 'gcd_dev_phase5',
+    })
+
+    assert result.returncode == 2
+    assert ('Native reset only permits gcd_dev or gcd_django_dev'
+            in result.stderr)
+    assert [call['stage'] for call in calls] == ['version', 'database']

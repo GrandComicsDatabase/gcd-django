@@ -72,6 +72,8 @@ PASSWORD_HASHERS = [
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
+# needs trailing slash, otherwise the path is not correct when joining.
+MEDIA_ROOT = join(MEDIA_ROOT, '')
 MEDIA_URL = '/media/'
 
 # URL and absolute path to static file tree.
@@ -376,7 +378,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '30/hour',
-        'user': '2000/day'
+        'user': '4000/day'
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
@@ -447,8 +449,8 @@ SITE_NAME = 'Grand Comics Database'
 
 # image directories
 IMAGE_SERVER_URL = 'http://images.comics.org/'
-COVERS_DIR = '/img/gcd/covers_by_id/'
-NEW_COVERS_DIR = '/img/gcd/new_covers/'
+COVERS_DIR = 'img/gcd/covers_by_id/'
+NEW_COVERS_DIR = 'img/gcd/new_covers/'
 GENERIC_IMAGE_DIR = 'img/gcd/generic_images/'
 NEW_GENERIC_IMAGE_DIR = 'img/gcd/new_generic_images/'
 

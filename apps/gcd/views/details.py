@@ -51,6 +51,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             Printer, IndiciaPrinter, School, Story, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, Multiverse, \
+                            IssueCredit, \
                             StoryCredit, StoryArc, StoryArcRelation, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import GenericCreatorTable, \
@@ -202,9 +203,20 @@ def generic_sortable_list(request, items, table, template, context,
                                      'page': page_number}).configure(table)
     export_format = request.GET.get("_export", None)
     if TableExport.is_valid_format(export_format):
-        exporter = TableExport(export_format, table)
-        return exporter.response("table.{}".format(export_format))
+        if request.user.is_authenticated:
+            exporter = TableExport(export_format, table)
+            return exporter.response("table.{}".format(export_format))
+        else:
+            return HttpResponse(
+                "Login required to download the shown data as JSON/YAML file.",
+                status=403
+            )
     if export_format and export_format in ['db_csv', 'db_json']:
+        if not request.user.is_authenticated:
+            return HttpResponse(
+                "Login required to download the shown data as JSON/YAML file.",
+                status=403
+            )
         fields = [f.name for f in items.model._meta.get_fields()
                   if f.auto_created is False]
         fields = [f for f in fields if f not in {'created', 'modified',
@@ -5851,7 +5863,7 @@ def show_story_modal(request, story_id):
 
 def credit_source(request, credit_id):
     """
-    Show the source of a credit for use in a modal.
+    Show the source of a sequence credit for use in a modal.
     """
     credit = get_object_or_404(StoryCredit.objects.select_related(
       'creator', 'credit_type', 'story__issue'), id=credit_id)
@@ -5861,6 +5873,23 @@ def credit_source(request, credit_id):
 
     issue_url = credit.story.issue.get_absolute_url()
     issue_url += '?show_all&show_sources#%d' % credit.story.id
+
+    return render(request, 'gcd/bits/credit_source.html',
+                  {'credit': credit, 'issue_url': issue_url})
+
+
+def issue_credit_source(request, credit_id):
+    """
+    Show the source of an issue credit for use in a modal.
+    """
+    credit = get_object_or_404(IssueCredit.objects.select_related(
+      'creator', 'credit_type', 'issue'), id=credit_id)
+
+    if credit.deleted or not credit.is_sourced:
+        return HttpResponse("")
+
+    issue_url = credit.issue.get_absolute_url()
+    issue_url += '?show_all&show_sources'
 
     return render(request, 'gcd/bits/credit_source.html',
                   {'credit': credit, 'issue_url': issue_url})
@@ -5905,6 +5934,48 @@ def credit_type_history(request, story_id, credit_type):
     return render(request, 'gcd/bits/credit_type_history.html',
                   {'changes': change_data,
                    'first': PreviewStory.init(storyrevisions[0]),
+                   'credit_type': credit_type})
+
+
+def issue_credit_type_history(request, issue_id, credit_type):
+    from apps.oi.templatetags.compare import diff_list
+    from apps.oi.models import PreviewIssue
+
+    if credit_type != 'editing':
+        raise ValueError
+
+    issue = get_object_or_404(Issue, id=issue_id)
+    issuerevisions = issue.revisions.filter(changeset__state=states.APPROVED)\
+                                    .order_by('modified', 'id')\
+                                    .select_related('changeset__indexer')
+    old = getattr(issuerevisions[0], credit_type)
+    old_rev = issuerevisions[0]
+    changes = []
+    for issuerev in issuerevisions[1:]:
+        new = getattr(issuerev, credit_type)
+        changed = old.strip() != new.strip()
+        if not changed:
+            credits = issuerev.issue_credit_revisions.filter(
+                               credit_type__name=credit_type)
+            if credits:
+                for credit in credits:
+                    credit.compare_changes()
+                    if credit.is_changed:
+                        changed = True
+                        break
+        if changed:
+            changes.append((old_rev, issuerev))
+        old = new
+        old_rev = issuerev
+    change_data = []
+    for change in changes:
+        change_data.append((change[1].changeset, diff_list(change[0],
+                                                           change[1],
+                                                           credit_type)))
+
+    return render(request, 'gcd/bits/credit_type_history.html',
+                  {'changes': change_data,
+                   'first': PreviewIssue.init(issuerevisions[0]),
                    'credit_type': credit_type})
 
 

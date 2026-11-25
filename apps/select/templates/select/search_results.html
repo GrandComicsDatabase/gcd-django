@@ -1,0 +1,16 @@
+{% load django_tables2 %}
+<div id="{{ select_target }}-results">
+  {% if not page.paginator.count %}
+  <p>No results.</p>
+  {# the chosen series is one row: a count of the rows would say nothing #}
+  {% elif select_target == 'series' %}
+  {% render_table table %}
+  {% else %}
+  {% include "gcd/bits/tw_render_table.html" %}
+  {% endif %}
+  {% if page.has_other_pages %}
+  <div hx-boost="true" hx-target="#{{ select_target }}-results" hx-swap="outerHTML" hx-push-url="false">
+    {% include "gcd/bits/tw_pagination_bar.html" with page_url=request.path %}
+  </div>
+  {% endif %}
+</div>

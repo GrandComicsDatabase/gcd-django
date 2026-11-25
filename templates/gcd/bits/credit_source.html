@@ -9,6 +9,9 @@
 		<br>
 		{{ credit.sourced_by }}
 		</p>
-		<button _="on click trigger closeModal">Close</button> <a style="float: right;" href="{{ issue_url }}">Show All Sources</a>
+		<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+			<button class="btn btn-blue-editing" _="on click trigger closeModal">Close</button>
+			<a class="hover:no-underline" href="{{ issue_url }}"><button class="btn btn-blue-editing">Show All Sources</button></a>
+		</div>
 	</div>
 </div>

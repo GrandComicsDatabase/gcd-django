@@ -6,8 +6,8 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${PYTHON:-python}"
 ALLOWED_ENVIRONMENT_VARIABLES=(
-  COMPOSE_PROJECT_NAME GCD_WEB_PORT GCD_MYSQL_PORT GCD_ELASTICSEARCH_PORT
-  GCD_SEARCH_WORKERS
+  COMPOSE_PROJECT_NAME GCD_WEB_PORT GCD_MYSQL_PORT GCD_MYSQL_BUFFER_POOL_SIZE
+  GCD_ELASTICSEARCH_PORT GCD_SEARCH_WORKERS
   MYSQL_DATABASE MYSQL_USER MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_HOST MYSQL_PORT
 )
 
@@ -22,7 +22,8 @@ Commands:
   up                  Start the application at http://127.0.0.1:8000
   setup [--dump ARCHIVE] [--replace --yes]
                       Create a ready-to-use local environment, optionally
-                      loading a manually downloaded GCD catalog dump
+                      loading a GCD catalog dump (Docker only); native setup
+                      seeds sample data without replacing the database
   search-up           Start the application with Elasticsearch and queued updates
   search-rebuild [args]
                       Start search and rebuild the Haystack index
@@ -44,6 +45,7 @@ Examples:
   ./bin/dev test apps/gcd/tests
   ./bin/dev manage createsuperuser
   ./bin/dev --runtime native up
+  ./bin/dev --runtime native setup
 EOF
 }
 
@@ -81,6 +83,7 @@ set_defaults() {
   export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-gcd-django-dev}"
   export GCD_WEB_PORT="${GCD_WEB_PORT:-8000}"
   export GCD_MYSQL_PORT="${GCD_MYSQL_PORT:-3308}"
+  export GCD_MYSQL_BUFFER_POOL_SIZE="${GCD_MYSQL_BUFFER_POOL_SIZE:-1G}"
   export MYSQL_DATABASE="${MYSQL_DATABASE:-gcd_dev}"
   export MYSQL_USER="${MYSQL_USER:-gcd_dev}"
   export MYSQL_PASSWORD="${MYSQL_PASSWORD:-gcd_dev_password}"
@@ -170,11 +173,37 @@ validate_dump_archive() {
 }
 
 validate_setup_database_name() {
-  if [[ ! "$MYSQL_DATABASE" =~ ^gcd_dev(_[a-z0-9_]+)?$ ]] && \
-     [[ "$MYSQL_DATABASE" != "gcd_django_dev" ]]; then
-    echo "setup only permits a local development database named gcd_dev, gcd_django_dev, or gcd_dev_* (got $MYSQL_DATABASE)." >&2
+  local database_name="$1"
+  if [[ ! "$database_name" =~ ^gcd_dev(_[a-z0-9_]+)?$ ]] && \
+     [[ "$database_name" != "gcd_django_dev" ]]; then
+    echo "setup only permits a local development database named gcd_dev, gcd_django_dev, or gcd_dev_* (got $database_name)." >&2
     exit 2
   fi
+}
+
+setup_native_environment() {
+  local database_name
+  if [[ $# -ne 0 ]]; then
+    echo "Native setup accepts no options. For Docker-only dump imports, use ./bin/dev setup --dump ARCHIVE [--replace --yes]." >&2
+    exit 2
+  fi
+  cd "$PROJECT_ROOT"
+  require_native_python
+  native_environment
+  # Sample setup is core-only, even when the calling shell enabled search.
+  export USE_ELASTICSEARCH=false
+  # Preserve the selected name, removing only the probe's print newline.
+  # Plain command substitution would also strip newlines within the name.
+  database_name="$(native_database_name && printf '.')"
+  database_name="${database_name%.}"
+  database_name="${database_name%$'\n'}"
+  validate_setup_database_name "$database_name"
+  "$PYTHON_BIN" manage.py migrate --noinput
+  "$PYTHON_BIN" manage.py seed_development_data
+  "$PYTHON_BIN" scripts/check_dev_environment.py
+  echo "GCD is available at http://127.0.0.1:${GCD_WEB_PORT}"
+  echo "Local sample accounts are for development only; see docs/development/CORE_SETUP.md#ready-to-use-development-data."
+  exec "$PYTHON_BIN" manage.py runserver "127.0.0.1:${GCD_WEB_PORT}"
 }
 
 database_has_user_data() {
@@ -287,6 +316,36 @@ copy_dump_catalog() {
   } | mysql_root
 }
 
+# Keywords are django-taggit rows. Tagged items point at their objects through
+# content type ids, which differ between the dump and the migrated database, so
+# they are matched by app label and model. Only catalog (gcd) objects are copied.
+copy_dump_keywords() {
+  local stage="gcd_dev_import_stage" target="$MYSQL_DATABASE"
+  if [[ "$(mysql_root_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${stage}' AND table_name IN ('taggit_tag', 'taggit_taggeditem', 'django_content_type');")" != "3" ]]; then
+    echo "The dump has no keyword tables; keywords are not copied."
+    return
+  fi
+  mysql_root <<SQL
+SET FOREIGN_KEY_CHECKS=0;
+DELETE FROM ${target}.taggit_taggeditem;
+DELETE FROM ${target}.taggit_tag;
+INSERT INTO ${target}.taggit_tag (id, name, slug)
+  SELECT id, name, slug FROM ${stage}.taggit_tag;
+INSERT INTO ${target}.taggit_taggeditem (id, tag_id, object_id, content_type_id)
+  SELECT item.id, item.tag_id, item.object_id, target_type.id
+  FROM ${stage}.taggit_taggeditem AS item
+  JOIN ${stage}.django_content_type AS source_type
+    ON source_type.id = item.content_type_id
+  JOIN ${target}.django_content_type AS target_type
+    ON target_type.app_label = source_type.app_label
+   AND target_type.model = source_type.model
+  WHERE source_type.app_label = 'gcd';
+ALTER TABLE ${target}.taggit_tag AUTO_INCREMENT = 1;
+ALTER TABLE ${target}.taggit_taggeditem AUTO_INCREMENT = 1;
+SET FOREIGN_KEY_CHECKS=1;
+SQL
+}
+
 setup_dump_database() {
   local archive="$1"
   validate_dump_archive "$archive"
@@ -296,6 +355,8 @@ setup_dump_database() {
   validate_dump_schema
   echo "Copying compatible catalog data into the migrated development database..."
   copy_dump_catalog
+  echo "Copying keywords of catalog records..."
+  copy_dump_keywords
   mysql_root_query 'DROP DATABASE gcd_dev_import_stage;'
 }
 
@@ -305,7 +366,7 @@ seed_docker_development_data() {
 
 setup_docker_environment() {
   local archive="$1" replace="$2" yes="$3"
-  validate_setup_database_name
+  validate_setup_database_name "$MYSQL_DATABASE"
   if [[ -n "$archive" ]]; then
     validate_dump_archive "$archive"
   fi
@@ -338,33 +399,33 @@ set_defaults
 case "$command" in
   help|-h|--help) usage ;;
   setup)
-    setup_archive=""
-    setup_replace=false
-    setup_yes=false
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        --dump)
-          if [[ $# -lt 2 ]]; then
-            echo "Usage: ./bin/dev setup --dump ARCHIVE [--replace --yes]" >&2
+    if [[ "$runtime" == "native" ]]; then
+      setup_native_environment "$@"
+    else
+      setup_archive=""
+      setup_replace=false
+      setup_yes=false
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --dump)
+            if [[ $# -lt 2 ]]; then
+              echo "Usage: ./bin/dev setup --dump ARCHIVE [--replace --yes]" >&2
+              exit 2
+            fi
+            setup_archive="$2"
+            shift 2
+            ;;
+          --replace) setup_replace=true; shift ;;
+          --yes) setup_yes=true; shift ;;
+          *)
+            echo "Unknown setup option: $1" >&2
             exit 2
-          fi
-          setup_archive="$2"
-          shift 2
-          ;;
-        --replace) setup_replace=true; shift ;;
-        --yes) setup_yes=true; shift ;;
-        *)
-          echo "Unknown setup option: $1" >&2
-          exit 2
-          ;;
-      esac
-    done
-    if [[ "$runtime" != "docker" ]]; then
-      echo "setup currently supports the default Docker runtime. Use ./bin/dev --runtime native up for Docker-free development." >&2
-      exit 2
+            ;;
+        esac
+      done
+      require_docker
+      setup_docker_environment "$setup_archive" "$setup_replace" "$setup_yes"
     fi
-    require_docker
-    setup_docker_environment "$setup_archive" "$setup_replace" "$setup_yes"
     ;;
   up)
     if [[ "$runtime" == "docker" ]]; then
@@ -470,7 +531,7 @@ case "$command" in
     fi
     compose logs --follow "$service" ;;
   reset)
-    if [[ "${1:-}" != "--yes" ]]; then
+    if [[ $# -ne 1 || "${1:-}" != "--yes" ]]; then
       echo "reset is destructive; rerun with: ./bin/dev reset --yes" >&2; exit 2
     fi
     if [[ "$runtime" == "docker" ]]; then
@@ -479,12 +540,17 @@ case "$command" in
       compose up --build --wait
     else
       require_native_python; native_environment
-      database_name="$(native_database_name)"
+      # As in setup, retain newlines belonging to the configured name. A
+      # normalized name must not authorize flushing a different database.
+      database_name="$(native_database_name && printf '.')"
+      database_name="${database_name%.}"
+      database_name="${database_name%$'\n'}"
       if [[ "$database_name" != "gcd_dev" && "$database_name" != "gcd_django_dev" ]]; then
         echo "Native reset only permits gcd_dev or gcd_django_dev (got $database_name)." >&2; exit 2
       fi
       "$PYTHON_BIN" manage.py flush --noinput
       "$PYTHON_BIN" manage.py migrate --noinput
+      "$PYTHON_BIN" manage.py restore_development_reference_data
     fi ;;
   *) echo "Unknown command: $command" >&2; usage >&2; exit 2 ;;
 esac

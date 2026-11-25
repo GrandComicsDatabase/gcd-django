@@ -35,7 +35,7 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       _set_help_labels, _get_comments_form_field,
                       init_data_source_fields, insert_data_source_fields,
                       _create_embedded_image_revision,
-                      _save_runtime_embedded_image_revision,
+                      _save_runtime_embedded_image_revision, _strip_list,
                       BaseForm, HiddenInputWithHelp, ModifiedPagedownWidget)
 
 
@@ -606,7 +606,7 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
     comments = _get_comments_form_field()
 
     def clean_work_years(self):
-        value = self.cleaned_data['work_years']
+        value = _strip_list(self.cleaned_data['work_years'])
         if not value:
             return value
         try:

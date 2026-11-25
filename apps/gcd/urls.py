@@ -333,6 +333,8 @@ urlpatterns = [
       gcd_views.details.scans, name='series_scan_table'),
 
     # Issue
+    path('issue/<int:issue_id>/<str:credit_type>/history/',
+      gcd_views.details.issue_credit_type_history, name='issue_credit_type_history'),
     path('issue/<int:issue_id>/modal/',
       gcd_views.details.show_issue_modal, name='show_issue_modal'),
     path('issue/<int:issue_id>/',
@@ -372,6 +374,9 @@ urlpatterns = [
     # Credits
     path('credit/<int:credit_id>/source/',
       gcd_views.details.credit_source, name='credit_source'),
+    path('issue_credit/<int:credit_id>/source/',
+      gcd_views.details.issue_credit_source, name='issue_credit_source'),
+
     # Stories
     path('story/<int:story_id>/<str:credit_type>/history/',
       gcd_views.details.credit_type_history, name='credit_type_history'),

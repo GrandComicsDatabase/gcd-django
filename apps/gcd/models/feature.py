@@ -16,6 +16,7 @@ from .gcddata import GcdData, GcdLink
 from .image import Image
 from .support_tables import TW_COLUMN_ALIGN_RIGHT, DailyChangesTable
 from .datasource import ExternalLink
+from apps.oi import states
 
 
 class FeatureRelationType(models.Model):
@@ -66,10 +67,13 @@ class Feature(GcdData):
     keywords = TaggableManager()
 
     def has_dependents(self):
-        return bool(self.active_logos().exists()) or \
-               bool(self.active_stories().exists()) or \
-               bool(self.from_related_feature.all().exists()) or \
-               bool(self.to_related_feature.all().exists())
+        if self.active_logos().exists() or self.active_stories().exists():
+            return True
+        if self.feature_names.filter(
+           storyrevision__changeset__state__in=states.ACTIVE).exists():
+            return True
+
+        return False
 
     def active_logos(self):
         return FeatureLogo.objects.filter(feature_name__feature=self,
@@ -403,6 +407,7 @@ class FeatureLogoTable(tables.Table):
                     'feature_logo_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
+
     def render_logo(self, record):
         if not settings.FAKE_IMAGES and record.logo:
             return mark_safe('<a href="%s"><img src="%s"></a>' %
