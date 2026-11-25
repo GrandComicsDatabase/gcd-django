@@ -335,7 +335,8 @@ $(function() {
     }
 
     // set initial date fields
-    pubDate = parsePubDate($('#id_publication_date').val());
+    // the forms for multiple issues have no publication date
+    pubDate = parsePubDate($('#id_publication_date').val() || '');
     onSaleDate = {
         year: $('#id_year_on_sale').val(),
         month: $('#id_month_on_sale').val(),
