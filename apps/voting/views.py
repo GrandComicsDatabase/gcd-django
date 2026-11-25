@@ -328,6 +328,12 @@ def vote(request):
                   'on this ballot.  You must have the "%s" permission.' %
                   topic.agenda.permission.name)
 
+            # The same conditions as the open ballots of the agenda page.
+            if not topic.open or topic.result_calculated or \
+               topic.deadline <= timezone.now():
+                return render_error(request,
+                                    'This ballot is not open for votes.')
+
             if topic.token is not None and \
                request.POST['token'].strip() != topic.token:
                 return render_error(
