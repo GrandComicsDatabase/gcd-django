@@ -3,6 +3,7 @@ from diff_match_patch import diff_match_patch
 from django.conf import settings
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
+from django.db.models import Q
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -73,13 +74,16 @@ def key_date_years_note(revision, item, label):
 
 def publisher_years_note(revision, field):
     '''
-    Note when a year of an indicia publisher or brand group revision is
-    outside the years of its publisher. The year is compared with both
-    years of the publisher. A missing or uncertain year cannot show a
-    problem, so that side is not compared.
+    Note when a year of an indicia publisher, brand group or brand use
+    revision is outside the years of its publisher. The year is compared
+    with both years of the publisher. A missing or uncertain year cannot
+    show a problem, so that side is not compared.
     '''
     year = getattr(revision, field)
-    publisher = revision.parent
+    if revision.source_name == 'brand_use':
+        publisher = revision.publisher
+    else:
+        publisher = revision.parent
     if not year or not publisher or getattr(revision, field + '_uncertain'):
         return ''
     if publisher.year_began and not publisher.year_began_uncertain \
@@ -91,6 +95,39 @@ def publisher_years_note(revision, field):
         return ' (note: after the last year %d of the publisher)' % \
                publisher.year_ended
     return ''
+
+
+def children_years_note(revision, field):
+    '''
+    Note how many indicia publishers, brand groups and brand uses of the
+    publisher of a publisher revision have a year before the first year or
+    after the last year of the revision. A missing (blank or 0) or
+    uncertain year cannot show a problem, so it is not compared.
+    '''
+    year = getattr(revision, field)
+    publisher = revision.publisher
+    if not year or not publisher or getattr(revision, field + '_uncertain'):
+        return ''
+    if field == 'year_began':
+        side, years = 'before', (1, year - 1)
+    else:
+        side, years = 'after', (year + 1, 9999)
+    outside = Q(year_began__range=years, year_began_uncertain=False) | \
+        Q(year_ended__range=years, year_ended_uncertain=False)
+    counts = [
+      (publisher.active_indicia_publishers().filter(outside).count(),
+       'indicia publisher'),
+      (publisher.active_brand_groups().filter(outside).count(),
+       'brand group'),
+      (publisher.branduse_set.filter(outside).count(), 'brand use')]
+    parts = ['%d %s%s' % (count, name, pluralize(count))
+             for count, name in counts if count]
+    if not parts:
+        return ''
+    if len(parts) == 3:
+        parts = [', '.join(parts[:2]), parts[2]]
+    verb = 'has' if sum(count for count, name in counts) == 1 else 'have'
+    return ' (note: %s %s a year %s it)' % (' and '.join(parts), verb, side)
 
 
 # check to return True for yellow css compare highlighting
@@ -159,8 +196,12 @@ def field_value(revision, field):
                                       res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['year_began', 'year_ended'] and \
-            revision.source_name in ['indicia_publisher', 'brand_group']:
-        note = publisher_years_note(revision, field)
+            revision.source_name in ['indicia_publisher', 'brand_group',
+                                     'brand_use', 'publisher']:
+        if revision.source_name == 'publisher':
+            note = children_years_note(revision, field)
+        else:
+            note = publisher_years_note(revision, field)
         if note:
             return '%d%s' % (value, note)
     elif field == 'indicia_publisher':

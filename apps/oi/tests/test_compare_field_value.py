@@ -2,11 +2,12 @@ import pytest
 
 from django.urls import reverse
 
-from apps.gcd.models import IndiciaPublisher, Publisher
+from apps.gcd.models import BrandGroup, BrandUse, IndiciaPublisher, Publisher
 from apps.oi import states
 from apps.oi.models import (
-    BrandGroupRevision, Changeset, CTYPES, IndiciaPublisherRevision,
-    IssueRevision, SeriesRevision)
+    BrandGroupRevision, BrandUseRevision, Changeset, CTYPES,
+    IndiciaPublisherRevision, IssueRevision, PublisherRevision,
+    SeriesRevision)
 from apps.oi.templatetags.compare import field_value
 
 
@@ -110,12 +111,16 @@ def test_compare_page_notes_key_date_outside_years(
 
 def _year_value(revision_class, field, years, publisher_years):
     publisher = Publisher(id=1, name='Sample Publisher', **publisher_years)
-    revision = revision_class(parent=publisher, **years)
+    link = 'publisher' if revision_class is BrandUseRevision else 'parent'
+    revision = revision_class(**{link: publisher}, **years)
     return field_value(revision, field)
 
 
-@pytest.mark.parametrize('revision_class',
-                         [IndiciaPublisherRevision, BrandGroupRevision])
+CHILD_REVISIONS = [IndiciaPublisherRevision, BrandGroupRevision,
+                   BrandUseRevision]
+
+
+@pytest.mark.parametrize('revision_class', CHILD_REVISIONS)
 @pytest.mark.parametrize('field, years, expected', [
     ('year_began', {'year_began': 1965},
      '1965 (note: before the first year 1970 of the publisher)'),
@@ -134,8 +139,7 @@ def test_note_when_year_outside_publisher_years(revision_class, field, years,
                        publisher_years) == expected
 
 
-@pytest.mark.parametrize('revision_class',
-                         [IndiciaPublisherRevision, BrandGroupRevision])
+@pytest.mark.parametrize('revision_class', CHILD_REVISIONS)
 @pytest.mark.parametrize('field, years, publisher_years', [
     # inside the years, first and last year included
     ('year_began', {'year_began': 1970}, {'year_began': 1970}),
@@ -162,8 +166,10 @@ def test_no_note_when_years_show_no_problem(revision_class, field, years,
                        publisher_years) == years[field]
 
 
-def test_no_note_without_publisher():
-    revision = IndiciaPublisherRevision(year_began=1965)
+@pytest.mark.parametrize('revision_class',
+                         CHILD_REVISIONS + [PublisherRevision])
+def test_no_note_without_publisher(revision_class):
+    revision = revision_class(year_began=1965)
     assert field_value(revision, 'year_began') == 1965
 
 
@@ -194,3 +200,118 @@ def test_compare_page_notes_years_outside_publisher_years(
       '2000 (note: after the last year 1995 of the publisher)') == 2
     assert content.count(
       '1970 (note: before the first year 1975 of the publisher)') == 1
+
+
+@pytest.mark.django_db
+def test_compare_page_notes_brand_use_years_outside_publisher_years(
+        client, any_indexer, any_added_brand_use):
+    # the brand use runs from 1970 to 1975, both uncertain
+    publisher = any_added_brand_use.publisher
+    publisher.year_began = 1972
+    publisher.year_began_uncertain = False
+    publisher.save()
+    changeset = Changeset.objects.create(
+      indexer=any_indexer, state=states.OPEN, change_type=CTYPES['brand_use'])
+    revision = BrandUseRevision.clone(data_object=any_added_brand_use,
+                                      changeset=changeset)
+    revision.year_began_uncertain = False
+    revision.save()
+    client.force_login(any_indexer)
+
+    response = client.get(reverse('compare', kwargs={'id': changeset.id}))
+
+    assert response.status_code == 200
+    assert response.content.decode().count(
+      '1970 (note: before the first year 1972 of the publisher)') == 1
+
+
+@pytest.fixture
+def publisher_with_children(any_added_indicia_publisher,
+                            any_added_brand_group1, any_added_brand_use,
+                            second_brand_same_group):
+    '''
+    A publisher with an indicia publisher from 1975 to 2000, a brand group
+    from 1984 to 1999 (uncertain), and brand uses from 1970 to 1975 and
+    from 1978 to 1985.
+    '''
+    publisher = any_added_brand_use.publisher
+    IndiciaPublisher.objects.filter(parent=publisher).update(
+      year_began=1975, year_began_uncertain=False)
+    BrandUse.objects.filter(publisher=publisher).update(
+      year_began_uncertain=False, year_ended_uncertain=False)
+    BrandUse.objects.create(publisher=publisher,
+                            emblem=second_brand_same_group,
+                            year_began=1978, year_ended=1985)
+    return publisher
+
+
+def _publisher_value(publisher, field, **years):
+    revision = PublisherRevision(publisher=publisher, **years)
+    return field_value(revision, field)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field, years, expected', [
+    ('year_began', {'year_began': 1980},
+     '1980 (note: 1 indicia publisher and 2 brand uses have a year '
+     'before it)'),
+    # the last year 1999 of the brand group is uncertain
+    ('year_ended', {'year_ended': 1990},
+     '1990 (note: 1 indicia publisher has a year after it)'),
+    ('year_began', {'year_began': 1990},
+     '1990 (note: 1 indicia publisher, 1 brand group and 2 brand uses '
+     'have a year before it)'),
+    ('year_ended', {'year_ended': 1980},
+     '1980 (note: 1 indicia publisher, 1 brand group and 1 brand use '
+     'have a year after it)'),
+])
+def test_note_when_years_of_children_outside_publisher_years(
+        publisher_with_children, field, years, expected):
+    assert _publisher_value(publisher_with_children, field,
+                            **years) == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field, years', [
+    # the first and the last year count as inside
+    ('year_began', {'year_began': 1970}),
+    ('year_ended', {'year_ended': 2000}),
+    # a blank or uncertain year of the publisher
+    ('year_began', {'year_began': None}),
+    ('year_began', {'year_began': 1990, 'year_began_uncertain': True}),
+    ('year_ended', {'year_ended': 1980, 'year_ended_uncertain': True}),
+])
+def test_no_note_when_years_of_children_show_no_problem(
+        publisher_with_children, field, years):
+    assert _publisher_value(publisher_with_children, field,
+                            **years) == years[field]
+
+
+@pytest.mark.django_db
+def test_note_leaves_out_deleted_children(publisher_with_children):
+    IndiciaPublisher.objects.filter(parent=publisher_with_children).update(
+      deleted=True)
+    BrandGroup.objects.filter(parent=publisher_with_children).update(
+      deleted=True)
+    assert _publisher_value(publisher_with_children, 'year_ended',
+                            year_ended=1980) == \
+        '1980 (note: 1 brand use has a year after it)'
+
+
+@pytest.mark.django_db
+def test_compare_page_notes_children_years_outside_publisher_years(
+        client, any_indexer, publisher_with_children):
+    changeset = Changeset.objects.create(
+      indexer=any_indexer, state=states.OPEN, change_type=CTYPES['publisher'])
+    revision = PublisherRevision.clone(data_object=publisher_with_children,
+                                       changeset=changeset)
+    revision.year_began = 1980
+    revision.year_began_uncertain = False
+    revision.save()
+    client.force_login(any_indexer)
+
+    response = client.get(reverse('compare', kwargs={'id': changeset.id}))
+
+    assert response.status_code == 200
+    assert ('1980 (note: 1 indicia publisher and 2 brand uses have a year '
+            'before it)') in response.content.decode()
