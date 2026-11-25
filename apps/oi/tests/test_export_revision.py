@@ -36,7 +36,19 @@ def test_a_downloaded_revision_has_the_values_of_the_revision(
     assert issue_line[INDICIA_PUBLISHER] == (
       any_added_issue.indicia_publisher.name)
     assert issue_line[ISSUE_NOTES] == 'Notes of the revision'
-    assert issue_line[ON_SALE_DATE] == '1946-11-23'
+    # the on-sale date of the fixture is uncertain
+    assert issue_line[ON_SALE_DATE] == '1946-11-23?'
+
+
+@pytest.mark.django_db
+def test_a_downloaded_revision_has_its_own_on_sale_date_certainty(
+  client, logged_in, any_added_issue, any_editing_changeset):
+    revision = IssueRevision.clone(data_object=any_added_issue,
+                                   changeset=any_editing_changeset)
+    revision.on_sale_date_uncertain = False
+    revision.save()
+
+    assert _issue_line(client, revision)[ON_SALE_DATE] == '1946-11-23'
 
 
 @pytest.mark.django_db
