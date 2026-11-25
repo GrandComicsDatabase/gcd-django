@@ -79,7 +79,7 @@
 </div>
 <div class="flex">
   <div class="sm:hidden bg-blue-100 h-7 pe-1 absolute left-0 flex">
-    <button class="mobile-facet-menu-button">
+    <button class="mobile-facet-menu-button" aria-label="Filters">
       {% include "gcd/bits/tw_three_bars.html" %}
     </button>
   </div>
@@ -162,12 +162,24 @@
                 <td><img {{ result.object.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
     {% endif %}
     {% if result.model_name == 'issue' %}
-                <td class="pe-2"><a hx-get="{% url "show_issue_modal" issue_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;" title="preview"><img class="inline" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img> [ISSUE]</a></td>
+                <td class="pe-2"><a
+                  hx-get="{% url "show_issue_modal" issue_id=result.object.id %}"
+                  hx-target="body" hx-swap="beforeend"
+                  style="cursor: pointer; color: #00e;" title="preview"><img
+                  class="inline"
+                  src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"
+                  title="preview" alt="preview"></img> [ISSUE]</a></td>
                 <td><img {{ result.object.series.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
                 {{ result.object.publication_date|str_encl:'(' }}</td>
     {% endif %}
     {% if result.model_name == 'story' %}
-                <td class="pe-2"><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;" title="preview"><img class="inline" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img> [STORY]</a></td>
+                <td class="pe-2"><a
+                  hx-get="{% url "show_story_modal" story_id=result.object.id %}"
+                  hx-target="body" hx-swap="beforeend"
+                  style="cursor: pointer; color: #00e;" title="preview"><img
+                  class="inline"
+                  src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"
+                  title="preview" alt="preview"></img> [STORY]</a></td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title:1 }}</a>
       {% if result.object.has_feature %} / {{ result.object.show_feature }}{% endif %} / {{ result.object.type }}
       {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}

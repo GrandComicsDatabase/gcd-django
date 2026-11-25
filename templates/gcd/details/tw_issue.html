@@ -399,7 +399,9 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   <a class="hover:no-underline" target="_blank"
      href="{{ tracker }}&amp;bug_file_loc={{ uri }}&amp;short_desc={{ sd }}">
     <btn class="btn btn-blue-editing">
-      Report Information <img class="inline w-[12px] mb-1" src="{% static 'img/gcd/icons/adwaita/external-link-symbolic.svg' %}">
+      Report Information <img class="inline w-[12px] mb-1"
+        src="{% static 'img/gcd/icons/adwaita/external-link-symbolic.svg' %}"
+        alt="opens in a new window">
     </btn>
   </a>
   {% endwith %}

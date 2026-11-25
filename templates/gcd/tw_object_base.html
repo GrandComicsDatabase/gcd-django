@@ -23,7 +23,10 @@
       <div class="max-md:hidden flex label-gcd-blue">Editing</div>
   {% endif %}
       <div class="md:hidden h-8">
-        <button class="mobile-editing-menu-button {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} rounded w-9 py-0.5 ps-1 right-1 {{ absolute }}">
+        <button aria-label="Editing"
+          class="mobile-editing-menu-button {% if MYCOMICS %} bg-my-comics
+            {% else %} bg-gcd {% endif %} rounded w-9 py-0.5 ps-1 right-1
+            {{ absolute }}">
             {% include "gcd/bits/tw_three_bars.html" %}
         </button>
       </div>
