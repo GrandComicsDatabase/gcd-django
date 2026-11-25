@@ -17,6 +17,7 @@ from django.urls import reverse, NoReverseMatch
 from django.http import HttpResponseBadRequest, HttpResponseRedirect, QueryDict
 from django.core import signing
 from django.core.cache import cache
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
@@ -29,7 +30,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
-from django_filters import FilterSet, MultipleChoiceFilter
+from django_filters import ChoiceFilter, FilterSet, MultipleChoiceFilter
 
 from apps.stddata.models import Country
 
@@ -360,27 +361,36 @@ def validate_changeset_revisions(changeset, request):
     revisions = list(changeset.issuerevisions.filter(deleted=False))
     revisions.extend(changeset.storyrevisions.filter(deleted=False))
     page_count_sum = 0
+    page_count_uncertain = False
+    page_count_changed = False
     for revision in revisions:
         if type(revision) is StoryRevision and revision.page_count is not None:
             page_count_sum += revision.page_count
+            if revision.page_count_uncertain:
+                page_count_uncertain = True
         # A changeset can contain cloned sequences that the indexer did not
         # edit. Recompute comparison state so legacy data in those untouched
         # sequences does not become part of the indexer's required work.
         revision.compare_changes()
         if not revision.is_changed:
             continue
+        elif type(revision) in [StoryRevision, IssueRevision]:
+            if revision.changed['page_count'] or revision.changed['page_count_uncertain']:
+                page_count_changed = True
         messages = validate_revision_for_transition(revision, request)
         if messages:
             invalid.append((revision, messages))
     if changeset.change_type == CTYPES['issue'] and page_count_sum > 0:
         issue = changeset.issuerevisions.first()
-        if issue.page_count is not None and\
+        if issue.page_count is not None and page_count_changed and \
            not issue.page_count_uncertain and \
-           page_count_sum > issue.page_count:
+           page_count_sum > issue.page_count and not page_count_uncertain:
             invalid.append((issue,
                             ['Sum of the page count of all sequences is %d, '
-                             'which exceeds the issue page count of %d.' % (
-                              page_count_sum, issue.page_count)]))
+                             'which exceeds the issue page count of %d. In '
+                             'doubt, flag page count uncertain for the '
+                             'issue or at least one of the sequences.'
+                             % (page_count_sum, issue.page_count)]))
     return invalid
 
 
@@ -528,6 +538,27 @@ def reserve(request, id, model_name, delete=False,
         raise
 
 
+def _lock_current(display_obj, changeset=None):
+    """
+    Take the lock of display_obj and read the object again, as an approval
+    frees the lock before it writes the object and commits.  Return the
+    lock, or None if another change holds it, or if the object was
+    deleted or removed by then, in which case no lock is kept.
+    """
+    revision_lock = _get_revision_lock(display_obj, changeset)
+    if revision_lock is None:
+        return None
+    try:
+        display_obj.refresh_from_db()
+        gone = getattr(display_obj, 'deleted', False)
+    except ObjectDoesNotExist:
+        gone = True
+    if gone:
+        revision_lock.delete()
+        return None
+    return revision_lock
+
+
 def _do_reserve(indexer, display_obj, model_name, delete=False,
                 changeset=None):
     """
@@ -535,12 +566,14 @@ def _do_reserve(indexer, display_obj, model_name, delete=False,
     Returns either the changeset, False (when indexer cannot reserve more)
     or None (when something goes wrong). The revision_lock is deleted for
     both False and None as return values.
+    The revision starts from the object as it is once its lock is taken;
+    an object deleted or removed by then gives None.
     """
     if model_name != 'cover' and (delete is False or indexer.indexer.is_new)\
        and indexer.indexer.can_reserve_another() is False:
         return False
 
-    revision_lock = _get_revision_lock(display_obj)
+    revision_lock = _lock_current(display_obj)
     if not revision_lock:
         return None
 
@@ -2193,10 +2226,11 @@ def edit_issues_in_bulk(request):
     if credits_formset:
         cd_credits = []
         for form in credits_formset:
-            if form.is_valid():
+            # a removed credit is left out, so it gets deleted below
+            if form.is_valid() and not form.cleaned_data.get('DELETE'):
                 cd_credits.append(form.cleaned_data)
     for issue in items:
-        revision_lock = _get_revision_lock(issue, changeset)
+        revision_lock = _lock_current(issue, changeset)
         if revision_lock:
             revision = IssueRevision.clone(issue, changeset=changeset)
             for field in initial:
@@ -2706,7 +2740,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
 
     form = form_class(request.POST)
     if not form.is_valid() or not credits_formset.is_valid() \
-       or not external_link_formset.is_valid():
+       or not external_link_formset.is_valid() \
+       or (code_number_formset and not code_number_formset.is_valid()):
         return _display_add_issue_form(request, series, form,
                                        credits_formset, code_number_formset,
                                        external_link_formset,
@@ -4112,10 +4147,14 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
           'edit', kwargs={'id': revision.changeset_id}))
 
     selected_fields = request.POST.getlist('field_to_copy')
+    keep_characters = 'keep_characters' in request.POST
     fields_to_copy = revision._get_single_value_fields().copy()
     fields_to_copy.update(revision._get_meta_fields())
     fields_to_set = revision._get_multi_value_fields()
     for field in selected_fields:
+        # the text of the characters is kept like their records
+        if field == 'characters' and keep_characters and revision.characters:
+            continue
         # single value fields
         if field in fields_to_copy:
             setattr(revision, field, getattr(compare_revision, field))
@@ -4175,19 +4214,23 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_credit.save()
                 else:
                     existing_credit.delete()
-    if revision.issue and (compare_revision.issue.series.language ==
-                           revision.issue.series.language):
-        same_language = True
-    else:
-        same_language = False
+    same_language = compare_revision.language == revision.language
 
     if 'characters' in selected_fields:
         characters = compare_revision.story_character_revisions\
                                      .exclude(deleted=True)
         existing_characters = revision.story_character_revisions\
                                       .exclude(deleted=True)
+        kept = frozenset()
+        if keep_characters:
+            kept = frozenset(existing_characters.values_list(
+              'character__character_id', 'universe_id'))
+            existing_characters = existing_characters.none()
 
         for character in characters:
+            if kept and (character.character.character_id,
+                         character.universe_id) in kept:
+                continue
             if same_language:
                 q_vals = {}
                 for field in character._get_single_value_fields():
@@ -4210,7 +4253,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             else:
                 new_character_revision = \
                   StoryCharacterRevision.copied_translation(character,
-                                                            revision)
+                                                            revision, kept)
                 if new_character_revision:
                     existing_characters = existing_characters.exclude(
                       id=new_character_revision.id)
@@ -4226,7 +4269,14 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                                  .exclude(deleted=True)
         existing_groups = revision.story_group_revisions\
                                   .exclude(deleted=True)
+        kept = frozenset()
+        if keep_characters:
+            kept = frozenset(existing_groups.values_list(
+              'group_name__group_id', 'universe_id'))
+            existing_groups = existing_groups.none()
         for group in groups:
+            if kept and (group.group_name.group_id, group.universe_id) in kept:
+                continue
             if same_language:
                 q_vals = {}
                 for field in group._get_single_value_fields():
@@ -4243,14 +4293,15 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_groups = existing_groups.exclude(
                       id=new_group.id)
             else:
-                language = revision.issue.series.language
+                language = revision.language
 
                 translations = group.group_name.group.translations(language)
                 if translations.count() == 0 and \
                    group.group_name.group.translated_from():
                     translations = group.group_name.group.translated_from()\
                                                    .translations(language)
-                if translations.count() == 1:
+                if translations.count() == 1 and \
+                   (translations.get().id, group.universe_id) not in kept:
                     group.group_name = translations.get().official_name()
                     new_group = StoryGroupRevision.clone(
                       group, revision.changeset, fork=True,
@@ -4576,7 +4627,7 @@ def reserve_reprint(request, changeset_id, reprint_id):
         refusal = _reprint_sequence_refusal(display_obj, changeset)
         if refusal:
             return render_error(request, refusal, redirect=False)
-    revision_lock = _get_revision_lock(display_obj, changeset)
+    revision_lock = _lock_current(display_obj, changeset)
     if not revision_lock:
         return render_error(
           request,
@@ -4970,6 +5021,31 @@ def _copy_placement(existing, position, has_cover):
     }
 
 
+def _copy_refusal(issue_revision, stories=()):
+    """
+    Return why stories cannot be copied into issue_revision, or None.
+
+    A new issue only exists once approved, so only a new variant can take
+    a copy, and a variant holds a single cover sequence, and only if its
+    cover artwork differs from the base issue.
+    """
+    if not issue_revision.variant_of:
+        if issue_revision.issue is None:
+            return 'Sequences cannot be copied into a new issue before it ' \
+                   'is approved.'
+        return None
+    if issue_revision.variant_cover_status != VCS_Codes.ARTWORK_DIFFERENCE:
+        return 'A cover sequence can only be copied into a variant if its ' \
+               'cover artwork is different from the base issue.'
+    cover_types = (STORY_TYPES['cover'],
+                   STORY_TYPES['cover reprint (on interior page)'])
+    if any(story.type_id not in cover_types for story in stories):
+        return 'Only a cover sequence can be copied into a variant issue.'
+    if len(stories) > 1 or issue_revision.active_stories():
+        return 'You cannot add more than one story to a variant issue.'
+    return None
+
+
 def _single_copy_context(request, issue_revision, story, position,
                          placement=None, changed=False):
     if placement is None:
@@ -5121,6 +5197,9 @@ def copy_cached_sequences(request, data, select_key):
             'A selected object is no longer available. '
             'Select the objects again.')
     stories = [by_id[pk] for pk in selected_ids]
+    refusal = _copy_refusal(issue_revision, stories)
+    if refusal:
+        return render_error(request, refusal)
     error = _about_comics_copy_error(request, stories, issue_revision)
     if error:
         return error
@@ -5128,6 +5207,11 @@ def copy_cached_sequences(request, data, select_key):
                      if s.type_id == STORY_TYPES['cover']]
     if any(pk not in actual_covers for pk in cover_ids):
         return HttpResponseBadRequest('A selected cover is no longer a cover.')
+    # A variant issue takes only cover sequences. A cover reprint ticked
+    # under Stories reaches this point, so it is refused here.
+    if issue_revision.variant_of and len(actual_covers) < len(stories):
+        return render_error(request, 'Only a cover sequence can be copied '
+                                     'into a variant issue.')
     cover_ids = actual_covers
     payload['cover_ids'] = cover_ids
     existing = list(issue_revision.active_stories())
@@ -5236,6 +5320,9 @@ def _selected_copy_sequence(request, data, object_type, selected_id):
     issue_revision = get_object_or_404(IssueRevision,
                                        id=data['issue_revision_id'])
     story = get_object_or_404(Story, id=selected_id)
+    refusal = _copy_refusal(issue_revision, [story])
+    if refusal:
+        return render_error(request, refusal)
     return oi_render(request, 'oi/edit/confirm_copy_sequence.html',
                      _single_copy_context(request, issue_revision, story,
                                           data['sequence_number']))
@@ -5260,6 +5347,9 @@ def copy_sequence(request, issue_revision_id, story_id=None,
         story = True
 
     if request.method != 'POST':
+        refusal = _copy_refusal(issue_revision)
+        if refusal:
+            return render_error(request, refusal)
         heading = 'Select story to copy into %s' % (esc(issue_revision))
         data = {'issue_revision_id': issue_revision_id,
                 'changeset_id': issue_revision.changeset_id,
@@ -5283,6 +5373,9 @@ def copy_sequence(request, issue_revision_id, story_id=None,
               'edit', kwargs={'id': issue_revision.changeset_id}))
         story = get_object_or_404(Story.objects.select_for_update(),
                                   id=story_id, deleted=False)
+        refusal = _copy_refusal(issue_revision, [story])
+        if refusal:
+            return render_error(request, refusal)
         error = _about_comics_copy_error(request, [story], issue_revision)
         if error:
             return error
@@ -5761,21 +5854,19 @@ def move_series(request, series_revision_id, publisher_id):
               'edit', kwargs={'id': series_revision.changeset.id}))
         else:
             if series_revision.changeset.issuerevisions.count() == 0:
-                for issue in series_revision.series.active_issues():
-                    if not _do_reserve(series_revision.changeset.indexer,
-                                       issue, 'issue',
-                                       changeset=series_revision.changeset):
-                        for issue_rev in series_revision.changeset\
-                                                        .issuerevisions.all():
-                            _free_revision_lock(issue_rev.issue)
-                            issue_rev.delete()
-                        for story_rev in series_revision.changeset\
-                                                        .storyrevisions.all():
-                            _free_revision_lock(story_rev.story)
-                            story_rev.delete()
-                        return show_error_with_return(
-                          request, 'Error while reserving issues.',
-                          series_revision.changeset)
+                try:
+                    # All or nothing: a failure takes back the locks and the
+                    # revisions of the issues reserved so far.
+                    with transaction.atomic():
+                        for issue in series_revision.series.active_issues():
+                            if not _do_reserve(
+                              series_revision.changeset.indexer, issue,
+                              'issue', changeset=series_revision.changeset):
+                                raise IntegrityError('issue not reservable')
+                except IntegrityError:
+                    return show_error_with_return(
+                      request, 'Error while reserving issues.',
+                      series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions\
                                                      .all():
                     for brand in issue_revision.brand_emblem.all():
@@ -5876,16 +5967,16 @@ def move_issue(request, issue_revision_id, series_id):
 
     if request.method != 'POST':
         header_text = "Do you want to move %s to %s ?" % \
-          (issue_revision.issue.full_name(), series.full_name())
+          (issue_revision.full_name(), series.full_name())
         url = urlresolvers.reverse(
           'move_issue',
           kwargs={'issue_revision_id': issue_revision_id,
                   'series_id': series_id})
         cancel_button = "Cancel"
         confirm_button = "move of issue %s to series %s" % (
-          issue_revision.issue, series)
+          issue_revision, series)
         hidden_fields = _fields_hidden_by_series(
-          issue_revision, issue_revision.issue.series, series)
+          issue_revision, issue_revision.series, series)
         if hidden_fields:
             warning = 'The series %s does not show the %s of this issue.' \
                       % (series, ', '.join(hidden_fields))
@@ -6087,7 +6178,7 @@ def move_cover(request, id, cover_id=None):
           request, 'Covers cannot be moved to a variant with the variant '
                    'cover status "No Difference".')
 
-    revision_lock = _get_revision_lock(cover, changeset)
+    revision_lock = _lock_current(cover, changeset)
     if not revision_lock:
         return render_error(
           request, 'Cannot move the cover as it is already reserved.')
@@ -6171,6 +6262,102 @@ def remove_story_revision(request, id):
     story.delete()
     return HttpResponseRedirect(urlresolvers.reverse('edit',
                                 kwargs={'id': story.changeset.id}))
+
+
+def _detach_comments(revision):
+    """
+    Keep the comments of a revision that is about to be deleted.
+
+    They stay on the changeset with a note, while the GenericRelation would
+    delete them together with the revision. Returns how many there were.
+    """
+    comments = list(revision.comments.all())
+    for comment in comments:
+        comment.text += '\nThe %s "%s" for which this comment was entered ' \
+                        'was removed.' % (
+                          type(revision).__name__,
+                          show_revision_short(revision, markup=False))
+        comment.revision_id = None
+        comment.save()
+    return len(comments)
+
+
+@permission_required('indexer.can_reserve')
+def remove_variant_revision(request, id):
+    """
+    Remove a variant newly added to the issue edited in a changeset.
+
+    Its sequences go with it and the changeset turns back into a plain
+    edit of the base issue.
+    """
+    revision = get_object_or_404(IssueRevision, id=id)
+    changeset = Changeset.objects.select_for_update().get(
+      id=revision.changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(
+          request, 'Only the reservation holder may remove variants.')
+    if changeset.state != states.OPEN:
+        return render_error(
+          request, 'This changeset is no longer open for editing.')
+    if changeset.change_type != CTYPES['variant_add'] \
+       or not revision.variant_of or revision.issue:
+        return render_error(
+          request, 'Only a new variant added to an issue can be removed.')
+    if changeset.coverrevisions.exists():
+        return render_error(
+          request, 'Please undo the cover move before removing the variant.')
+    stories = revision.ordered_story_revisions()
+    if stories.filter(story__isnull=False).exists():
+        return render_error(
+          request, 'A sequence was moved to this variant. Please use Move To'
+                   ' Other Issue to move it back before removing the variant.')
+
+    if request.method != 'POST':
+        names = [show_revision_short(story, markup=False) for story in stories]
+        warning = ''
+        if names:
+            warning = 'These new sequences will be removed with it: %s' \
+                      % '; '.join(names)
+        return oi_render(
+          request, 'oi/edit/confirm.html',
+          {
+            'type': 'Variant Removal',
+            'header_text': 'Do you want to remove the new variant %s ?'
+                           % revision.full_name(),
+            'warning': warning,
+            'url': urlresolvers.reverse('remove_variant_revision',
+                                        kwargs={'id': id}),
+            'cancel_button': 'Cancel',
+            'confirm_button': 'removal of variant %s' % revision,
+          })
+
+    edit_url = urlresolvers.reverse('edit', kwargs={'id': changeset.id})
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(edit_url)
+
+    for story in stories:
+        _detach_comments(story)
+    if not _detach_comments(revision) and changeset.approver:
+        # changeset already was submitted once since it has an approver
+        changeset.comments.create(
+          commenter=changeset.indexer,
+          text='The IssueRevision "%s" was removed.' % revision,
+          old_state=changeset.state,
+          new_state=changeset.state)
+    # A sequence has no foreign key to its new variant, only issue=None. If
+    # left behind, the approval would attach it to the base issue.
+    stories.delete()
+    revision.delete()
+    changeset.change_type = CTYPES['issue']
+    changeset.save()
+
+    # Under variant_add the form of the base issue offers a variant name.
+    # An issue without variants has none.
+    base_revision = changeset.issuerevisions.get()
+    if not base_revision.issue.active_variants().exists():
+        base_revision.variant_name = ''
+        base_revision.save()
+    return HttpResponseRedirect(edit_url)
 
 
 @permission_required('indexer.can_reserve')
@@ -6508,6 +6695,19 @@ def reorder_characters(request, character_order_id):
         return vte.response
 
 
+def _save_sort_field(child, sort_field):
+    """
+    Save only sort_field of child, and the time of the change if it keeps
+    one: its row was read earlier, so the other columns may be older than
+    what another request has committed.
+    """
+    fields = [sort_field]
+    if any(field.name == 'modified'
+           for field in child._meta.concrete_fields):
+        fields.append('modified')
+    child.save(update_fields=fields)
+
+
 def _reorder_children(request, parent, children, sort_field, child_set,
                       commit, unique=True, skip=None, extras=None):
     """
@@ -6573,7 +6773,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
                 current_code += 1
         if commit:
             setattr(child, sort_field, current_code)
-            child.save()
+            _save_sort_field(child, sort_field)
         else:
             child_list.append((child, current_code))
         current_code += 1
@@ -6585,7 +6785,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
     if commit and extras:
         for child in extras:
             setattr(child, sort_field, current_code)
-            child.save()
+            _save_sort_field(child, sort_field)
             current_code += 1
 
     return child_list
@@ -6690,6 +6890,7 @@ def show_queue(request, queue_name):
         'states': states,
         'countries': countries,
         'country_names': country_names,
+        'queue_empty': not changes.exists(),
         'data': [
           {
             'object_name': 'Awards',
@@ -6934,6 +7135,30 @@ class ChangesetTypeFilter(FilterSet):
         fields = ['change_type',]
 
 
+class EditorLogFilter(ChangesetTypeFilter):
+    indexer = ChoiceFilter(label='Indexer', empty_label='All indexers')
+
+    def __init__(self, *args, editor, **kwargs):
+        """
+        Offer the indexers of the changes in the log, with the current
+        mentees of the editor in a group of their own on top.
+        """
+        super().__init__(*args, **kwargs)
+        users = User.objects.filter(id__in=self.queryset.values('indexer'))\
+                            .select_related('indexer')\
+                            .order_by('last_name', 'first_name')
+        mentees, others = [], []
+        for user in users:
+            mentee = user.indexer.is_new and \
+                user.indexer.mentor_id == editor.id
+            (mentees if mentee else others).append((user.id,
+                                                    str(user.indexer)))
+        choices = others
+        if mentees:
+            choices = [('Your mentees', mentees), ('Other indexers', others)]
+        self.filters['indexer'].extra['choices'] = choices
+
+
 @login_required
 def show_approved(request):
 
@@ -6976,7 +7201,7 @@ def show_commented(request):
                                .distinct().order_by('-last_remark')\
                                .select_related('approver__indexer',
                                                'indexer__indexer')
-    filter = ChangesetTypeFilter(request.GET, changes)
+    filter = EditorLogFilter(request.GET, changes, editor=request.user)
     changes = filter.qs
 
     request_get = request.GET.copy()
@@ -7002,7 +7227,7 @@ def show_editor_log(request):
                                comments__new_state__in=changed_states,
                                comments__commenter=request.user)\
                        .exclude(indexer=request.user).distinct()
-    filter = ChangesetTypeFilter(request.GET, changes)
+    filter = EditorLogFilter(request.GET, changes, editor=request.user)
     changes = filter.qs
 
     # TODO: check again with django 5

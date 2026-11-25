@@ -62,9 +62,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
     else:
         class RuntimeSeriesRevisionForm(SeriesRevisionForm):
             class Meta(SeriesRevisionForm.Meta):
-                exclude = SeriesRevisionForm.Meta.exclude
-                exclude.append('imprint')
-                exclude.append('format')
+                exclude = SeriesRevisionForm.Meta.exclude + ['imprint',
+                                                             'format']
 
             def __init__(self, *args, **kwargs):
                 # Don't allow country and language to be un-set:

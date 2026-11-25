@@ -391,9 +391,9 @@ def test_adjust_parent_counts_single(patched_other_dummy):
 
         old_value.update_cached_counts.assert_called_once_with(old_counts,
                                                                negate=True)
-        old_value.save.assert_called_once_with()
+        old_value.save.assert_called_once_with(update_fields=['modified'])
         new_value.update_cached_counts.assert_called_once_with(new_counts)
-        new_value.save.assert_called_once_with()
+        new_value.save.assert_called_once_with(update_fields=['modified'])
 
 
 def test_adjust_parent_counts_single_no_change(patched_other_dummy):
@@ -416,7 +416,7 @@ def test_adjust_parent_counts_single_no_change(patched_other_dummy):
         )
 
         new_value.update_cached_counts.assert_called_once_with(deltas)
-        new_value.save.assert_called_once_with()
+        new_value.save.assert_called_once_with(update_fields=['modified'])
 
 
 def test_adjust_parent_counts_multi(patched_other_dummy):
@@ -441,11 +441,11 @@ def test_adjust_parent_counts_multi(patched_other_dummy):
         for o in old_value - new_value:
             o.update_cached_counts.assert_called_once_with(old_counts,
                                                            negate=True)
-            o.save.assert_called_once_with()
+            o.save.assert_called_once_with(update_fields=['modified'])
 
         for n in new_value - old_value:
             n.update_cached_counts.assert_called_once_with(new_counts)
-            n.save.assert_called_once_with()
+            n.save.assert_called_once_with(update_fields=['modified'])
 
         for i in new_value & old_value:
             i.update_cached_counts.assert_has_calls([
@@ -454,7 +454,8 @@ def test_adjust_parent_counts_multi(patched_other_dummy):
             ])
             assert i.update_cached_counts.call_count == 2
 
-            i.save.assert_has_calls([mock.call(), mock.call()])
+            i.save.assert_has_calls([mock.call(update_fields=['modified']),
+                                     mock.call(update_fields=['modified'])])
             assert i.save.call_count == 2
 
 
@@ -478,7 +479,7 @@ def test_adjust_parent_counts_multi_no_change(patched_other_dummy):
 
         for v in new_value:
             v.update_cached_counts.assert_called_once_with(deltas)
-            v.save.assert_called_once_with()
+            v.save.assert_called_once_with(update_fields=['modified'])
 
 
 @pytest.fixture

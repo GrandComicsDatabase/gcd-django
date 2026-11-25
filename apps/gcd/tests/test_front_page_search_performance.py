@@ -150,7 +150,10 @@ def test_series_search_page_with_issue_dates(
     settings.USE_ELASTICSEARCH = False
     for series in Series.objects.filter(pk__in=series_catalog):
         series.issue_count = series.active_issues().count()
+        series.save(update_fields=['issue_count'])
         series.set_first_last_issues()
     response = client.get('/series/name/Nathan%20Never/')
     assert response.status_code == 200
     assert b'Nathan Never' in response.content
+    # A series with several issues is shown as a range of dates.
+    assert b'1991 - ' in response.content
