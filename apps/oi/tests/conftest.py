@@ -4,6 +4,7 @@
 import pytest
 
 from django.db import models, connections
+from django.db.models.signals import post_migrate
 from django.contrib.auth.models import User
 from taggit.managers import TaggableManager
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
@@ -32,11 +33,39 @@ def keywords():
     }
 
 
+def make_stats():
+    """
+    Make the statistics that a commit to the display updates: the totals
+    and those of the test country.
+    """
+    CountStats.objects.init_stats()
+    CountStats.objects.init_stats(country=any_country())
+
+
+def make_stats_after_flush(sender, **kwargs):
+    """
+    Receive the post_migrate that a flush sends once it has emptied the
+    database, and make the statistics again.
+    """
+    make_stats()
+
+
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_setup, django_db_blocker):
+    """
+    Make the statistics once for the session, and again after each flush
+    that sends post_migrate: a transactional test empties the database
+    when it ends, and a test after it would find no statistics to update.
+    A flush with available_apps or serialized_rollback sends none.  The
+    data that the migrations load is not made again, so a transactional
+    test must not need it.
+    """
     with django_db_blocker.unblock():
-        CountStats.objects.init_stats()
-        CountStats.objects.init_stats(country=any_country())
+        make_stats()
+    stats = CountStats._meta.app_config
+    post_migrate.connect(make_stats_after_flush, sender=stats)
+    yield
+    post_migrate.disconnect(make_stats_after_flush, sender=stats)
 
 
 @pytest.fixture
