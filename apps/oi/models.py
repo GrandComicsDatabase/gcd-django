@@ -4309,7 +4309,9 @@ class IssueRevision(Revision):
         return self.changeset.issuerevisions.filter(series=self.series)
 
     def _same_series_open_with_after(self):
-        return self._same_series_revisions().filter(after__isnull=False,
+        # an 'after' in another series, e.g. of a new issue moved to another
+        # series, does not place the issue
+        return self._same_series_revisions().filter(after__series=self.series,
                                                     committed=None)
 
     def _open_prereq_revisions(self):
@@ -4439,6 +4441,8 @@ class IssueRevision(Revision):
         #       committing the variant_of_rev if necessary.
         #       Idea may be good for other new dependent object situations.
         if self.added or self.series_changed:
+            if self.after and self.after.series_id != self.series_id:
+                self.after = None
             if not self.after:
                 # If we're handling a run of issues, this is the
                 # previous issue in the run, if any.
