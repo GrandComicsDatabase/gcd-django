@@ -30,7 +30,11 @@
   {% endif %}
 </div>
 <div>
+  {% if page.paginator.count %}
   {% render_table table %}
+  {% else %}
+  <p>No {{ item_name }}{{ 0|pluralize:plural_suffix }} found.</p>
+  {% endif %}
 </div>
 
 {% if used_search_terms %}
