@@ -1,0 +1,40 @@
+name: Problem with the site
+description: A page, link, button or search of the site does not work.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        This form is for a problem in the code of the site. Wrong data in a
+        record, such as a credit, a date or a name, goes to the Error Tracker:
+        go back and choose "Wrong data in a record".
+  - type: dropdown
+    id: site
+    attributes:
+      label: Site
+      options:
+        - www.comics.org
+        - beta.comics.org
+        - A local development setup
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Address of the page
+      description: Copy it from the address bar of the browser.
+      placeholder: https://www.comics.org/...
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to see it again
+      description: >-
+        The clicks or the search that lead to the problem, and whether you
+        were logged in.
