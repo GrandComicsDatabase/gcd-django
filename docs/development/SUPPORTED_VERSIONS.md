@@ -17,6 +17,28 @@ The core environment deliberately disables Elasticsearch. Search-enabled
 environments use the existing Elasticsearch 7 client and custom Elasticsearch 7
 Haystack backend within the supported range above.
 
+## Native package choices and measured coverage
+
+MySQL `>=8.0` is a compatibility floor, not an instruction to install the newest
+available major release. Use the recipe for the selected platform:
+
+| Route | Package selection | Measured sample-data walkthrough |
+| --- | --- | --- |
+| Docker Compose | `mysql:8.0` | Docker core and optional-search checks |
+| Native Ubuntu 24.04 | Ubuntu's `mysql-server` package, MySQL 8.0 | Ubuntu 24.04.5 ARM64, MySQL 8.0.46 |
+| Native macOS | Homebrew `mysql@8.4` | Apple Silicon macOS 26.6.2, MySQL 8.4.13 |
+| Native WSL2 | Ubuntu 24.04's `mysql-server` package, MySQL 8.0 | Ubuntu 24.04.5 x86_64, MySQL 8.0.46 |
+
+The native walkthroughs used Python 3.13.18. Patch versions here record test
+evidence, not permanent dependency pins. The WSL2 run used a pinned source
+archive; its result does not establish Docker Desktop/WSL editor integration.
+Intel macOS remains unverified. Codespaces is deferred to a separate follow-up.
+
+Do not upgrade or replace an existing MySQL service to match a recipe without
+reviewing its data and other users. See [native macOS](NATIVE_MACOS.md),
+[native Ubuntu](NATIVE_UBUNTU.md), and [WSL2](WSL2.md) for isolated setup and
+platform-specific build dependencies.
+
 ## Policy
 
 - Python is restricted to the 3.13 release line.

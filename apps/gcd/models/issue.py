@@ -520,11 +520,11 @@ class Issue(GcdData):
 
             if self.is_indexed != is_indexed:
                 self.is_indexed = is_indexed
-                self.save()
+                self.save(update_fields=['is_indexed', 'modified'])
                 if self.active_variants():
                     for variant in self.active_variants():
                         variant.is_indexed = is_indexed
-                        variant.save()
+                        variant.save(update_fields=['is_indexed', 'modified'])
 
         index_delta = 0
         if self.series.is_comics_publication:
@@ -657,11 +657,19 @@ class Issue(GcdData):
             number = ' ' + number
         return '%s%s' % (self.series.full_name(), number)
 
-    def full_name_with_link(self, publisher=False):
+    def full_name_with_link(self, publisher=False, variant_name=False):
         name_link = self.series.full_name_with_link(publisher)
+        if variant_name:
+            number = self.display_full_descriptor
+        else:
+            number = self.display_number
         return mark_safe('%s <a href="%s">%s</a>' % (name_link,
                                                      self.get_absolute_url(),
-                                                     esc(self.display_number)))
+                                                     esc(number)))
+
+    @property
+    def full_name_with_variant_link(self):
+        return self.full_name_with_link(variant_name=True)
 
     def show_series_and_issue_link(self):
         issue_number = self.display_full_descriptor
