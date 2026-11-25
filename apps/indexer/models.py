@@ -127,6 +127,9 @@ class Indexer(models.Model):
         old_imps = self.imps
         self.imps = models.F('imps') + value
         self.save()
+        # Read the sum back: a later save of this instance would otherwise
+        # add value again.
+        self.refresh_from_db(fields=['imps'])
         if (old_imps < settings.MEMBERSHIP_IMPS and
            Indexer.objects.get(pk=self.pk).imps >= settings.MEMBERSHIP_IMPS):
             self.user.groups.add(Group.objects.get(name='member'))

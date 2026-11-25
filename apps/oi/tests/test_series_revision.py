@@ -240,10 +240,10 @@ def test_adjust_stats_pub_changed(series_and_revision):
 
     s.publisher.update_cached_counts.assert_called_once_with({'issues': 20},
                                                              negate=True)
-    s.publisher.save.assert_called_once_with()
+    s.publisher.save.assert_called_once_with(update_fields=['modified'])
 
     rev.publisher.update_cached_counts.assert_called_once_with({'issues': 5})
-    rev.publisher.save.assert_called_once_with()
+    rev.publisher.save.assert_called_once_with(update_fields=['modified'])
 
     s.update_cached_counts.assert_called_once_with({'issues': -15})
     s.save.assert_called_once_with()
@@ -262,7 +262,7 @@ def test_adjust_stats_only_counts_changed(series_and_revision):
     rev._adjust_stats(changes, {'issues': 20}, {'issues': 5})
 
     s.publisher.update_cached_counts.assert_called_once_with({'issues': -15})
-    s.publisher.save.assert_called_once_with()
+    s.publisher.save.assert_called_once_with(update_fields=['modified'])
 
     s.update_cached_counts.assert_called_once_with({'issues': -15})
     s.save.assert_called_once_with()

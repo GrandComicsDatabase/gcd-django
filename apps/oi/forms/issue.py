@@ -16,7 +16,8 @@ from crispy_forms.layout import Layout, Field, HTML
 from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       VARIANT_NAME_HELP_TEXT, VARIANT_COVER_STATUS_HELP_TEXT,
-                      ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
+                      ISSUE_LABELS, ISSUE_HELP_TEXTS, CREDIT_NAME_LABEL,
+                      KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       _strip_list,
@@ -418,7 +419,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 # can add after one of the variants
                 if 'after' in self.fields:
                     self.fields['after'].queryset = (
-                        variant_of.variant_set.filter(deleted=False) |
+                        variant_of.active_variants() |
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
 
@@ -456,7 +457,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
     # the other issuerevision from 'variant_add' was taken care of above
     if (revision.changeset.change_type == CTYPES['variant_add']) or \
-            revision.issue.variant_set.count():
+            revision.issue.active_variants().exists() or revision.variant_name:
         class RuntimeBaseIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
@@ -494,7 +495,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
                 'A concise and clear description of the external source of '
                 'the credit.'
         }
-        labels = {'credit_name': 'Credit description'}
+        labels = {'credit_name': CREDIT_NAME_LABEL}
 
     def __init__(self, *args, **kwargs):
         super(IssueCreditRevisionForm, self).__init__(*args, **kwargs)
@@ -990,13 +991,13 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
                     'have a whole number for the issue number (even if it '
                     'displays like "v1#1")')
 
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, the '
                     'issue after which you are inserting the new issues '
-                    'must have a volume.')
-
-            cd['first_volume'] = cd['after'].volume
+                    'must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 
@@ -1123,12 +1124,13 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         if cd['first_number'] is None and cd['after'] is not None:
             cd = self._parse_year_and_number(cd, cd['issues_per_cycle'])
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, '
                     'the issue after which you are inserting '
-                    'the new issues must have a volume.')
-            cd['first_volume'] = cd['after'].volume
+                    'the new issues must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 
