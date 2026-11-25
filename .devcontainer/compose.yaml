@@ -1,0 +1,15 @@
+# Only editor-specific differences. The application and health/migration gates
+# stay in ../compose.yaml. Host access uses the editor's forwarded port 8000.
+services:
+  db:
+    ports: !reset []
+    volumes:
+      - ./.devcontainer/init-test-database.sh:/docker-entrypoint-initdb.d/10-gcd-test-database.sh:ro
+  migrate:
+    environment:
+      USE_ELASTICSEARCH: "false"
+  web:
+    user: gcd
+    ports: !reset []
+    environment:
+      USE_ELASTICSEARCH: "false"

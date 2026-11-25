@@ -11,11 +11,13 @@
     </div>
   {% if error_link %}
     <div class="px-2">
-    {% blocktrans with request.build_absolute_uri as uri and error_subject|urlencode as error_sub %}
+    {% with page=request.build_absolute_uri|urlencode %}
+    {% blocktrans with page as uri and error_subject|urlencode as error_sub %}
     If you believe any of this data to be incorrect, please
       <a class="new_window" href="https://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ uri }}&amp;short_desc={{ error_sub }}"
          target="_blank">let us know</a>.
     {% endblocktrans %}
+    {% endwith %}
     </div>
   {% endif %}
   </div>
