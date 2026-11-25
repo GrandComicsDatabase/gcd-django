@@ -98,6 +98,27 @@ def test_changed_text_keeps_the_spaces_html_hides(old, new, shown):
     assert _shown_change(field, old, new, {})[1] == shown
 
 
+@pytest.mark.parametrize('old, new, shown', [
+  ('X', ' A', ("<span class='deleted'>X</span>",
+               "<span class='added'> A</span>")),
+  ('X', 'A ', ("<span class='deleted'>X</span>",
+               "<span class='added'>A </span>")),
+  (' X', 'A', ("<span class='deleted'> X</span>",
+               "<span class='added'>A</span>")),
+  ('X A', ' A', ("<span class='deleted'>X</span> A", " A")),
+  ('A X', 'A Y', ("A <span class='deleted'>X</span>",
+                  "A <span class='added'>Y</span>"))])
+def test_a_space_at_the_edge_of_a_value_is_shown(old, new, shown):
+    """
+    A space at the start or at the end of a value, which HTML hides at
+    the edge of a cell, is a no-break space, in a changed part or not; a
+    space between words stays a space.
+    """
+    field = IssueRevision._meta.get_field('notes')
+
+    assert _shown_change(field, old, new, {}) == shown
+
+
 @pytest.mark.django_db
 def test_rows_of_a_sequence_change(client, sequence_change,
                                    approved_stories):

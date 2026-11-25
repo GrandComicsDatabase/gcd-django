@@ -37,6 +37,11 @@ NO_BREAK_SPACE = '\u00a0'
 # a line break.
 HIDDEN_SPACES = re.compile(r'\s{2,}|[^\S ]')
 
+# Spaces at the start and at the end of a value, which HTML hides at the
+# edges of a cell.
+LEADING_SPACES = re.compile(r'\A\s+')
+TRAILING_SPACES = re.compile(r'\s+\Z')
+
 # The models that a bulk change can change, with their revision classes.
 BULK_TARGETS = {Issue: IssueRevision}
 
@@ -338,6 +343,8 @@ def _shown_change(field, old, new, names):
     Return the old and the new value of field as HTML, with the deleted
     and the added parts marked.  Text is compared character by character
     and keeps spaces and case; any other value is marked as a whole.
+    The spaces that HTML would hide show as no-break spaces: those of a
+    changed part, and those at the start and at the end of each value.
     """
     old = _shown_value(field, old, names)
     new = _shown_value(field, new, names)
@@ -348,7 +355,24 @@ def _shown_change(field, old, new, names):
         diff = [(-1, old), (1, new)]
     diff = [(op, _shown_spaces(text) if op else text)
             for op, text in diff if text]
-    return show_diff(diff, 'orig'), show_diff(diff, 'change')
+    old_side = _shown_edges([part for part in diff if part[0] <= 0])
+    new_side = _shown_edges([part for part in diff if part[0] >= 0])
+    return show_diff(old_side, 'orig'), show_diff(new_side, 'change')
+
+
+def _shown_edges(parts):
+    """
+    Return parts, the (op, text) parts of one side of a value, with the
+    spaces at the start of the first part and at the end of the last
+    one as no-break spaces, changed or not: HTML hides them at the edges
+    of a cell.
+    """
+    for index, edge in ((0, LEADING_SPACES), (-1, TRAILING_SPACES)):
+        if parts:
+            op, text = parts[index]
+            parts[index] = (op, edge.sub(
+              lambda match: NO_BREAK_SPACE * len(match.group()), text))
+    return parts
 
 
 def _shown_spaces(text):
