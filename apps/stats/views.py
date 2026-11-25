@@ -5,7 +5,7 @@ import os
 import os.path
 import stat
 import errno
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from django.http import FileResponse
@@ -79,8 +79,9 @@ def download(request):
         try:
             timestamps.append(
                 (dump_info[0],
-                 datetime.utcfromtimestamp(
-                    os.stat(dump_info[1])[stat.ST_MTIME])))
+                 datetime.fromtimestamp(
+                    os.stat(dump_info[1])[stat.ST_MTIME],
+                    timezone.utc).replace(tzinfo=None)))
         except OSError as ose:
             if ose.errno == errno.ENOENT:
                 timestamps.append((dump_info[0], 'never'))
