@@ -228,6 +228,27 @@ def test_approve_allows_corrected_changeset(any_edit_story_rev, any_editor):
     assert any_edit_story_rev.committed is True
 
 
+def test_first_approval_adds_points_once(any_edit_story_rev, any_editor):
+    """
+    The first approval of a new indexer adds the points of the change
+    once, also when it moves the indexer to probation.
+    """
+    changeset = any_edit_story_rev.changeset
+    changeset.change_type = CTYPES['issue']
+    changeset.imps = 5
+    _put_in_review(changeset, any_editor, any_edit_story_rev.issue,
+                   any_edit_story_rev.story)
+    indexer = changeset.indexer.indexer
+    assert indexer.max_reservations == settings.RESERVE_MAX_INITIAL
+    assert indexer.imps == 0
+
+    approve.__wrapped__(_request_for(any_editor), changeset.id)
+
+    indexer.refresh_from_db()
+    assert indexer.max_reservations == settings.RESERVE_MAX_PROBATION
+    assert indexer.imps == 5
+
+
 def test_send_back_requires_comment_using_button_label(any_edit_story_rev,
                                                        any_editor,
                                                        monkeypatch):

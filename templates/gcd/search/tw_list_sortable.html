@@ -96,7 +96,11 @@ Should be changed so that we have consistent display. Currently only the search 
 </div>
 {% endif %}
 <div>
+  {% if page.paginator.count %}
   {% render_table table %}
+  {% else %}
+  <p>No {{ item_name }}{{ 0|pluralize:plural_suffix }} found.</p>
+  {% endif %}
 </div>
 
 <script type="text/javascript">
