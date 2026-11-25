@@ -462,7 +462,7 @@ class IndiciaPrinter(BasePublisher):
 
         if deltas.get('issues', 0):
             self.parent.issue_count = F('issue_count') + deltas['issues']
-            self.parent.save()
+            self.parent.save(update_fields=['issue_count', 'modified'])
 
     def object_page_name(self):
         parent_url = self.parent.get_absolute_url()

@@ -7,3 +7,4 @@ __pycache__
 .DS_Store
 media
 static_root
+.devcontainer/compose.project.yaml
