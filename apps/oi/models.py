@@ -7098,10 +7098,11 @@ class StoryRevision(Revision):
 
                 # Just putting in a question mark isn't worth an IMP.
                 # Note that the input data is already whitespace-stripped.
-                # Changed StoryCredits give also positive is_changed and
-                # therefore corresponding IMP here.
+                # Changed StoryCredits of this type give also positive
+                # is_changed and therefore corresponding IMP here.
                 if field_name == name and getattr(self, field_name) == '?':
-                    if self.story_credit_revisions.exists() == 0:
+                    if not self.story_credit_revisions.filter(
+                      credit_type_id=CREDIT_TYPES[name]).exists():
                         return 0
                 return 1
         return 0
