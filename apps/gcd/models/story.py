@@ -26,6 +26,7 @@ from .support_tables import render_publisher
 STORY_TYPES = {
     'ad': 2,
     'cover': 6,
+    'cover reprint (on interior page)': 7,
     'insert': 11,
     'letters_page': 12,
     'comic story': 19,
