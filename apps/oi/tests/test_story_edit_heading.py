@@ -23,9 +23,10 @@ def story_revision(client, any_indexer, any_added_story):
                                changeset=changeset)
 
 
-def _edit_page(client, revision):
+def _edit_page(client, revision, model_name='story'):
+    """Return the edit page of the revision, checking that it opens."""
     response = client.get(reverse('edit_revision',
-                                  kwargs={'model_name': 'story',
+                                  kwargs={'model_name': model_name,
                                           'id': revision.id}))
     assert response.status_code == 200
     return response.content.decode()
@@ -61,4 +62,20 @@ def test_view_without_tabs_has_no_sequence_heading(client, any_indexer,
     page = _edit_page(client, story_revision)
 
     assert TAB_BAR not in page
+    assert '<h2>Sequence' not in page
+
+
+@pytest.mark.django_db
+def test_edit_page_of_another_revision_has_no_heading(client,
+                                                      story_revision):
+    """
+    The edit page is shared by all revisions; one that names no heading,
+    such as that of the issue, shows none with the tabbed view on.
+    """
+    issue_revision = IssueRevision.objects.get(
+      changeset=story_revision.changeset)
+
+    page = _edit_page(client, issue_revision, model_name='issue')
+
+    assert issue_revision.edit_heading() == ''
     assert '<h2>Sequence' not in page

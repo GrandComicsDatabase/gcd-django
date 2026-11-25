@@ -22,8 +22,8 @@
 <h1>
   {{ changeset|header_link }}
 </h1>
-{% if revision.source_name == 'story' and request.user.indexer.use_tabs %}
-<h2>Sequence {{ revision.sequence_number }}: {{ revision.show_title }}</h2>
+{% if request.user.indexer.use_tabs and revision.edit_heading %}
+<h2>{{ revision.edit_heading }}</h2>
 {% endif %}
 
 <div class="edit">
