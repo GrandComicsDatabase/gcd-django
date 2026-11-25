@@ -1,27 +1,34 @@
-// Cover upload form: preview of the selected or dropped scan, with its
-// dimensions and a warning if it is below the minimum size.
-(function () {
+// Image upload card (templates/oi/bits/image_upload_card.html): preview of
+// the selected or dropped image, with its dimensions and, where the card
+// sets a minimum size, a warning below it.
+/**
+ * Wires one upload card.
+ * @param {HTMLElement} card the element with data-image-upload
+ */
+function setupImageUpload(card) {
   'use strict';
 
-  const MIN_SHORT_SIDE = 400;
   // Only raster images are opened in a new tab: an SVG opened as a
   // same-origin document could run scripts.
   const RASTER = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
                   'image/bmp', 'image/avif'];
 
-  const scanInput = document.getElementById('id_scan');
-  const section = document.getElementById('scan_section');
-  if (!scanInput || !section || !window.DataTransfer) {
+  const scanInput = card.querySelector('input[type=file]');
+  // The element highlighted while a file is dragged over it.
+  const section = card.closest('[data-dragging]') || card;
+  if (!scanInput || !window.DataTransfer) {
     return;
   }
-  const choose = document.getElementById('scan_choose');
-  const selected = document.getElementById('scan_selected');
-  const scanOpen = document.getElementById('scan_open');
-  const scanPreview = document.getElementById('scan_preview');
-  const scanName = document.getElementById('scan_name');
-  const scanInfo = document.getElementById('scan_info');
-  const scanWarning = document.getElementById('scan_warning');
-  const changeButton = document.getElementById('scan_change');
+  const choose = card.querySelector('[data-upload=choose]');
+  const selected = card.querySelector('[data-upload=selected]');
+  const scanOpen = card.querySelector('[data-upload=open]');
+  const scanPreview = card.querySelector('[data-upload=preview]');
+  const scanName = card.querySelector('[data-upload=name]');
+  const scanInfo = card.querySelector('[data-upload=info]');
+  const scanWarning = card.querySelector('[data-upload=warning]');
+  const changeButton = card.querySelector('[data-upload=change]');
+  // Set only where the card has a minimum size.
+  const minShortSide = Number(card.dataset.minShortSide);
   let scanUrl = null;
   let shownFile = null;
 
@@ -88,7 +95,9 @@
     }
     scanName.textContent = file.name;
     scanInfo.textContent = formatSize(file.size);
-    show(scanWarning, false);
+    if (scanWarning) {
+      show(scanWarning, false);
+    }
     const raster = RASTER.includes(file.type);
     // Files without a MIME type (e.g. an unknown extension) are previewed,
     // since an img does not run scripts, but not opened in a new tab.
@@ -105,7 +114,9 @@
       const height = scanPreview.naturalHeight;
       scanInfo.textContent = width + ' x ' + height + ' pixels, ' +
                              formatSize(file.size);
-      show(scanWarning, Math.min(width, height) < MIN_SHORT_SIDE);
+      if (scanWarning) {
+        show(scanWarning, Math.min(width, height) < minShortSide);
+      }
     };
     // The browser cannot decode the image; it can still be uploaded.
     scanPreview.onerror = function () {
@@ -164,4 +175,9 @@
   if (scanInput.files.length) {
     scanInput.dispatchEvent(new Event('change'));
   }
-}());
+}
+
+// Wire the cards once the page is parsed.
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-image-upload]').forEach(setupImageUpload);
+});
