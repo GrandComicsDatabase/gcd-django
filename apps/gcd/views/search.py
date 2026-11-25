@@ -36,7 +36,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             CreatorArtInfluence, CreatorNonComicWork, \
                             CreatorNameDetail, SeriesPublicationType, \
                             Award, ReceivedAward, Character, Group, Universe, \
-                            Printer, StoryArc
+                            Printer, StoryArc, Reprint
 from apps.gcd.models.character import CharacterSearchTable
 from apps.gcd.models.cover import CoverIssuePublisherEditTable
 from apps.gcd.models.creator import CreatorSearchTable
@@ -1625,7 +1625,7 @@ def used_search(search_values):
         used_search_terms.append(('genre', genres))
         del search_values['genre']
     for i in search_values:
-        if search_values[i] and search_values[i] not in ['None', 'False']:
+        if search_values[i] and search_values[i] != 'None':
             used_search_terms.append((i, search_values[i]))
     return target, method, logic, used_search_terms
 
@@ -1677,6 +1677,7 @@ def process_advanced(request, export_csv=False):
     heading = mark_safe('matching your <a href="#search_terms">query</a>')
 
     context = {'object': target,
+               'target': display_target,
                'heading': heading,
                'plural_suffix': 's',
                'query_string': query_string,
@@ -1916,7 +1917,7 @@ def search_indicia_publishers(data, op):
     """
     target = data['target']
     if data['indicia_publisher'] or data['ind_pub_notes'] or \
-       data['is_surrogate'] or target == 'indicia_publisher':
+       data['is_surrogate'] is not None or target == 'indicia_publisher':
         prefix = compute_prefix(target, 'indicia_publisher')
     else:
         return None
@@ -2083,6 +2084,15 @@ def search_issues(data, op, stories_q=None):
             q_objs.append(~Q(**{'%svariant_of' % prefix: None}))
         else:
             q_objs.append(Q(**{'%svariant_of' % prefix: None}))
+    if data['has_variant_name'] is not None:
+        # a negated exact through a join to several issues would reject the
+        # whole publisher as soon as one of its issues has no name
+        lookup = 'gt' if data['has_variant_name'] else 'exact'
+        q_objs.append(Q(**{'%svariant_name__%s' % (prefix, lookup): ''}))
+    if data['has_variants'] is not None:
+        variants = Exists(Issue.objects.filter(
+          variant_of=OuterRef('%sid' % prefix), deleted=False))
+        q_objs.append(variants if data['has_variants'] else ~variants)
     if data['issue_date']:
         q_objs.append(
           Q(**{'%spublication_date__%s' % (prefix, op): data['issue_date']}))
@@ -2301,6 +2311,14 @@ def search_stories(data, op):
         if data[field]:
             q_and_only.append(Q(**{'%s%s__%s' % (prefix, field, op):
                                 data[field]}))
+
+    if data['reprint_link_notes']:
+        # two subqueries instead of a list of ids: a common word can match
+        # a large part of the 1.5 million links, whose notes have no index
+        links = Reprint.objects.filter(
+            **{'notes__%s' % op: data['reprint_link_notes']})
+        q_and_only.append(Q(**{'%sid__in' % prefix: links.values('origin')}) |
+                          Q(**{'%sid__in' % prefix: links.values('target')}))
 
     if data['feature']:
         if data['feature_is_linked'] is None:

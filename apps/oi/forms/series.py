@@ -4,9 +4,9 @@
 from django import forms
 
 from .support import (
-    _check_year_order, _get_comments_form_field, _set_help_labels,
-    SERIES_HELP_LINKS, SERIES_HELP_TEXTS, GENERIC_ERROR_MESSAGE,
-    KeywordBaseForm)
+    _check_year_order, _check_year_range, _get_comments_form_field,
+    _set_help_labels, SERIES_HELP_LINKS, SERIES_HELP_TEXTS,
+    GENERIC_ERROR_MESSAGE, KeywordBaseForm)
 
 from markdownx.widgets import MarkdownxWidget
 from crispy_forms.helper import FormHelper
@@ -62,9 +62,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
     else:
         class RuntimeSeriesRevisionForm(SeriesRevisionForm):
             class Meta(SeriesRevisionForm.Meta):
-                exclude = SeriesRevisionForm.Meta.exclude
-                exclude.append('imprint')
-                exclude.append('format')
+                exclude = SeriesRevisionForm.Meta.exclude + ['imprint',
+                                                             'format']
 
             def __init__(self, *args, **kwargs):
                 # Don't allow country and language to be un-set:
@@ -174,6 +173,7 @@ class SeriesRevisionForm(KeywordBaseForm):
         cd['binding'] = cd['binding'].strip()
         cd['publishing_format'] = cd['publishing_format'].strip()
         cd['comments'] = cd['comments'].strip()
+        _check_year_range(self)
         _check_year_order(cd)
         if 'reservation_requested' in cd and cd['reservation_requested'] and \
                 (not cd['is_current'] and not cd['is_singleton']):

@@ -22,8 +22,23 @@
     {% block queue_title %}
     {% endblock %}
   </h1>
-  <form class="inline" method="get">
-  {{ filter_form }}
+  <form class="results-filter flex" method="get">
+    {% for field in filter_form %}
+      {% if field.is_hidden %}
+        {{ field }}
+      {% else %}
+        <div class="mr-2 mb-1">
+          <label for="{{ field.id_for_label }}"
+                 class="px-1 align-top">
+            {{ field.label }}
+          </label>
+          {{ field }}
+          {% for error in field.errors %}
+            <p class="text-sm text-red-600">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endfor %}
     <button class="btn btn-blue ml-1 mb-1 h-8">
       <input type="submit" name="submit" value="Filter Changes">
     </button>
