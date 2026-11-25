@@ -82,8 +82,12 @@ def test_keyword_list_counts_only_the_catalog(client, series, collection,
 
 
 def test_keyword_page_leaves_out_the_collections(client, series,
-                                                 collection):
-    """The page of the keyword lists the series, not the collection."""
+                                                 collection,
+                                                 collection_item):
+    """
+    The page of the keyword lists the series, not the collection or its
+    item; the item gave an error page.
+    """
     table = _table(client, 'show_keyword')
 
     assert [row.record.content_object for row in table.rows] == [series]
