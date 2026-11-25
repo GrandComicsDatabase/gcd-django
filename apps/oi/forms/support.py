@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import date
 
 from django import forms
 from django.conf import settings
@@ -523,6 +524,14 @@ ISSUE_LABELS = {
     'no_brand': "No publisher's brand emblem",
 }
 
+# a migrated text credit can bring a description such as "Editor"
+CREDIT_NAME_LABEL = (
+    'Credit description: '
+    '<button type="button" class="mx-0 btn-blue-editing inline" '
+    'onclick="const field = this.parentElement.control; '
+    'field.value = field.value.toLowerCase()">To Lower Case</button> '
+    )
+
 ISSUE_HELP_TEXTS = {
     'number':
         'The issue number (or other label) as it appears in the indicia. '
@@ -730,6 +739,36 @@ def _get_comments_form_field():
                   'displayed, but is stored in the change history.')
 
 
+def _check_year_range(form):
+    """
+    Raise a ValidationError if a year began or ended that was changed is
+    not between 1700 and next year. A year already stored stays allowed,
+    so that old data does not block an unrelated change.
+    """
+    last_year = date.today().year + 1
+    for field in ('year_began', 'year_ended'):
+        year = form.cleaned_data.get(field)
+        if year is not None and field in form.changed_data and \
+           not 1700 <= year <= last_year:
+            raise forms.ValidationError(
+              '%s must be between 1700 and %d.' % (
+                field.replace('_', ' ').capitalize(), last_year))
+
+
+def _check_year_order(cleaned_data):
+    """
+    Raise a ValidationError if a year ended is before its year began.
+    """
+    for began, ended in (('year_began', 'year_ended'),
+                         ('year_overall_began', 'year_overall_ended')):
+        if cleaned_data.get(began) and cleaned_data.get(ended) and \
+           cleaned_data[ended] < cleaned_data[began]:
+            raise forms.ValidationError(
+              '%s cannot be before %s.' % (
+                ended.replace('_', ' ').capitalize(),
+                began.replace('_', ' ')))
+
+
 def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
     if keywords is not None and keywords != '':
@@ -751,6 +790,15 @@ def _clean_keywords(cleaned_data):
                 raise forms.ValidationError(
                   'An extra ";" needs to removed.')
     return keywords
+
+
+def _strip_list(value):
+    """Strip whitespace and trailing ';' of a ';'-separated list."""
+    value = value.strip()
+    end = len(value)
+    while end and (value[end - 1] == ';' or value[end - 1].isspace()):
+        end -= 1
+    return value[:end]
 
 
 def init_data_source_fields(field_name, revision, fields):

@@ -273,8 +273,9 @@ def _send_result_email(topic, extra=''):
                                          settings.SITE_URL.rstrip('/') +
                                          topic.get_absolute_url())
 
-            list_config.send_mail(subject="GCD Vote Result: %s" % topic,
-                                  message=email_body)
+            list_config.send_mail(
+              subject="GCD Vote Result: #%d %s" % (topic.id, topic),
+              message=email_body)
 
 
 @login_required
