@@ -3,10 +3,12 @@ from re import match
 from decimal import Decimal, InvalidOperation
 
 from django import forms
+from django.db.models import Exists, OuterRef
 
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
-from apps.gcd.models import StoryType, OLD_TYPES, SeriesPublicationType
+from apps.gcd.models import StoryType, OLD_TYPES, SeriesPublicationType, \
+                            Publisher, Series
 from apps.gcd.models.support import GENRES
 
 ORDERINGS = [['', '--'],
@@ -42,17 +44,25 @@ class AdvancedSearch(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super(AdvancedSearch, self).__init__(*args, **kwargs)
+        # Only what the search can find: it filters the publishers by
+        # country and the series by language. The check stays in the
+        # SELECT, where MySQL makes one index lookup per entry; in a
+        # WHERE it reads all the series.
+        countries = Country.objects.annotate(in_use=Exists(
+          Publisher.objects.filter(country=OuterRef('pk'), deleted=False)))
+        languages = Language.objects.annotate(in_use=Exists(
+          Series.objects.filter(language=OuterRef('pk'), deleted=False)))
         self.fields['country'] = forms.MultipleChoiceField(
           required=False,
           widget=forms.CheckboxSelectMultiple(attrs={
             'class': 'overflow-y-auto max-h-60 border border-gray-500 '
                      'px-1 inline-block'}),
           choices=([c.code, c.name.title()]
-                   for c in Country.objects.order_by('name')))
+                   for c in countries.order_by('name') if c.in_use))
         self.fields['language'] = forms.MultipleChoiceField(
           required=False,
           choices=([L.code, L.name]
-                   for L in Language.objects.order_by('name')),
+                   for L in languages.order_by('name') if L.in_use),
           widget=forms.CheckboxSelectMultiple(attrs={
             'class': 'overflow-y-auto max-h-60 border border-gray-500 '
                      'px-1 inline-block'}),
@@ -184,6 +194,16 @@ class AdvancedSearch(forms.Form):
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
+    has_variant_name = forms.NullBooleanField(
+      label='Has a Variant Name', required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
+    has_variants = forms.NullBooleanField(
+      label='Has Variants', required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(label='Issue Pages', required=False)
     issue_pages_uncertain = forms.NullBooleanField(
@@ -278,6 +298,8 @@ class AdvancedSearch(forms.Form):
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
+    reprint_link_notes = forms.CharField(label='Reprint Link Notes',
+                                         required=False)
     story_reprinted = forms.ChoiceField(
       label="Reprinted", required=False,
       choices=[('', ""),

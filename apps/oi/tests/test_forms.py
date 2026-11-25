@@ -8,6 +8,8 @@ import pytest
 from dal import autocomplete
 from django.forms import ValidationError
 
+from apps.oi.forms import get_revision_form
+from apps.oi.forms.series import SeriesRevisionForm
 from apps.oi.forms.story import (
     StoryCharacterRevisionForm, StoryCreditRevisionForm,
     StoryGroupRevisionForm, StoryRevisionForm)
@@ -137,3 +139,20 @@ def test_story_autocomplete_selects_span_the_cell(form_class):
             if 'w-full' not in classes or 'lg:w-4/5' in classes:
                 wrong_width.append(name)
     assert wrong_width == []
+
+
+def test_series_edit_form_keeps_the_excluded_fields_of_the_base_form():
+    """
+    The form of an existing series leaves out imprint and format without
+    adding them to the list of SeriesRevisionForm, which every series form
+    of the process shares, however many times the form is built.
+    """
+    revision = mock.MagicMock(source_name='series')
+    excluded = list(SeriesRevisionForm.Meta.exclude)
+
+    for _ in range(2):
+        form_class = get_revision_form(revision, user=mock.MagicMock())
+        assert 'imprint' not in form_class.base_fields
+        assert 'format' not in form_class.base_fields
+
+    assert SeriesRevisionForm.Meta.exclude == excluded
