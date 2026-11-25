@@ -233,3 +233,23 @@ def test_compare_names_the_sequence_a_reprint_link_moved_from(
 
     assert shown.endswith('<br>reprint link was moved from %s'
                           % show_story_short(old_origin))
+
+
+@pytest.mark.django_db
+def test_compare_of_approved_move_names_the_moved_sequence(
+        client, logged_in_indexer, data):
+    """
+    Once the move is approved, the compare of the moved sequence says of
+    each of its two reprint links that it was moved from that sequence,
+    with nothing after the name of the sequence.
+    """
+    changeset = _reserve_two_issues(client, data)
+    _move_story(client, changeset, data['moved'], data['issue_b'])
+    changeset = _approve(changeset, logged_in_indexer)
+    moved = Story.objects.get(id=data['moved'].id)
+
+    cells = _current_reprint_cells(client, changeset)
+
+    note = '<br>reprint link was moved from %s</li>' % \
+        show_story_short(moved)
+    assert sum(cell.count(note) for cell in cells) == 2
