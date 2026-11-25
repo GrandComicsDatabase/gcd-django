@@ -140,12 +140,12 @@ class Publisher(BasePublisher):
         if deltas.get('indicia publishers', 0):
             self.indicia_publisher_count = (F('indicia_publisher_count') +
                                             deltas['indicia publishers'])
-        if deltas.get('series', 0):
-            self.series_count = F('series_count') + deltas['series']
         # special case for non-comics publications,
-        # counts for publisher series, but not for stats
-        if deltas.get('publisher series', 0):
-            self.series_count = F('series_count') + deltas['publisher series']
+        # counts for publisher series, but not for stats;
+        # a series that changes kind gives both deltas
+        series = deltas.get('series', 0) + deltas.get('publisher series', 0)
+        if series:
+            self.series_count = F('series_count') + series
         if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
