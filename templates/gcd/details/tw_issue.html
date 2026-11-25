@@ -373,26 +373,54 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   <details class="[&_svg]:open:rotate-90">
     <summary class="list-none">
       <btn class="btn btn-blue-editing">
-        <svg class="inline rotate-0 transform transition-all duration-300" fill="none" height="16" width="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+        <svg class="inline rotate-0 transform transition-all duration-300"
+             fill="none" height="16" width="16" stroke="currentColor"
+             stroke-linecap="round" stroke-linejoin="round"
+             stroke-width="2" viewBox="0 0 24 24">
           <polyline points="6 3 12 9 6 15"></polyline>
         </svg>
         Download
       </btn>
     </summary>
     {% if preview %}
-    <a class="hover:no-underline" href="{% url 'export_issue_revision_csv' issue.revision.id %}"><btn class="btn btn-blue-editing">CSV</btn></a>
-    <a class="hover:no-underline" href="{% url 'export_issue_revision' issue.revision.id %}"><btn class="btn btn-blue-editing">TSV</btn></a>
-    <a class="hover:no-underline" href="{% url 'export_issue_revision_json' issue.revision.id %}"><btn class="btn btn-blue-editing">JSON</btn></a>
-    <a class="hover:no-underline" href="{% url 'export_issue_revision_yaml' issue.revision.id %}"><btn class="btn btn-blue-editing">YAML</btn></a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue_revision_csv' issue.revision.id %}">
+      <btn class="btn btn-blue-editing">CSV</btn>
+    </a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue_revision' issue.revision.id %}">
+      <btn class="btn btn-blue-editing">TSV</btn>
+    </a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue_revision_json' issue.revision.id %}">
+      <btn class="btn btn-blue-editing">JSON</btn>
+    </a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue_revision_yaml' issue.revision.id %}">
+      <btn class="btn btn-blue-editing">YAML</btn>
+    </a>
     {% else %}
-    <a class="hover:no-underline" href="{% url 'export_issue_csv' issue.id %}"><btn class="btn btn-blue-editing">CSV</btn></a>
-    <a class="hover:no-underline" href="{% url 'export_issue' issue.id %}"><btn class="btn btn-blue-editing">TSV</btn></a>
-    <a class="hover:no-underline" href="{% url 'export_issue_json' issue.id %}"><btn class="btn btn-blue-editing">JSON</btn></a>
-    <a class="hover:no-underline" href="{% url 'export_issue_yaml' issue.id %}"><btn class="btn btn-blue-editing">YAML</btn></a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue_csv' issue.id %}">
+      <btn class="btn btn-blue-editing">CSV</btn>
+    </a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue' issue.id %}">
+      <btn class="btn btn-blue-editing">TSV</btn>
+    </a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue_json' issue.id %}">
+      <btn class="btn btn-blue-editing">JSON</btn>
+    </a>
+    <a class="hover:no-underline"
+       href="{% url 'export_issue_yaml' issue.id %}">
+      <btn class="btn btn-blue-editing">YAML</btn>
+    </a>
     {% endif %}
   </details>
   {% elif not preview %}
-  <a class="hover:no-underline" href="/api{% url 'show_issue' issue.id %}?format=json">
+  <a class="hover:no-underline"
+     href="/api{% url 'show_issue' issue.id %}?format=json">
     <btn class="btn btn-blue-editing">Download (JSON)</btn>
   </a>
   {% endif %}
