@@ -16,9 +16,11 @@ from crispy_forms.layout import Layout, Field, HTML
 from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       VARIANT_NAME_HELP_TEXT, VARIANT_COVER_STATUS_HELP_TEXT,
-                      ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
+                      ISSUE_LABELS, ISSUE_HELP_TEXTS, CREDIT_NAME_LABEL,
+                      KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
+                      _strip_list,
                       HiddenInputWithHelp, PageCountInput)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
@@ -294,11 +296,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['publication_date'] = cd['publication_date'].strip()
             cd['key_date'] = cd['key_date'].strip()
             cd['indicia_frequency'] = cd['indicia_frequency'].strip()
-            cd['price'] = cd['price'].strip()
-            cd['editing'] = cd['editing'].strip()
+            cd['price'] = _strip_list(cd['price'])
+            cd['editing'] = _strip_list(cd['editing'])
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
-            cd['isbn'] = cd['isbn'].strip()
+            cd['isbn'] = _strip_list(cd['isbn'])
             cd['rating'] = cd['rating'].strip()
 
             cd = _common_clean(cd, self.data)
@@ -366,7 +368,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     'the same time.')
 
             if cd['barcode']:
-                cd['barcode'] = cd['barcode'].replace('-', '').replace(' ', '')
+                cd['barcode'] = _strip_list(
+                  cd['barcode'].replace('-', '').replace(' ', ''))
                 cd['barcode'] = cd['barcode'].replace(';', '; ')
 
             return cd
@@ -416,7 +419,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 # can add after one of the variants
                 if 'after' in self.fields:
                     self.fields['after'].queryset = (
-                        variant_of.variant_set.filter(deleted=False) |
+                        variant_of.active_variants() |
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
 
@@ -454,7 +457,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
     # the other issuerevision from 'variant_add' was taken care of above
     if (revision.changeset.change_type == CTYPES['variant_add']) or \
-            revision.issue.variant_set.count():
+            revision.issue.active_variants().exists() or revision.variant_name:
         class RuntimeBaseIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
@@ -492,7 +495,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
                 'A concise and clear description of the external source of '
                 'the credit.'
         }
-        labels = {'credit_name': 'Credit description'}
+        labels = {'credit_name': CREDIT_NAME_LABEL}
 
     def __init__(self, *args, **kwargs):
         super(IssueCreditRevisionForm, self).__init__(*args, **kwargs)
@@ -701,8 +704,16 @@ def get_bulk_issue_revision_form(series, method, user=None):
 
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
-            self.fields['indicia_publisher'].queryset = \
+            indicia_publishers = \
                 series.publisher.active_indicia_publishers_no_pending()
+            if method != 'bulk_edit':
+                if series.year_began:
+                    indicia_publishers = indicia_publishers.exclude(
+                        year_ended__lt=series.year_began)
+                if series.year_ended:
+                    indicia_publishers = indicia_publishers.exclude(
+                        year_began__gt=series.year_ended)
+            self.fields['indicia_publisher'].queryset = indicia_publishers
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 
@@ -737,6 +748,10 @@ def get_bulk_issue_revision_form(series, method, user=None):
                     widget=forms.HiddenInput, required=False)
                 indicia_printer_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
+            if series.year_ended:
+                year_ended = forms.CharField(widget=forms.HiddenInput,
+                                             required=False,
+                                             initial=series.year_ended)
         publisher_id = forms.CharField(widget=forms.HiddenInput,
                                        initial=series.publisher.id)
         if series.year_began:
@@ -777,7 +792,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
         help_text=ISSUE_HELP_TEXTS['brand_emblem'],
         widget=autocomplete.ModelSelect2Multiple(
             url='brand_emblem_autocomplete',
-            forward=['publisher_id', 'year_began',],
+            forward=['publisher_id', 'year_began', 'year_ended'],
             attrs={'data-html': True,
                    'class': 'w-full lg:w-4/5',
                    'data-placeholder': 'select a brand emblem'}),
@@ -818,6 +833,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
         help_texts = ISSUE_HELP_TEXTS
 
     def _shared_key_order(self):
+        # A series without an end year has no year_ended field.
+        year_ended = ['year_ended'] if 'year_ended' in self.fields else []
         return ['indicia_publisher', 'indicia_pub_not_printed',
                 'brand_emblem', 'no_brand',
                 'indicia_frequency', 'no_indicia_frequency',
@@ -827,7 +844,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'indicia_printer_sourced_by',
                 'no_isbn', 'no_barcode',
                 'rating', 'no_rating', 'comments',
-                'publisher_id', 'year_began']
+                'publisher_id', 'year_began'] + year_ended
 
     def _init_creator_editors(self):
         self.helper = FormHelper()
@@ -974,13 +991,13 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
                     'have a whole number for the issue number (even if it '
                     'displays like "v1#1")')
 
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, the '
                     'issue after which you are inserting the new issues '
-                    'must have a volume.')
-
-            cd['first_volume'] = cd['after'].volume
+                    'must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 
@@ -1107,12 +1124,13 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         if cd['first_number'] is None and cd['after'] is not None:
             cd = self._parse_year_and_number(cd, cd['issues_per_cycle'])
-            if cd['after'].volume is None:
+            try:
+                cd['first_volume'] = int(cd['after'].volume)
+            except ValueError:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, '
                     'the issue after which you are inserting '
-                    'the new issues must have a volume.')
-            cd['first_volume'] = cd['after'].volume
+                    'the new issues must have a whole number as volume.')
             if cd['first_number'] == 1:
                 cd['first_volume'] += 1
 
