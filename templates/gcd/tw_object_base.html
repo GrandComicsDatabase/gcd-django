@@ -55,11 +55,11 @@
     {% if object_url and not preview %}
       {% if MYCOMICS %}
         <div class="bg-gcd mt-1 font-bold px-2 py-1 text-center rounded">
-          <a class="text-white visited:text-white" href="http://www.comics.org{{ object_url }}">{{ model_name }} at www.comics.org</a>
+          <a class="text-white visited:text-white" href="https://www.comics.org{{ object_url }}">{{ model_name }} at www.comics.org</a>
         </div>
       {% else %}
         <div class="bg-my-comics mt-1 font-bold px-2 py-1 text-center rounded">
-          <a class="text-white visited:text-white" href="http://my.comics.org{{ object_url }}">{{ model_name }} at my.comics.org</a>
+          <a class="text-white visited:text-white" href="https://my.comics.org{{ object_url }}">{{ model_name }} at my.comics.org</a>
         </div>
       {% endif %}
     {% endif %}

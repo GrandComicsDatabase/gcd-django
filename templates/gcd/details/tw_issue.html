@@ -394,7 +394,7 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   {% endif %}
     </div>
   </btn>
-  {% with tracker="http://errors.comics.org/enter_bug.cgi?product=GCD" %}
+  {% with tracker="https://errors.comics.org/enter_bug.cgi?product=GCD" %}
   {% with uri=request.build_absolute_uri|urlencode sd=issue|urlencode %}
   <a class="hover:no-underline" target="_blank"
      href="{{ tracker }}&amp;bug_file_loc={{ uri }}&amp;short_desc={{ sd }}">
