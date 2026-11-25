@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from apps.gcd.models import Issue, Reprint, Story, StoryType
+from apps.gcd.templatetags.display import show_story_short
 from apps.oi import states
 from apps.oi.models import (
     Changeset, IssueRevision, ReprintRevision, StoryRevision, CTYPES)
@@ -208,3 +209,27 @@ def test_compare_of_approved_move_shows_reprint_links_once(
 
     for link in data['links']:
         assert [cell.count(link) for cell in cells if link in cell] == [1]
+
+
+@pytest.mark.django_db
+def test_compare_names_the_sequence_a_reprint_link_moved_from(
+        data, any_indexer):
+    """
+    A reprint link whose origin moves to a sequence of another issue says
+    in the compare of that issue from which sequence it was moved, with
+    nothing after the name of that sequence.
+    """
+    old_origin = data['from_reprint'].origin
+    new_origin = Story.objects.get(title='Story In B')
+    changeset = Changeset(state=states.OPEN, indexer=any_indexer,
+                          change_type=CTYPES['reprint'])
+    changeset.save()
+    revision = ReprintRevision.clone(data['from_reprint'], changeset)
+    revision.origin = new_origin
+    revision.origin_issue = new_origin.issue
+    revision.save()
+
+    shown = revision.get_compare_string(new_origin.issue, do_compare=True)
+
+    assert shown.endswith('<br>reprint link was moved from %s'
+                          % show_story_short(old_origin))
