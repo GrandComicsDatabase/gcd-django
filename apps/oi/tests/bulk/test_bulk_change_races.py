@@ -157,14 +157,26 @@ def test_requests_at_the_same_moment(settings,
     twin = Client()
     twin.cookies = first.cookies
 
-    results = _together(lambda: _apply(first, token='twice'),
-                        lambda: _apply(twin, token='twice'))
+    # The indexer row is held until both requests wait for it, so both
+    # have passed the check of the page: apply refuses the second one,
+    # after the first one ends.
+    results, threads = {}, []
+    try:
+        with _held(_hold_indexer, reserving_indexer):
+            threads.append(_started(results, 'first', lambda: _apply(
+              first, token='twice')))
+            threads.append(_started(results, 'twin', lambda: _apply(
+              twin, token='twice')))
+            _wait_for_lock_wait(Indexer._meta.db_table, waiting=2)
+    finally:
+        for thread in threads:
+            thread.join(90)
 
     assert Changeset.objects.filter(change_type=CTYPES['bulk'],
                                     state=states.OPEN).count() == 1
-    assert sum(result.status_code == 302 for result in results) == 1
+    assert sum(result.status_code == 302 for result in results.values()) == 1
     assert any('This selection was applied already' in
-               result.content.decode() for result in results)
+               result.content.decode() for result in results.values())
 
     # Two tabs of one indexer, each with its own list, apply at once: the
     # requests take turns, and the second finds the first change active.
@@ -638,18 +650,19 @@ def _lock_waits(cursor, table):
     return cursor.fetchone()[0]
 
 
-def _wait_for_lock_wait(table, timeout=30):
+def _wait_for_lock_wait(table, waiting=1, timeout=30):
     """
-    Wait until a transaction waits for a lock on a row of table, as the
-    server shows it.
+    Wait until waiting transactions, one by default, wait for a lock on a
+    row of table, as the server shows it.
     """
     end = time.monotonic() + timeout
     with connection.cursor() as cursor:
         while time.monotonic() < end:
-            if _lock_waits(cursor, table):
+            if _lock_waits(cursor, table) >= waiting:
                 return
             time.sleep(0.05)
-    raise AssertionError('no transaction waits for %s' % table)
+    raise AssertionError('fewer than %d transactions wait for %s'
+                         % (waiting, table))
 
 
 def _lock_waits_until_done(thread, table):
