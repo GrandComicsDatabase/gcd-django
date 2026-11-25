@@ -212,9 +212,20 @@ def generic_sortable_list(request, items, table, template, context,
     if export_format == 'bulk' and table.bulk_change:
         return bulk.start_from_list(request, items)
     if TableExport.is_valid_format(export_format):
-        exporter = TableExport(export_format, table)
-        return exporter.response("table.{}".format(export_format))
+        if request.user.is_authenticated:
+            exporter = TableExport(export_format, table)
+            return exporter.response("table.{}".format(export_format))
+        else:
+            return HttpResponse(
+                "Login required to download the shown data as JSON/YAML file.",
+                status=403
+            )
     if export_format and export_format in ['db_csv', 'db_json']:
+        if not request.user.is_authenticated:
+            return HttpResponse(
+                "Login required to download the shown data as JSON/YAML file.",
+                status=403
+            )
         fields = [f.name for f in items.model._meta.get_fields()
                   if f.auto_created is False]
         fields = [f for f in fields if f not in {'created', 'modified',
