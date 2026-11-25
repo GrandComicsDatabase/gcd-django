@@ -1,0 +1,18 @@
+{# One field of an upload form: a checkbox beside its label and help text, any other field under its label. Parameter: field. #}
+{% if field.widget_type == 'checkbox' %}
+  <div class="flex items-start gap-3 py-3">
+    <div class="flex h-6 items-center [&_input]:h-5 [&_input]:w-5 [&_input]:rounded [&_input]:border-gray-300 [&_input]:text-blue-600">{{ field }}</div>
+    <div class="leading-6">
+      <label for="{{ field.id_for_label }}" class="font-medium text-gray-900">{{ field.label }}</label>
+      {{ field.errors }}
+      {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
+    </div>
+  </div>
+{% else %}
+  <div class="py-3">
+    <label for="{{ field.id_for_label }}" class="block font-medium text-gray-900">{{ field.label }}{% if field.field.required %} <span class="text-red-600" aria-hidden="true">*</span>{% endif %}</label>
+    {{ field.errors }}
+    <div class="mt-1 [&_input[type=text]]:w-full [&_input[type=text]]:rounded-md [&_input[type=text]]:border-gray-300 [&_input[type=text]]:shadow-sm [&_textarea]:!w-full [&_textarea]:rounded-md [&_textarea]:border-gray-300 [&_textarea]:shadow-sm">{{ field }}</div>
+    {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="mt-1 text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
+  </div>
+{% endif %}

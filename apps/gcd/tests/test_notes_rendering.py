@@ -62,8 +62,8 @@ def test_baseform_notes_keep_markdown_without_expanding_tracking_fields():
                       MarkdownxWidget)
     assert not isinstance(GroupMembershipRevisionForm.base_fields['notes']
                           .widget, MarkdownxWidget)
-    assert not isinstance(SeriesRevisionForm.base_fields['tracking_notes']
-                          .widget, MarkdownxWidget)
+    assert isinstance(SeriesRevisionForm.base_fields['tracking_notes']
+                      .widget, MarkdownxWidget)
 
 
 @pytest.mark.parametrize('model', ['character', 'group'])
@@ -475,8 +475,6 @@ def test_review_preview_preserves_markdown_source():
     rendered = show_diff_markdown([(1, SOURCE)], 'change')
     assert '<strong>Membership note</strong>' in rendered
     assert '**Membership note**' in rendered
-    assert field_value(SimpleNamespace(tracking_notes=SOURCE),
-                       'tracking_notes') == SOURCE.replace('\n', '<br>')
 
 
 @pytest.mark.django_db

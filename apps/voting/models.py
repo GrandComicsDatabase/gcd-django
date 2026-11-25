@@ -201,6 +201,9 @@ class AgendaMailingList(models.Model):
     display_token = models.BooleanField(default=False)
 
     def send_mail(self, subject, message):
+        # Votes on BETA are tests: their mails must not reach the lists.
+        if settings.BETA:
+            return
         if self.mailing_list is not None:
             send_mail(from_email=settings.EMAIL_VOTING_FROM,
                       recipient_list=(self.mailing_list.address,),
@@ -419,8 +422,8 @@ def topic_post_save(sender, **kwargs):
                   topic.deadline.strftime('%d %B %Y %H:%M:%S ') +
                   settings.TIME_ZONE)
 
-                list_config.send_mail("GCD Ballot Open: %s" % topic,
-                                      email_body)
+                list_config.send_mail(
+                  "GCD Ballot Open: #%d %s" % (topic.id, topic), email_body)
 
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)

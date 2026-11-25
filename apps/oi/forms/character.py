@@ -8,7 +8,8 @@ from collections import OrderedDict
 from dal import autocomplete
 
 from apps.gcd.models import Character, Group, CharacterRelationType, \
-                            GroupRelationType, Universe, StoryCharacter
+                            GroupMembership, GroupRelationType, Universe, \
+                            StoryCharacter
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -373,6 +374,16 @@ class GroupMembershipRevisionForm(forms.ModelForm):
     def clean(self):
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+        cd = self.cleaned_data
+        memberships = GroupMembership.objects.filter(
+          **{field: cd[field] for field in self._meta.fields})
+        if self.instance.group_membership_id:
+            memberships = memberships.exclude(
+              id=self.instance.group_membership_id)
+        if memberships.exists():
+            raise forms.ValidationError(
+              'An identical membership of this character in this group '
+              'already exists.')
 
 
 def get_character_relation_revision_form(revision=None, user=None):

@@ -26,3 +26,4 @@ settings_local.py
 # Local development environment
 .env
 .venv/
+.devcontainer/compose.project.yaml
