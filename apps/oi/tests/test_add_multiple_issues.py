@@ -210,3 +210,85 @@ def test_bulk_edit_lists_are_not_limited(any_added_series, dated_choices):
                 .values_list('name', flat=True)) ==
             {'before', 'during', 'after', 'undated'})
     assert 'year_ended' not in form.fields
+
+
+def _set_number(issue, number, volume):
+    issue.number = number
+    issue.volume = volume
+    issue.no_volume = False
+    issue.save()
+    return issue
+
+
+def _continue_after(client, issue, method, number_of_issues, **fields):
+    """Add issues after an issue, leaving their numbering to the form."""
+    series = issue.series
+    data = {
+      'after': issue.id,
+      'number_of_issues': number_of_issues,
+      'publisher_id': series.publisher.id,
+      'year_began': series.year_began,
+      'comments': 'test',
+      'issue_credit_revisions-TOTAL_FORMS': 0,
+      'issue_credit_revisions-INITIAL_FORMS': 0,
+    }
+    data.update(fields)
+    return client.post(_url(series, method), data)
+
+
+def _added_numbers(series):
+    return list(IssueRevision.objects.filter(series=series, issue=None)
+                .order_by('revision_sort_code')
+                .values_list('number', 'volume'))
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('after, added, expected', [
+  # The first new issue starts the next volume.
+  ('12', 2, [('1', '2'), ('2', '2')]),
+  # The volume changes after the first new issue.
+  ('11', 3, [('12', '1'), ('1', '2'), ('2', '2')]),
+])
+def test_per_volume_continues_into_next_volume(
+      adding_client, any_added_issue, after, added, expected):
+    issue = _set_number(any_added_issue, after, '1')
+
+    response = _continue_after(adding_client, issue, 'volume', added,
+                               issues_per_volume=12)
+
+    assert response.status_code == 302
+    assert _added_numbers(issue.series) == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('after, added, expected', [
+  ('12/1990', 2, [('1/1991', '2'), ('2/1991', '2')]),
+  ('11/1990', 3, [('12/1990', '1'), ('1/1991', '2'), ('2/1991', '2')]),
+])
+def test_per_year_volume_continues_into_next_volume(
+      adding_client, any_added_issue, after, added, expected):
+    issue = _set_number(any_added_issue, after, '1')
+
+    response = _continue_after(adding_client, issue, 'year_volume', added,
+                               issues_per_cycle=12)
+
+    assert response.status_code == 302
+    assert _added_numbers(issue.series) == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method, number, cycle', [
+  ('volume', '12', {'issues_per_volume': 12}),
+  ('year_volume', '12/1990', {'issues_per_cycle': 12}),
+])
+@pytest.mark.parametrize('volume', ['', 'A'])
+def test_volume_continuation_needs_a_whole_number_volume(
+      adding_client, any_added_issue, method, number, cycle, volume):
+    issue = _set_number(any_added_issue, number, volume)
+
+    response = _continue_after(adding_client, issue, method, 2, **cycle)
+
+    assert response.status_code == 200
+    assert ('must have a whole number as volume' in
+            str(response.context['form'].non_field_errors()))
+    assert _added_numbers(issue.series) == []
