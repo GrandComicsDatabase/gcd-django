@@ -13,8 +13,9 @@ from crispy_forms.layout import Layout, Field
 from .custom_layout_object import Formset, BaseField
 
 from .support import (
-    _check_year_order, _get_comments_form_field, _set_help_labels,
-    _create_embedded_image_revision, _save_runtime_embedded_image_revision,
+    _check_year_order, _check_year_range, _get_comments_form_field,
+    _set_help_labels, _create_embedded_image_revision,
+    _save_runtime_embedded_image_revision,
     GENERIC_ERROR_MESSAGE, PUBLISHER_HELP_LINKS, PUBLISHER_HELP_TEXTS,
     INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS, PRINTER_HELP_LINKS,
     PRINTER_HELP_TEXTS, INDICIA_PRINTER_HELP_LINKS, KeywordBaseForm)
@@ -89,6 +90,7 @@ class PublisherRevisionForm(KeywordBaseForm):
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        _check_year_range(self)
         _check_year_order(cd)
         if cd['year_began'] and cd['year_overall_began']:
             if cd['year_began'] < cd['year_overall_began']:
@@ -192,6 +194,7 @@ class BrandGroupRevisionForm(KeywordBaseForm):
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        _check_year_range(self)
         _check_year_order(cd)
         if cd['year_began'] and cd['year_overall_began']:
             if cd['year_began'] < cd['year_overall_began']:
@@ -376,6 +379,7 @@ class BrandRevisionForm(KeywordBaseForm):
         cd['comments'] = cd['comments'].strip()
         if 'brand_groups_other_publisher' in cd:
             cd['group'] = cd['group'].union(cd['brand_groups_other_publisher'])
+        _check_year_range(self)
         _check_year_order(cd)
         if cd['year_began'] and cd['year_overall_began']:
             if cd['year_began'] < cd['year_overall_began']:
@@ -425,6 +429,7 @@ class BrandUseRevisionForm(forms.ModelForm):
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        _check_year_range(self)
         _check_year_order(cd)
         return cd
 

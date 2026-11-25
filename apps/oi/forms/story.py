@@ -11,7 +11,6 @@ from crispy_forms.layout import Layout, Field, HTML
 from crispy_forms.utils import render_field
 from crispy_forms.bootstrap import (
     Tab,
-    TabHolder,
 )
 from markdownx.widgets import MarkdownxWidget
 from taggit.models import Tag
@@ -34,12 +33,12 @@ from apps.gcd.models.support import GENRES
 from apps.gcd.models.cover import box_covers
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 
-from .custom_layout_object import Formset
+from .custom_layout_object import Formset, FormsetTabHolder
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     _strip_list,
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
-    KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
+    KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS, CREDIT_NAME_LABEL,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
     BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
@@ -134,7 +133,8 @@ def get_story_revision_form(revision=None, user=None,
 
     # for variants we can only have cover sequences (for now)
     if (revision and (revision.issue is None or revision.issue.variant_of))\
-       or (revision is None and issue_revision.issue is None):
+       or (revision is None and (issue_revision.issue is None
+                                 or issue_revision.variant_of)):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
@@ -320,7 +320,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'A concise and clear description of the external source of '
                 'the credit.'
         }
-        labels = {'credit_name': 'Credit description'}
+        labels = {'credit_name': CREDIT_NAME_LABEL}
         widgets = {
             'sourced_by': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
@@ -337,6 +337,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
         self.helper.form_tag = False
         # self.helper.disable_csrf = True
         self.formset_helper = StoryFormSetHelper()
+        self.fields['creator'].label_suffix = ''
+        self.fields['credit_name'].label_suffix = ''
         fields = list(self.fields)
         fields.append('id')
         field_list = [BaseField(Field(field,
@@ -356,11 +358,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
                 'ghost work.',
-      label='<button hx-get="/select/creator/by_detail/" type="button" '
+      label='Creator: <br class="max-sm:hidden">'
+            '<button hx-get="/select/creator/by_detail/" type="button" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
             'hx-on:htmx:after-request="setSelectValue(event)" '
             'hx-swap="none" class="mx-0 btn-blue-editing inline">To Official'
-            '</button> Creator'
+            '</button>'
     )
 
     signature = forms.ModelChoiceField(
@@ -430,6 +433,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
                      'Please tick "Is credited" instead.']
                 )
 
+            elif cd['credit_name'].strip().startswith("credited as"):
+                raise forms.ValidationError(
+                    ['"Credit description" cannot start with "credited as". '
+                     'Please use the "credited as" field and '
+                     'tick "Is credited" instead.']
+                )
 
 class StoryFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
@@ -548,7 +557,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Cannot select a group universe without a group.'])
 
-        if cd['group_name'] and cd['character']:
+        if cd['group_name'] and 'character' in cd and cd['character']:
             character_groups = cd['character'].character.active_memberships()
             character_groups = character_groups.values_list('group', flat=True)
             for group in cd['group_name']:
@@ -852,7 +861,7 @@ class StoryRevisionForm(KeywordBaseForm):
             # The layout is organized into tabs for better user experience.
             # When counting the fields, we need to account for the added
             # hidden fields and formsets that are included in the field_list.
-            self.helper.layout = Layout(TabHolder(
+            self.helper.layout = Layout(FormsetTabHolder(
               Tab('Sequence Details',
                   *(f for f in field_list[:credits_start-5]),
                   *(f for f in field_list[characters_end:-3]),
