@@ -57,3 +57,30 @@ def test_submit_without_comment_needs_a_change(client, any_indexer,
     assert (EMPTY_CHANGE_ERROR in response.content.decode()) is not swap
     changeset = Changeset.objects.get(id=changeset.id)
     assert changeset.state == (states.PENDING if swap else states.OPEN)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('headers, link', [
+    ({}, None), ({'HTTP_REFERER': '/from/here/'}, '/from/here/')])
+def test_the_empty_change_message_links_back(client, any_indexer,
+                                             any_added_issue, headers, link):
+    """The link goes to the referrer, or else to the edit page of the change."""
+    _add_story(any_added_issue, any_indexer, 0)
+    any_indexer.is_superuser = True
+    any_indexer.save()
+    any_indexer.indexer.max_reservations = 10
+    any_indexer.indexer.save()
+    client.force_login(any_indexer)
+    client.post(reverse('reserve_revision',
+                        kwargs={'model_name': 'issue',
+                                'id': any_added_issue.id}))
+    changeset = Changeset.objects.get(issuerevisions__issue=any_added_issue,
+                                      state=states.OPEN)
+
+    response = client.post(reverse('submit', kwargs={'id': changeset.id}),
+                           {'comments': ''}, **headers)
+
+    edit_url = reverse('edit', kwargs={'id': changeset.id})
+    content = response.content.decode()
+    assert EMPTY_CHANGE_ERROR in content
+    assert 'href="%s"' % (link or edit_url) in content
