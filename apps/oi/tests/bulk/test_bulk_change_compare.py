@@ -100,12 +100,12 @@ def test_changed_text_keeps_the_spaces_html_hides(old, new, shown):
 
 @pytest.mark.parametrize('old, new, shown', [
   ('X', ' A', ("<span class='deleted'>X</span>",
-               "<span class='added'> A</span>")),
+               "<span class='added'>\u00a0A</span>")),
   ('X', 'A ', ("<span class='deleted'>X</span>",
-               "<span class='added'>A </span>")),
-  (' X', 'A', ("<span class='deleted'> X</span>",
+               "<span class='added'>A\u00a0</span>")),
+  (' X', 'A', ("<span class='deleted'>\u00a0X</span>",
                "<span class='added'>A</span>")),
-  ('X A', ' A', ("<span class='deleted'>X</span> A", " A")),
+  ('X A', ' A', ("<span class='deleted'>X</span> A", "\u00a0A")),
   ('A X', 'A Y', ("A <span class='deleted'>X</span>",
                   "A <span class='added'>Y</span>"))])
 def test_a_space_at_the_edge_of_a_value_is_shown(old, new, shown):
