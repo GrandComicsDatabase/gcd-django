@@ -19,11 +19,16 @@ from apps.oi.models import Revision
 # all instantiate the proper concrete revision, even if they are
 # not saving it to the database.
 
+# No migration creates tables for these test models, so they are not
+# managed: the serialized rollback of a transactional test reads every
+# managed table, and a missing one fails the setup of the database.
+#
 # Make some dummy data objects to correspond to the dummy revisions.
 # These need to go first so that we can set source_class for the revisions.
 class Dummy(GcdData):
     class Meta:
         app_label = 'gcd'
+        managed = False
 
     _update_stats = True
 
@@ -42,6 +47,7 @@ class Dummy(GcdData):
 class OtherDummy(GcdData):
     class Meta:
         app_label = 'gcd'
+        managed = False
 
     _update_stats = True
 
@@ -51,6 +57,7 @@ class OtherDummy(GcdData):
 class DummyRevision(Revision):
     class Meta:
         app_label = 'oi'
+        managed = False
 
     dummy = models.ForeignKey('gcd.Dummy', null=True, on_delete=models.CASCADE)
 
@@ -93,6 +100,7 @@ class DummyRevision(Revision):
 class OtherDummyRevision(Revision):
     class Meta:
         app_label = 'oi'
+        managed = False
 
     other_dummy = models.ForeignKey(OtherDummy, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -113,11 +121,13 @@ class OtherDummyRevision(Revision):
 class SimpleSource(models.Model):
     class Meta:
         app_label = 'gcd'
+        managed = False
 
 
 class SimpleSourceRevision(Revision):
     class Meta:
         app_label = 'oi'
+        managed = False
 
     source_class = SimpleSource
 
@@ -127,3 +137,4 @@ class SimpleSourceRevision(Revision):
 class SimplestRevision(Revision):
     class Meta:
         app_label = 'oi'
+        managed = False
