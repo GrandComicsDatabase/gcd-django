@@ -92,8 +92,15 @@
 </table>
     {% endif %}
   {% endwith %}
-{% empty %}
-<p>
-All queues are empty.
-</p>
 {% endfor %}
+{% if queue_empty %}
+<p>
+  {% if queue_name == 'editing' %}
+  You are not editing any records.
+  {% elif queue_name == 'pending' %}
+  No changes are pending review.
+  {% else %}
+  No changes are under your review.
+  {% endif %}
+</p>
+{% endif %}
