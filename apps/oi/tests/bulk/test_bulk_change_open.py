@@ -756,6 +756,30 @@ def test_sweep_counts_from_the_last_work(client, change, any_approver, work):
 
 
 @pytest.mark.django_db
+def test_unassigning_is_no_work(client, change, any_approver):
+    """
+    The approver of a change sent back can unassign it, which is no work
+    on it: its last work stays as it was, and the sweep discards it.
+    """
+    _sent_back(change, any_approver)
+    _made_long_ago(change)
+    client.force_login(any_approver)
+    assert 'name="release"' in client.get(_compare(change)).content.decode()
+
+    assert client.post(_process(change),
+                       {'release': 'Unassign',
+                        'comments': ''}).status_code == 302
+
+    last_work = change.modified
+    change.refresh_from_db()
+    assert change.approver is None
+    assert change.modified == last_work
+    _sweep(client, any_approver)
+    change.refresh_from_db()
+    assert change.state == states.DISCARDED
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize('days', [0, 20])
 def test_sweep_leaves_a_change_worked_on_after_selection(
       client, change, any_approver, reserving_indexer, bulk_change,
