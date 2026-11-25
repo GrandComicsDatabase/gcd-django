@@ -537,7 +537,7 @@ def _create_issue_add(parsed_data, request, series, series_url):
     else:
         add_after = series.last_issue
     brand_emblem = parsed_data.pop('brand_emblem')
-    indicia_printer = parsed_data.pop('indicia_printer')
+    indicia_printer = parsed_data.pop('indicia_printer', None)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_add'])
@@ -866,6 +866,13 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
                             % (issue_id, changeset_id))
 
 
+def _with_uncertainty(value, uncertain):
+    # a question mark after the value is what the import reads as uncertain
+    if uncertain and value not in (None, ''):
+        return '%s?' % value
+    return str(value)
+
+
 def generate_reprint_link(reprints, direction):
     reprint_note = ''
     for reprint in reprints:
@@ -894,11 +901,9 @@ def generate_reprint_link(reprints, direction):
 def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     if revision:
         issue_revision = get_object_or_404(IssueRevision, id=issue_id)
-        issue = PreviewIssue(issue_revision)
+        issue = PreviewIssue.init(issue_revision)
         issue.series = issue_revision.series
         issue.on_sale_date = on_sale_date_as_string(issue_revision)
-        issue.revision = issue_revision
-        issue.keywords = issue_revision.keywords
     else:
         issue = get_object_or_404(Issue, id=issue_id)
     series = issue.series
@@ -911,8 +916,8 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     export_data = []
     for field_name in ISSUE_FIELDS:
         if field_name == 'brand_emblem':
-            if not issue.brand_emblem and not issue.no_brand:
-                export_data.append('')
+            if issue.no_brand:
+                export_data.append('None')
             else:
                 brands = issue.brand_emblem.all()
                 brand_names = ''
@@ -940,6 +945,12 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
             export_data.append('None')
         elif field_name == 'indicia_printer':
             export_data.append(issue.show_printer(url=False))
+        elif field_name == 'page_count':
+            export_data.append(_with_uncertainty(issue.page_count,
+                                                 issue.page_count_uncertain))
+        elif field_name == 'on_sale_date':
+            export_data.append(_with_uncertainty(
+              issue.on_sale_date, issue.on_sale_date_uncertain))
         else:
             export_data.append(str(getattr(issue, field_name)))
 
@@ -1013,6 +1024,9 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                     export_data.append(sequence.keywords)
                 else:
                     export_data.append(get_keywords(sequence))
+            elif field_name == 'page_count':
+                export_data.append(_with_uncertainty(
+                  sequence.page_count, sequence.page_count_uncertain))
             else:
                 export_data.append(str(getattr(sequence, field_name)))
         if use_csv:
