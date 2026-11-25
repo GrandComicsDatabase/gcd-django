@@ -30,7 +30,11 @@ class EmailBackend:
             return None
 
     def get_user(self, user_id):
+        """
+        Return the user of a session, or None for an account that is not
+        active, as Django's ModelBackend does, so that its session ends.
+        """
         try:
-            return User.objects.get(pk=user_id)
+            return User.objects.get(pk=user_id, is_active=True)
         except User.DoesNotExist:
             return None
