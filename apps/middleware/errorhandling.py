@@ -28,8 +28,8 @@ class ErrorHandlingMiddleware(MiddlewareMixin):
             logger.warning('Lock conflict on %s', request.path,
                            exc_info=exception)
             response = render_error(
-              request, 'Another request was saving the same data at this '
-                       'moment, so nothing was saved. Please try again.',
+              request, 'An error occurred when processing the request. '
+                       'Please check and try again.',
               redirect=False)
             # A failed request for the log and for a script, as the server
             # error was; 503 tells that it can be sent again.
