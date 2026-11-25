@@ -883,12 +883,14 @@ a:hover {
     --tw-text-opacity: 1;
     color: rgb(0 0 0 / var(--tw-text-opacity));
   }
-  a:visited {
-    color: rgb(0 0 0 );
-  }
   a:hover {
     text-decoration-line: none;
   }
+}
+
+.btn-blue-editing:visited {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity));
 }
 
 .btn-blue {
@@ -1508,6 +1510,10 @@ form :is(input, select, textarea) {
 
 .ml-auto {
   margin-left: auto;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
 }
 
 .mr-3 {
