@@ -49,6 +49,14 @@ Edit Covers :: {{ issue }}
         <button class="w-full pe-2"><input class="w-full btn-blue-editing" type="submit" value="Remove mark for replacement"></button>
       </form>
       {% endif %}
+      {% if cover.id in show_first_ids %}
+      <form action="{% url "edit_covers" issue_id=issue.id %}" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="first" value="{{ cover.id }}">
+        <button class="w-full pe-2"><input class="w-full btn-blue-editing"
+          type="submit" value="Show first"></button>
+      </form>
+      {% endif %}
     {% endif %}
 
     {% if pending %}

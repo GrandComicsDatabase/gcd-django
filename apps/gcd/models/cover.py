@@ -21,7 +21,7 @@ ZOOM_LARGE = 4
 class Cover(models.Model):
     class Meta:
         app_label = 'gcd'
-        ordering = ['issue']
+        ordering = ['issue', 'position', 'id']
         get_latest_by = "id"
         permissions = (
             ('can_upload_cover', 'can upload cover'),
@@ -46,6 +46,11 @@ class Cover(models.Model):
 
     reserved = models.BooleanField(default=False, db_index=True)
     deleted = models.BooleanField(default=False, db_index=True)
+
+    # Covers of an issue show by position, lowest first, then as uploaded.
+    # An editor's choice of the first cover goes below all others of the
+    # issue, so a cover uploaded later, at 0, still comes last.
+    position = models.SmallIntegerField(default=0)
 
     @property
     def sort_code(self):
@@ -186,7 +191,8 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
         query_set = query_set.order_by(direction + 'issue__series__sort_name',
                                        'issue__series__year_began',
                                        'issue__series__id',
-                                       direction + 'issue__sort_code')
+                                       direction + 'issue__sort_code',
+                                       'position', 'id')
         return (query_set, True)
 
     def order_publisher(self, query_set, is_descending):
@@ -194,21 +200,23 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
         query_set = query_set.order_by(
           direction + 'issue__series__publisher__name',
           direction + 'issue__series__sort_name',
-          direction + 'issue__sort_code')
+          direction + 'issue__sort_code', 'position', 'id')
         return (query_set, True)
 
     def order_publication_date(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue__key_date',
                                        direction + 'issue__series__sort_name',
-                                       direction + 'issue__sort_code')
+                                       direction + 'issue__sort_code',
+                                       'position', 'id')
         return (query_set, True)
 
     def order_on_sale_date(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue__on_sale_date',
                                        direction + 'issue__series__sort_name',
-                                       direction + 'issue__sort_code')
+                                       direction + 'issue__sort_code',
+                                       'position', 'id')
         return (query_set, True)
 
 
