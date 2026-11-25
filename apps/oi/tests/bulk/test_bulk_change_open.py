@@ -567,6 +567,22 @@ def test_remove_cannot_empty_the_change(client, change):
 
 
 @pytest.mark.django_db
+def test_rows_of_revisions_read_before_a_removal(client, change):
+    """
+    The page reads the revisions of the change, then their values: an
+    object removed in between has no values, so no changes and no row.
+    """
+    revisions = _revisions(change)
+    assert _remove(client, change, revisions[0].id).status_code == 302
+
+    rows = bulk.compare_rows(revisions)
+
+    assert [row[0] for row in rows] == revisions[1:]
+    assert bulk.exact_diff(IssueRevision, [revisions[0].id]) == \
+        {revisions[0].id: {}}
+
+
+@pytest.mark.django_db
 def test_remove_needs_objects_of_the_change(client, change, bulk_change,
                                             approved_variant):
     """

@@ -274,6 +274,11 @@ def exact_diff(rev_class, revision_ids):
 
     diff = {}
     for revision_id in revision_ids:
+        # A revision deleted since its id was read, as when its object left
+        # the change, has no row and so no changes.
+        if revision_id not in rows:
+            diff[revision_id] = {}
+            continue
         new = rows[revision_id]
         old = old_rows[previous[revision_id]]
         changes = {}
