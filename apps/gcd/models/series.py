@@ -183,7 +183,7 @@ class Series(GcdData):
         else:
             self.first_issue = issues[0]
             self.last_issue = issues[len(issues) - 1]
-        self.save()
+        self.save(update_fields=['first_issue', 'last_issue', 'modified'])
 
     _update_stats = True
 

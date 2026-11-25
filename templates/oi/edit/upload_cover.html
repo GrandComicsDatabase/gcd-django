@@ -46,35 +46,14 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
     {% csrf_token %}
     {{ form.non_field_errors }}
     <div class="grid gap-4 md:grid-cols-5 md:gap-y-0">
-    <section id="scan_section" class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm transition md:col-span-2 md:row-span-2 md:grid md:grid-rows-subgrid" data-dragging="ring-2 ring-blue-500 bg-blue-50">
+    <section class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm transition md:col-span-2 md:row-span-2 md:grid md:grid-rows-subgrid" data-dragging="ring-2 ring-blue-500 bg-blue-50">
       <div class="border-b border-gray-200 px-4 py-3">
         <h2 class="text-gray-900">Cover image</h2>
         <p class="text-gray-600">A scan of the printed cover.</p>
       </div>
       <div class="p-4">
         {{ form.scan.errors }}
-        <div id="scan_choose" class="grid gap-3">
-          <label for="{{ form.scan.id_for_label }}" class="group flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 px-4 py-8 text-center transition md:py-6 hover:border-blue-500 hover:bg-blue-50 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 [&_input]:sr-only">
-            <svg class="mb-1 h-10 w-10 text-gray-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-            <span class="font-semibold text-gray-900">Upload a scan</span>
-            <span class="text-gray-600"><span class="hidden sm:inline">Drag and drop it here, or </span><span class="font-medium text-blue-700 underline">browse files</span></span>
-            <span class="text-gray-500">At least 400 pixels on the short side</span>
-            {{ form.scan }}
-          </label>
-        </div>
-        <div id="scan_selected" class="hidden items-center gap-4" data-shown="flex">
-          <button type="button" id="scan_open" class="max-w-[45%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" title="Open at full size" aria-label="Open the image at full size">
-            <img id="scan_preview" class="h-48 w-auto max-w-full border border-gray-200 object-contain shadow-sm sm:h-64" alt="Selected cover image">
-          </button>
-          <div class="min-w-0 flex-1">
-            <p id="scan_name" class="truncate font-semibold text-gray-900"></p>
-            <p id="scan_info" class="text-gray-600" aria-live="polite"></p>
-            <p id="scan_warning" class="hidden font-medium text-red-700">The image is too small: the shorter side must be at least 400 pixels.</p>
-            <div class="mt-3 flex flex-wrap gap-2">
-              <button type="button" id="scan_change" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-900 shadow-sm hover:bg-gray-50">Choose another</button>
-            </div>
-          </div>
-        </div>
+        {% include "oi/bits/image_upload_card.html" with field=form.scan prompt="Upload a scan" min_side=400 %}
   {% if replace_cover %}
         <div class="mt-4 border-t border-gray-200 pt-4">
           <h3 class="text-gray-900">Cover to replace</h3>
@@ -121,23 +100,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
       <div class="divide-y divide-gray-100 px-4">
   {% for field in form.visible_fields %}
     {% if field.name != 'scan' and field.name != 'comments' and field.name != 'is_wraparound' and field.name != 'is_gatefold' %}
-      {% if field.widget_type == 'checkbox' %}
-        <div class="flex items-start gap-3 py-3">
-          <div class="flex h-6 items-center [&_input]:h-5 [&_input]:w-5 [&_input]:rounded [&_input]:border-gray-300 [&_input]:text-blue-600">{{ field }}</div>
-          <div class="leading-6">
-            <label for="{{ field.id_for_label }}" class="font-medium text-gray-900">{{ field.label }}</label>
-            {{ field.errors }}
-            {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
-          </div>
-        </div>
-      {% else %}
-        <div class="py-3">
-          <label for="{{ field.id_for_label }}" class="block font-medium text-gray-900">{{ field.label }}{% if field.field.required %} <span class="text-red-600" aria-hidden="true">*</span>{% endif %}</label>
-          {{ field.errors }}
-          <div class="mt-1 [&_input[type=text]]:w-full [&_input[type=text]]:rounded-md [&_input[type=text]]:border-gray-300 [&_input[type=text]]:shadow-sm [&_textarea]:!w-full [&_textarea]:rounded-md [&_textarea]:border-gray-300 [&_textarea]:shadow-sm">{{ field }}</div>
-          {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="mt-1 text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
-        </div>
-      {% endif %}
+      {% include "oi/bits/upload_field.html" %}
     {% endif %}
   {% endfor %}
         <div class="py-3">
@@ -236,7 +199,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 
 {% include 'oi/bits/jquery.html' %}
 {% compress js %}
-  <script type='text/javascript' src="{% static 'js/oi/cover_upload.js' %}"></script>
+  <script type='text/javascript' src="{% static 'js/oi/image_upload.js' %}"></script>
   <script type='text/javascript'>
   $(function () {
     // Wraparound and gatefold are mutually exclusive.
