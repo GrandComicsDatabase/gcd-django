@@ -6260,7 +6260,8 @@ class StoryRevision(Revision):
                     compare_revision = self.previous()
                 if not credits and compare_revision and \
                     compare_revision.story_credit_revisions.filter(
-                      credit_type_id=CREDIT_TYPES[credit_type]).exists():
+                      credit_type_id=CREDIT_TYPES[credit_type],
+                      deleted=False).exists():
                     self.changed[credit_type] = True
                     self.is_changed = True
                 elif credits:
