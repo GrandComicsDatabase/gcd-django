@@ -4760,7 +4760,6 @@ def edit_reprint(request, id, which_side=None):
                                kwargs={'reprint_revision_id': id,
                                        'story_id': story.id,
                                        'issue_id': issue.id}))
-        raise ValueError
     elif which_side.startswith('edit_note'):
         if which_side == 'edit_note_origin':
             which_side = 'target'
