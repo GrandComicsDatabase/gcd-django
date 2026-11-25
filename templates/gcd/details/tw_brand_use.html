@@ -81,7 +81,8 @@
 {% block bottom_nav_bar %}
 <nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
   <div class="flex-1 font-bold text-2xl self-start">
-    {{ brand.object_page_name }}
+    {{ brand_use.emblem|absolute_url }} at
+    {{ brand_use.publisher|absolute_url }}
   </div>
   {% include "gcd/bits/tw_pagination_bar.html" %}
 </nav>
