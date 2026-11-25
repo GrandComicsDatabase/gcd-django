@@ -347,6 +347,7 @@ def test_requests_at_the_same_moment(settings,
                                          data=FREQUENCY))
         waits = _lock_waits_until_done(thread, 'gcd_issue')
     thread.join(90)
+    assert not thread.is_alive(), 'the Apply did not end'
 
     assert waits == 0
     assert results['apply'].status_code == 302
@@ -666,10 +667,14 @@ def _wait_for_lock_wait(table, waiting=1, timeout=30):
 
 
 def _lock_waits_until_done(thread, table):
-    """Return how often a lock wait on table was seen while thread ran."""
+    """
+    Return how often a lock wait on table was seen while thread ran, for
+    at most 30 seconds.
+    """
     seen = 0
+    end = time.monotonic() + 30
     with connection.cursor() as cursor:
-        while thread.is_alive():
+        while thread.is_alive() and time.monotonic() < end:
             seen += _lock_waits(cursor, table)
             time.sleep(0.02)
     return seen
