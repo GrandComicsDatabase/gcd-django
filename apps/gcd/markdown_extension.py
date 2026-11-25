@@ -3,13 +3,15 @@ from html import unescape
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 
+# Initialize the package before its submodules to avoid circular imports when
+# Django's autoreloader and system checks load Markdown concurrently.
+import markdown
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.inlinepatterns import InlineProcessor
 from markdown.postprocessors import Postprocessor
 from xml.etree.ElementTree import Element
 
-import markdown
 import nh3
 
 from django.conf import settings

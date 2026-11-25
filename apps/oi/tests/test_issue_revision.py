@@ -736,11 +736,12 @@ def test_same_series_open_with_after():
     with mock.patch('%s._same_series_revisions' % IREV) as ssrevs_mock:
         ssowa_revs = mock.MagicMock()
         ssrevs_mock.return_value.filter.return_value = ssowa_revs
-        rev = IssueRevision()
+        series = Series()
+        rev = IssueRevision(series=series)
 
         assert rev._same_series_open_with_after() == ssowa_revs
         ssrevs_mock.return_value.filter.assert_called_once_with(
-            after__isnull=False, committed=None)
+            after__series=series, committed=None)
 
 
 @pytest.mark.parametrize('deleted', (True, False))

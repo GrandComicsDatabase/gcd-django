@@ -422,8 +422,8 @@ def topic_post_save(sender, **kwargs):
                   topic.deadline.strftime('%d %B %Y %H:%M:%S ') +
                   settings.TIME_ZONE)
 
-                list_config.send_mail("GCD Ballot Open: %s" % topic,
-                                      email_body)
+                list_config.send_mail(
+                  "GCD Ballot Open: #%d %s" % (topic.id, topic), email_body)
 
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)
