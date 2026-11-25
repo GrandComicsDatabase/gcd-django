@@ -644,12 +644,18 @@ def distinct_values(model, ids, name):
 
 
 def value_key(value):
-    """
+    r"""
     Return the text that stands for a stored value in a form choice:
     'None' for None, else '=' and the value, so that no value, the empty
-    text included, looks like no choice.
+    text included, looks like no choice.  A backslash, a carriage return
+    and a line feed are written \\, \r and \n: a browser changes the line
+    breaks of a radio value before it sends it, and each value keeps a
+    key of its own.
     """
-    return 'None' if value is None else '=' + str(value)
+    if value is None:
+        return 'None'
+    return '=' + str(value).replace('\\', '\\\\').replace('\r', '\\r') \
+                           .replace('\n', '\\n')
 
 
 def _object_names(field, values):
