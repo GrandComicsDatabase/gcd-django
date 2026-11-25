@@ -16,7 +16,8 @@ from crispy_forms.layout import Layout, Field, HTML
 from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       VARIANT_NAME_HELP_TEXT, VARIANT_COVER_STATUS_HELP_TEXT,
-                      ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
+                      ISSUE_LABELS, ISSUE_HELP_TEXTS, CREDIT_NAME_LABEL,
+                      KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       _strip_list, _set_title_case_label,
@@ -495,7 +496,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
                 'A concise and clear description of the external source of '
                 'the credit.'
         }
-        labels = {'credit_name': 'Credit description'}
+        labels = {'credit_name': CREDIT_NAME_LABEL}
 
     def __init__(self, *args, **kwargs):
         super(IssueCreditRevisionForm, self).__init__(*args, **kwargs)

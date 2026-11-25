@@ -33,7 +33,11 @@
  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} issue{{ page.paginator.count|pluralize:'s' }}.
   <a href="{% url "series_timeline" series_id=series.id %}">See series monthly timeline</a>
   (depends on key dates being set correctly).
+  {% if page.paginator.count %}
   {% render_table table %}
+  {% else %}
+  <p>No issues found.</p>
+  {% endif %}
 
 </div>
 {% endblock %}

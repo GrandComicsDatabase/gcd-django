@@ -26,7 +26,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: test
-          MYSQL_DATABASE: gcd_ci
+          MYSQL_DATABASE: gcd_dev_ci
         ports:
           - 3306:3306
         options: >-
@@ -37,11 +37,11 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: settings_dev
-      MYSQL_DATABASE: gcd_ci
+      MYSQL_DATABASE: gcd_dev_ci
       MYSQL_HOST: 127.0.0.1
-      MYSQL_PASSWORD: test
+      MYSQL_PASSWORD: native_ci_password
       MYSQL_PORT: 3306
-      MYSQL_USER: root
+      MYSQL_USER: native_ci
 
     steps:
       - name: Checkout
@@ -68,16 +68,45 @@ jobs:
           python -m pip install --upgrade pip "setuptools<81"
           python -m pip install -r requirements.txt
 
-      - name: Run migrations
-        run: python manage.py migrate --noinput
+      - name: Provision the native CI database user
+        env:
+          MYSQL_SERVICE: ${{ job.services.mysql.id }}
+        run: |
+          # Root is used only inside this disposable service for provisioning.
+          # Escape underscores because database GRANT names are MySQL patterns.
+          docker exec -i "$MYSQL_SERVICE" sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -uroot' <<'SQL'
+          CREATE USER 'native_ci'@'%' IDENTIFIED BY 'native_ci_password';
+          GRANT ALL ON `gcd\_dev\_ci`.* TO 'native_ci'@'%';
+          GRANT ALL ON `test\_gcd\_dev\_ci`.* TO 'native_ci'@'%';
+          SQL
 
-      - name: Verify runtime contract
-        run: python scripts/check_dev_environment.py
+      - name: Smoke-test native setup on the empty database
+        run: python .github/scripts/smoke_native_setup.py
+
+      - name: Verify native runtime and seeded data
+        run: |
+          ./bin/dev --runtime native doctor
+          ./bin/dev --runtime native manage shell -c "
+          from django.contrib.auth import authenticate
+          from apps.gcd.models import Series
+          assert authenticate(username='editor', password='editme') is not None, 'Fixture login failed'
+          Series.objects.get(name='[GCD DEV] Adventures')
+          "
 
       - name: Run application smoke tests
         run: |
-          python -m pytest -q \
+          ./bin/dev --runtime native test -q \
             apps/gcd/tests/test_dev_environment_core.py \
+            apps/gcd/tests/test_dev_environment.py \
+            apps/gcd/tests/test_devcontainer.py \
+            apps/gcd/tests/test_devcontainer_database.py \
+            apps/gcd/tests/test_devcontainer_ci.py \
+            apps/gcd/tests/test_development_docs.py \
+            apps/gcd/tests/test_native_reset_safety.py \
+            apps/gcd/tests/test_native_reset_reference_data.py \
+            apps/gcd/tests/test_markdown_startup.py \
+            apps/gcd/tests/test_notes_rendering.py \
+            apps/gcd/tests/test_health.py \
             apps/gcd/tests/test_front_page_search_performance.py \
             apps/gcd/tests/test_search_indexes.py \
             apps/gcd/tests/test_seed_development_data.py \
@@ -91,8 +120,44 @@ jobs:
       - name: Run API v2 tests when available
         run: |
           if [ -d apps/api_v2/tests ]; then
-            python -m pytest apps/api_v2/tests/ -q
+            ./bin/dev --runtime native test apps/api_v2/tests/ -q
           fi
+
+  devcontainer-smoke:
+    name: Dev Container CLI lifecycle and Linux ownership
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node for the pinned Dev Container CLI
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install the tested Compose plugin
+        env:
+          DOCKER_CONFIG: ${{ runner.temp }}/gcd-devcontainer-docker
+          COMPOSE_VERSION: v5.7.1
+          COMPOSE_SHA256: af426722a8af5de812fcee30cc1c39f0639f5f723cbadefb25e5d4db054064cf
+        run: |
+          # Older Compose can omit access to Dev Containers' generated Dockerfile.
+          install -d "$DOCKER_CONFIG/cli-plugins"
+          curl --fail --location --silent --show-error \
+            "https://github.com/docker/compose/releases/download/$COMPOSE_VERSION/docker-compose-linux-x86_64" \
+            --output "$DOCKER_CONFIG/cli-plugins/docker-compose"
+          actual_sha256="$(sha256sum "$DOCKER_CONFIG/cli-plugins/docker-compose" | cut -d ' ' -f 1)"
+          test "$actual_sha256" = "$COMPOSE_SHA256"
+          chmod +x "$DOCKER_CONFIG/cli-plugins/docker-compose"
+          test "$(docker compose version --short)" = "${COMPOSE_VERSION#v}"
+          docker buildx version
+
+      - name: Rehearse an isolated Dev Container clone
+        env:
+          DOCKER_CONFIG: ${{ runner.temp }}/gcd-devcontainer-docker
+        run: python3 .github/scripts/smoke_devcontainer.py
 
   compose-smoke:
     name: Docker Compose core setup
