@@ -717,7 +717,9 @@ def creator_membership_by_name(request, creator_membership_name,
         q_obj = Q(organization_name__icontains=creator_membership_name)
         return generic_by_name(request, creator_membership_name, q_obj, sort,
                                CreatorMembership,
-                               'gcd/search/creator_membership_list.html')
+                               'gcd/search/creator_membership_list.html',
+                               related=['creator__birth_date',
+                                        'membership_type'])
 
 
 def received_award_by_name(request, received_award_name, sort=ORDER_ALPHA):
@@ -751,7 +753,9 @@ def creator_art_influence_by_name(request, creator_art_influence_name,
                   creator_art_influence_name)
         return generic_by_name(request, creator_art_influence_name, q_obj,
                                sort, CreatorArtInfluence,
-                               'gcd/search/creator_art_influence_list.html')
+                               'gcd/search/creator_art_influence_list.html',
+                               related=['creator__birth_date',
+                                        'influence_link'])
 
 
 def creator_non_comic_work_by_name(request, creator_non_comic_work_name,
@@ -768,7 +772,9 @@ def creator_non_comic_work_by_name(request, creator_non_comic_work_name,
         q_obj = Q(publication_title__icontains=creator_non_comic_work_name)
         return generic_by_name(request, creator_non_comic_work_name, q_obj,
                                sort, CreatorNonComicWork,
-                               'gcd/search/creator_non_comic_work_list.html')
+                               'gcd/search/creator_non_comic_work_list.html',
+                               related=['creator__birth_date', 'work_type',
+                                        'work_role'])
 
 
 def story_by_character(request, character, sort=ORDER_ALPHA):
