@@ -37,6 +37,7 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision, _strip_list,
                       BaseForm, HiddenInputWithHelp, ModifiedPagedownWidget)
+from .image import ImageUploadInput
 
 
 # if we want/need to have more specific control, we can use
@@ -389,7 +390,7 @@ class CreatorSignatureRevisionForm(forms.ModelForm):
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
 
-    signature = forms.ImageField(widget=forms.FileInput, required=False)
+    signature = forms.ImageField(widget=ImageUploadInput, required=False)
 
     comments = _get_comments_form_field()
 

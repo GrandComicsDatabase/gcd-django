@@ -19,6 +19,7 @@ from .support import (
     GENERIC_ERROR_MESSAGE, PUBLISHER_HELP_LINKS, PUBLISHER_HELP_TEXTS,
     INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS, PRINTER_HELP_LINKS,
     PRINTER_HELP_TEXTS, INDICIA_PRINTER_HELP_LINKS, KeywordBaseForm)
+from .image import ImageUploadInput
 
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision, BrandGroupRevision,
@@ -356,7 +357,7 @@ class BrandRevisionForm(KeywordBaseForm):
                   "about a visual appearance of the brand name."
     )
 
-    brand_emblem_image = forms.ImageField(widget=forms.FileInput,
+    brand_emblem_image = forms.ImageField(widget=ImageUploadInput,
                                           label='Brand Emblem Image',
                                           required=False)
 

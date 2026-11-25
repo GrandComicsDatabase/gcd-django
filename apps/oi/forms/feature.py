@@ -22,6 +22,7 @@ from .support import (CharacterBaseForm, FEATURE_HELP_LINKS,
                       _get_comments_form_field, combine_reverse_relations,
                       GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision)
+from .image import ImageUploadInput
 from .story import _genre_choices
 from .custom_layout_object import Formset, BaseField
 
@@ -269,7 +270,7 @@ class FeatureLogoRevisionForm(forms.ModelForm):
                   "a specific visual appearance of the name."
     )
 
-    feature_logo_image = forms.ImageField(widget=forms.FileInput,
+    feature_logo_image = forms.ImageField(widget=ImageUploadInput,
                                           required=False)
 
     comments = _get_comments_form_field()
