@@ -68,7 +68,7 @@ EXIT;
 
 The escaped underscores make these exact database grants under MySQL's default
 rules, not wildcard patterns. If `partial_revokes=1`, use `gcd_dev` and
-`test_gcd_dev` without backslashes in the two grants. Do not change the server's
+`test_gcd_dev` unescaped in the two database grants. Do not change the server's
 setting to follow the guide. See [MySQL database-level grants](https://dev.mysql.com/doc/refman/8.4/en/grant.html).
 
 The tests of concurrent changes read the two Performance Schema tables, so

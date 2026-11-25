@@ -108,15 +108,18 @@ python -m pytest apps/gcd/tests/test_health.py apps/gcd/tests/test_seed_developm
 ```
 
 Run other application tests with `python -m pytest PATH_TO_TESTS`. The database
-first-initialization hook gives the application account privileges only on the
-exact development schema and its `test_` counterpart, allowing pytest to create
-and remove its test database, and `SELECT` on the two Performance Schema tables
-`data_locks` and `data_lock_waits`, which the tests of concurrent changes read.
-It does not give the editor global MySQL privileges
+first-initialization hook gives the application account privileges on the exact
+development schema and its `test_` counterpart, allowing pytest to create and
+remove its test database. Besides those it gives only `SELECT` on the two
+Performance Schema tables `data_locks` and `data_lock_waits`, which the tests of
+concurrent changes read. It does not give the editor global MySQL privileges
 or root credentials. This hook runs in the database container on a new volume,
-not in an already-populated database. An unexpected test-database permission
-error should be investigated; it is not a reason to grant global privileges or
-reset a preserved volume.
+not in an already-populated database. A volume set up by an earlier version of
+the hook keeps its grants: the tests of concurrent changes fail on it with
+error 1142 until the two `GRANT SELECT` statements of
+`.devcontainer/init-test-database.sh` are run on it as the MySQL root user. An
+unexpected test-database permission error should be investigated; it is not a
+reason to grant global privileges or reset a preserved volume.
 
 There is no Docker socket or Docker-in-Docker service in the editor container.
 Use Python commands there, not the Docker-backed `./bin/dev` commands. Manage
