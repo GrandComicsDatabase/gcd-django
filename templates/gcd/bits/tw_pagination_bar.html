@@ -7,7 +7,7 @@
   {% spaceless %}
     <li>
   {% if page.has_previous %}
-      <a class="flex items-center justify-center navigation-bar-box-link {% if mycomics_red %}hover:bg-red-300{% endif %} h-8 rounded-s-lg" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+      <a class="flex items-center justify-center navigation-bar-box-link {% if mycomics_red %}hover:bg-red-300{% endif %} h-8 rounded-s-lg" href="{{ page_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
   {% else %}
       <span class="flex items-center justify-center navigation-bar-box-link {% if mycomics_red %}hover:bg-red-100{% else %}hover:bg-blue-100{% endif %} h-8 rounded-s-lg" style="text-decoration: none">&#5176;</span>
   {% endif %} <!-- has_previous -->
@@ -19,14 +19,14 @@
     {% else %}
     {% if not number %}<span class="flex items-center justify-center h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-100{% else %}hover:bg-blue-100{% endif %}"> ... {# literally dots #}</span>
       {% else %}{# pagelink num #}
-      <a class="flex items-center justify-center h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-300{% endif %}" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ number }}">{{ number }}</a>
+      <a class="flex items-center justify-center h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-300{% endif %}" href="{{ page_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ number }}">{{ number }}</a>
       {% endif %}
     {% endif %}
     </li>
   {% endfor %}
     <li>
   {% if page.has_next %}
-    <a class="flex items-center justify-center h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-300{% endif %} rounded-e-lg" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+    <a class="flex items-center justify-center h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-300{% endif %} rounded-e-lg" href="{{ page_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
   {% else %}
       <span class="flex items-center justify-center h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-100{% else %}hover:bg-blue-100{% endif %} rounded-e-lg" style="text-decoration: none">&#5171;</span>
   {% endif %} <!-- has_next -->
@@ -41,13 +41,13 @@
   {% if page.has_other_pages %}
   <li>
   {% if page.has_previous %}
-      <a class="flex items-center justify-center px-2 h-8 navigation-bar-box-link rounded-s-lg {% if mycomics_red %}hover:bg-red-300{% else %}hover:bg-blue-300{% endif %}" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+      <a class="flex items-center justify-center px-2 h-8 navigation-bar-box-link rounded-s-lg {% if mycomics_red %}hover:bg-red-300{% else %}hover:bg-blue-300{% endif %}" href="{{ page_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
   {% else %}
       <span class="flex items-center justify-center px-2 h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-100{% else %}hover:bg-blue-100{% endif %} rounded-s-lg" style="text-decoration: none">&#5176;</span>
   {% endif %} <!-- has_previous -->
     </li>
   {% if page.has_next %}
-    <a class="flex items-center justify-center px-2 h-8 navigation-bar-box-link rounded-e-lg {% if mycomics_red %}hover:bg-red-300{% else %}hover:bg-blue-300{% endif %}" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+    <a class="flex items-center justify-center px-2 h-8 navigation-bar-box-link rounded-e-lg {% if mycomics_red %}hover:bg-red-300{% else %}hover:bg-blue-300{% endif %}" href="{{ page_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
   {% else %}
       <span class="flex items-center justify-center px-2 h-8 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-100{% else %}hover:bg-blue-100{% endif %} rounded-e-lg" style="text-decoration: none">&#5171;</span>
   {% endif %} <!-- has_next -->
@@ -64,19 +64,19 @@
     {% spaceless %}
     <div class="px-1 py-1 sm:hidden">
     {% if page.has_previous %}
-        <a class="px-3 py-1 navigation-bar-box-link rounded-s-lg {% if mycomics_red %}hover:bg-red-300{% endif %}" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+        <a class="px-3 py-1 navigation-bar-box-link rounded-s-lg {% if mycomics_red %}hover:bg-red-300{% endif %}" href="{{ page_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
     {% else %}
         <span class="px-3 py-1 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-100{% else %}hover:bg-blue-100{% endif %} rounded-s-lg" style="text-decoration: none">&#5176;</span>
     {% endif %} <!-- has_previous -->
     {% if page.has_next %}
-      <a class="px-3 py-1 navigation-bar-box-link rounded-e-lg {% if mycomics_red %}hover:bg-red-300{% endif %}" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+      <a class="px-3 py-1 navigation-bar-box-link rounded-e-lg {% if mycomics_red %}hover:bg-red-300{% endif %}" href="{{ page_url }}?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
     {% else %}
         <span class="px-3 py-1 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-100{% else %}hover:bg-blue-100{% endif %} rounded-e-lg" style="text-decoration: none">&#5171;</span>
     {% endif %} <!-- has_next -->
     </div>
     {% endspaceless %}
   {% endif %}
-        <form method="GET">
+        <form method="GET"{% if page_url %} action="{{ page_url }}"{% endif %}>
         <input type="text" class="border border-gray-400 rounded" name="page" size="3">
         <input type="submit" class="px-2 py-0 h-7 navigation-bar-box-link {% if mycomics_red %}hover:bg-red-300{% endif %} rounded" value="{% trans 'Go' %}">
   {% for field, value in request.GET.items %}

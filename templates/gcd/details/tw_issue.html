@@ -296,28 +296,9 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
 {% endblock content %}
 
 {% block issue_links %}
-<div class="my-1 max-md:hidden label-gcd-blue">
-Related Links
+<div class="max-md:hidden">
+{% include "gcd/bits/tw_issue_related_links.html" %}
 </div>
-<ul class="ps-1 max-md:hidden text-sm">
-  {% if not issue.series.is_singleton %}
-    {% if issue.series.has_gallery %}
-    <li> <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Series Cover Gallery</a>
-    {% endif %}
-    <li> <a href="{% url "series_details" series_id=issue.series.id %}">Series Details by Issue</a><br/>
-    <li> <a href="{% url "series_timeline" series_id=issue.series.id %}">Series Monthly Timeline</a>
-  {% endif %}
-  {% if issue.indicia_image or issue.soo_image %}
-    {% if issue.indicia_image %}
-    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Indicia Scan</a></li>
-    {% endif %}
-    {% if issue.soo_image %}
-    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Statement of Ownership Scan</a></li>
-    {% endif %}
-  {% else %}
-    <li> <a href="{% url "issue_images" issue_id=issue.id %}">No Issue Scans</a></li> 
-  {% endif %}
-</ul>
 {% endblock %}
 
 {% block issue_toc %}
@@ -413,11 +394,16 @@ Related Links
   {% endif %}
     </div>
   </btn>
-  <a class="hover:no-underline" href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}&amp;short_desc={{ issue|urlencode }}" target="_blank">
+  {% with tracker="http://errors.comics.org/enter_bug.cgi?product=GCD" %}
+  {% with uri=request.build_absolute_uri|urlencode sd=issue|urlencode %}
+  <a class="hover:no-underline" target="_blank"
+     href="{{ tracker }}&amp;bug_file_loc={{ uri }}&amp;short_desc={{ sd }}">
     <btn class="btn btn-blue-editing">
       Report Information <img class="inline w-[12px] mb-1" src="{% static 'img/gcd/icons/adwaita/external-link-symbolic.svg' %}">
     </btn>
   </a>
+  {% endwith %}
+  {% endwith %}
   {% if user.is_authenticated and issue.series.is_singleton %}
   <div class="flex label-gcd-blue">Editing Series Data</div>
     {% with object=issue.series object_name='Series' object_class='series' %}
@@ -435,6 +421,10 @@ Related Links
   {% with model_name='issue' object=issue %}
     {{ block.super }}
   {% endwith %}
+  {# On narrow screens the Related Links of the side column are hidden. #}
+  <div class="md:hidden">
+  {% include "gcd/bits/tw_issue_related_links.html" %}
+  </div>
 {% endblock change_history %}
 
 {% block js %}

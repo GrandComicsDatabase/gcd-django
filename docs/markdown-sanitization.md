@@ -109,3 +109,9 @@ representative legacy HTML, source preservation, and the plain-text annotation
 boundary. Run these tests when changing the policy. Synthetic cases do not
 constitute an audit of all existing production HTML; compatibility should be
 reviewed before broadening or narrowing the allowlist.
+
+`apps/gcd/tests/test_markdown_startup.py` covers concurrent package and GCD
+extension imports in a fresh interpreter. Keep the parent `import markdown`
+before its submodule imports in `markdown_extension.py`; Django's autoreloader
+can load URL configuration and template libraries concurrently. This import
+ordering does not change rendering or sanitization policy.
