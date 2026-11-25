@@ -20,4 +20,9 @@ COPY requirements.txt ./
 RUN python -m pip install --upgrade pip "setuptools<81" \
     && python -m pip install --no-cache-dir -r requirements.txt
 
+# A named, non-root home is needed by editor extensions. Ordinary Compose keeps
+# its existing numeric user; Dev Containers can remap this user on Linux.
+RUN groupadd --gid 1000 gcd \
+    && useradd --uid 1000 --gid gcd --create-home --shell /bin/bash gcd
+
 COPY . ./

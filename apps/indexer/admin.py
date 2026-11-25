@@ -2,6 +2,7 @@
 
 
 from django.contrib import admin
+from django.contrib.auth.models import User
 
 from apps.indexer.models import Indexer, ImpGrant
 
@@ -30,6 +31,19 @@ class IndexerAdmin(admin.ModelAdmin):
         }),
     )
     filter_horizontal = ('languages',)
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        # Users who may only view the page get no mentor field.
+        if 'mentor' in form.base_fields:
+            mentors = User.objects.with_perm(
+              'indexer.can_mentor', include_superusers=False,
+              backend='django.contrib.auth.backends.ModelBackend')
+            # The current mentor may no longer be an editor.
+            if obj and obj.mentor_id:
+                mentors |= User.objects.filter(pk=obj.mentor_id)
+            form.base_fields['mentor'].queryset = mentors
+        return form
 
 
 class ImpGrantAdmin(admin.ModelAdmin):

@@ -293,7 +293,8 @@ def test_set_first_last_issues_empty():
 
         assert s.first_issue is None
         assert s.last_issue is None
-        s.save.assert_called_once_with()
+        s.save.assert_called_once_with(
+          update_fields=['first_issue', 'last_issue', 'modified'])
 
 
 def test_set_first_last_issues_nonempty():
@@ -324,4 +325,5 @@ def test_set_first_last_issues_nonempty():
 
         assert s.first_issue is i1
         assert s.last_issue is i2
-        s.save.assert_called_once_with()
+        s.save.assert_called_once_with(
+          update_fields=['first_issue', 'last_issue', 'modified'])
