@@ -326,9 +326,21 @@ def _shown_change(field, old, new, names):
         diff_match_patch().diff_cleanupSemantic(diff)
     else:
         diff = [(-1, old), (1, new)]
-    diff = [(op, NO_BREAK_SPACE * len(text) if op and text.isspace()
-             else text) for op, text in diff if text]
+    diff = [(op, _shown_spaces(text) if op else text)
+            for op, text in diff if text]
     return show_diff(diff, 'orig'), show_diff(diff, 'change')
+
+
+def _shown_spaces(text):
+    """
+    Return a changed part of a text with no-break spaces in place of the
+    spaces that HTML would merge or hide; a part of spaces only is all
+    no-break spaces, so that it does not vanish.
+    """
+    if text.isspace():
+        return NO_BREAK_SPACE * len(text)
+    return HIDDEN_SPACES.sub(
+      lambda match: NO_BREAK_SPACE * len(match.group()), text)
 
 
 # The fields of an issue that feed the notes of the compare page of one
