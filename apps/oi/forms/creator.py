@@ -20,6 +20,7 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision, \
                            CreatorSignatureRevision, get_creator_field_list, \
                            _get_creator_sourced_fields, _check_year
 from apps.gcd.models import NameType, CreatorNameDetail, School
+from apps.stddata.forms import DateForm
 from apps.stddata.models import Country
 
 from .custom_layout_object import Formset, FormAsField, BaseField
@@ -55,6 +56,31 @@ def _generic_data_source_clean(form, cd, field=''):
             form.add_error(
               '%s_source_description' % field,
               'Source description and source type must both be set.')
+
+
+def _check_death_not_before_birth(data):
+    """
+    Raise a ValidationError if the death date in the data of the creator
+    page is before the birth date. The parts that both dates have are
+    compared in turn, year, month and day; a part that is empty or
+    uncertain in either date ends the comparison.
+    """
+    birth = DateForm(data, prefix='birth_date')
+    death = DateForm(data, prefix='death_date')
+    if not birth.is_valid() or not death.is_valid():
+        return
+    for part in ('year', 'month', 'day'):
+        born = getattr(birth.instance, part)
+        died = getattr(death.instance, part)
+        if not born or not died or \
+           getattr(birth.instance, part + '_uncertain') or \
+           getattr(death.instance, part + '_uncertain'):
+            return
+        if int(died) != int(born):
+            if int(died) < int(born):
+                raise forms.ValidationError(
+                  'Death date cannot be before birth date.')
+            return
 
 
 class CreatorNameDetailRevisionForm(forms.ModelForm):
@@ -270,6 +296,7 @@ class CreatorRevisionForm(BaseForm):
                     self.add_error(
                       '%s_source_description' % field,
                       'Source description and source type must both be set.')
+        _check_death_not_before_birth(self.data)
 
 
 def get_creator_school_revision_form(revision=None, user=None):
