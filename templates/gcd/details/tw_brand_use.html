@@ -42,7 +42,8 @@
               {{ issues_count }}</li>
             <li><span class="font-bold">Publisher's Brand Emblem:</span>
               {% if brand_use.emblem.emblem %}
-              <img src="{{ brand_use.emblem.emblem.scaled_image.url }}">
+              <img src="{{ brand_use.emblem.emblem.scaled_image.url }}"
+                alt="{{ brand_use.emblem.name }}">
               {% endif %}
               {% if brand_use.emblem.generic %}
               generic

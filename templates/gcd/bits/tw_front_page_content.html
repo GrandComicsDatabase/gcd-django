@@ -45,7 +45,8 @@ from various smaller templates that are managed via django-templatesadmin.
       <div class="mb-1 mx-1 lg:me-2 2xl:me-4 2xl:ms-2">
         <div class="min-w-[100px] w-[100px] me-1 float-left">
           <a href="{% url 'show_creator' creator.id %}">
-            <img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}">
+            <img class="border-2 rounded-full"
+              src="{{ creator.get_portrait_url }}" alt="{{ creator }}">
           </a>
         </div>
         <div class="font-bold text-lg">{{ creator|absolute_url }}</div>

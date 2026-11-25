@@ -4,7 +4,7 @@
 <div class="feed-post">
 {{ post.content }}
 </p>
-<img width="150px" src="{{ post.picture }}">
+<img width="150px" src="{{ post.picture }}" alt="">
 <a href="{{ post.url }}"><img alt="comment on facebook" src="{% static "img/gcd/social/facebook_32.png" %}"></a>
 <a href="mailto:?body={{ post.mail_body }}&subject={{ post.mail_subject }}"><img alt="email" src="{% static "img/gcd/social/email_32.png" %}"></a>
 </div>

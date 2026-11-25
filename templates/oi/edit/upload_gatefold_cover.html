@@ -17,7 +17,8 @@ Select front cover for {{ issue }}
   {% endwith %}
   <p>Please select the front part of the cover for {{ issue }}. Note that if you leave this page without
      clicking "Submit", your upload will be lost.</p>
-  <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox' width='{{ width }}'>
+  <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox'
+    width='{{ width }}' alt='Uploaded scan'>
   <div class="flex">
     <div id='preview_box' style="overflow: hidden; margin: 0.5em; width: 200px;">
   </div>
