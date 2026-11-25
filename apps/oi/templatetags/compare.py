@@ -109,7 +109,8 @@ def field_value(revision, field):
         value = esc(value)
 
         if type(revision).__name__ == 'IssueRevision':
-            if revision.changeset.change_type == CTYPES['issue_bulk']:
+            if revision.changeset.change_type in [CTYPES['issue_bulk'],
+                                                  CTYPES['bulk']]:
                 if not revision.changeset.issuecreditrevisions.exists():
                     if revision.issue.active_credits:
                         credits = revision.issue.active_credits
