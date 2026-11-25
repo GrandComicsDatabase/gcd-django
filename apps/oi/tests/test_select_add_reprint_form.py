@@ -36,7 +36,7 @@ NO_SERIES_NAMED = [{'id': 'note', 'disabled': True,
                     'text': 'No series with this name and this Issue Number.'}]
 ASK_SERIES = b'<p>Too many results: choose a Series.</p>'
 ASK_NUMBER = b'<p>Too many results: write the Issue Number.</p>'
-TRIGGER = 'submit, change delay:500ms'
+TRIGGER = 'submit, change delay:500ms, input delay:500ms'
 SEARCH_BUTTON = ('<button class="btn-blue-editing inline" type="submit">'
                  'Search</button>')
 
@@ -282,17 +282,14 @@ def two_issues_selector(client, catalog):
     return resolve(response.url).kwargs['select_key']
 
 
-def test_one_set_of_fields_where_the_form_is(client, select_key, catalog):
-    """The row asks for the same fields, and the form does what it does."""
+def test_form_is_below_the_row_of_fields(client, select_key, catalog):
+    """The row of fields stays above the form, which has its own fields."""
     for key in (select_key, bond_selector(client, catalog),
                 two_issues_selector(client, catalog)):
         html = selector_page(client, key)
-        assert 'id="new-search-form"' in html
-        assert 'class="select_search"' not in html
+        assert html.index('class="select_search"') < html.index(
+          'id="new-search-form"')
         assert 'by entering the relevant information' not in html
-        for name in ('publisher', 'series', 'year', 'number', 'search_story',
-                     'search_series'):
-            assert f'name="{name}"' not in html
         assert html.count('name="issue_number"') == 1
 
 
@@ -306,7 +303,9 @@ def test_form_has_no_sequence_number(client, select_key, catalog):
     """A sequence is chosen on the page of its issue, with Remember Story."""
     for key in (select_key, bond_selector(client, catalog),
                 two_issues_selector(client, catalog)):
-        assert 'name="sequence_number"' not in selector_page(client, key)
+        form = re.search(r'<form id="new-search-form".*?</form>',
+                         selector_page(client, key), re.DOTALL).group()
+        assert 'name="sequence_number"' not in form
 
 
 def test_form_is_where_issues_can_be_chosen(client, select_key, catalog):
