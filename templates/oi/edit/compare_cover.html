@@ -20,15 +20,15 @@ Reviewing :: {{ revision }}
 <td class="w-1/2 align-top {% if old_cover.marked %} marked{% endif %}">
   <h2 class="justify-center text-center">cover to be replaced</h2>
   <div class="justify-center text-center">
-    <a class="inline-block" href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_tag }}</a>
+    <a class="inline-block border border-gray-500 shadow-md" href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_tag }}</a>
   {% if old_cover_width %}
   <div>The full cover file has a width of {{ old_cover_width }} pixels.</div>
   {% endif %}
   {% if old_cover.is_wraparound %}
   </div>
   <div>The selected front part of the above full cover:</div>
-  <div class="cover_medium">
-    <a href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_front_tag }}</a>
+  <div>
+    <a class="border border-gray-500 shadow-md" href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_front_tag }}</a>
   {% endif %}
     <div>
       Cover <a href="{% url 'compare' id=old_cover.changeset.id %}">
@@ -59,7 +59,7 @@ Reviewing :: {{ revision }}
   {% endif %}
 {% endif %}
 <div class="justify-center text-center">
-  <a class="inline-block" href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
+  <a class="inline-block border border-gray-500 shadow-md" href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
 {% if cover_width %}
   <div>The full cover file has a width of {{ cover_width }} pixels.</div>
   {% if perms.indexer.can_vote and revision.created > settings.NEW_SITE_COVER_CREATION_DATE and not settings.BETA %}
@@ -68,9 +68,9 @@ Reviewing :: {{ revision }}
 {% endif %}
 {% if revision.is_wraparound %}
 </div>
-<div class="cover_medium">
+<div>
   <div>The selected front part of the above full cover:</div>
-  <a href="{{ revison.issue.get_absolute_url }}">{{ cover_front_tag }}</a>
+  <a class="border border-gray-500 shadow-md" href="{{ revison.issue.get_absolute_url }}">{{ cover_front_tag }}</a>
 {% endif %}
 
   <div>
