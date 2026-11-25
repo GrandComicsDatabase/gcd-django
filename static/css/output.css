@@ -1512,6 +1512,10 @@ form :is(input, select, textarea) {
   margin-left: auto;
 }
 
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
 .mr-3 {
   margin-right: 0.75rem;
 }
