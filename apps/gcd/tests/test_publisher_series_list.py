@@ -6,6 +6,7 @@ import json
 import re
 
 import pytest
+from django.contrib.auth.models import User
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
@@ -72,6 +73,12 @@ def publisher(places):
 def one_language_publisher(places):
     """A publisher with the series of ONE_LANGUAGE_SERIES, in one language."""
     return add_publisher('Other Test Publisher', ONE_LANGUAGE_SERIES)
+
+
+@pytest.fixture
+def member(db):
+    """A user to sign in, since only a signed-in user may download a list."""
+    return User.objects.create_user('publisher_series_member')
 
 
 def table_head(response):
@@ -173,8 +180,9 @@ def test_language_heading_sorts_by_name_then_series_and_year(client,
 @pytest.mark.parametrize('page', PAGES)
 @pytest.mark.parametrize('export', ['csv', 'json'])
 def test_download_has_the_language_when_the_page_has_it(
-        client, publisher, one_language_publisher, page, export):
+        client, member, publisher, one_language_publisher, page, export):
     """The download has the language by name only when the page shows it."""
+    client.force_login(member)
     rows = download(client, publisher.get_absolute_url() + page, export)
     assert {('%s %s' % (row.get('Series'), row.get('Year')),
              row.get('Language')) for row in rows} == SHOWN
