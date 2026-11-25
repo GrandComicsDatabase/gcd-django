@@ -127,6 +127,12 @@ def _prices(changeset):
     return [revision.price for revision in _revisions(changeset)]
 
 
+def _page_counts(changeset):
+    """The page count of each revision of changeset, by revision id."""
+    return {revision.id: revision.page_count
+            for revision in _revisions(changeset)}
+
+
 def _sent_back(changeset, approver):
     """Submit changeset, let approver review it and send it back."""
     changeset.submit()
@@ -1091,12 +1097,14 @@ def test_lock_errors_while_working_on_a_change(client, change, monkeypatch,
                                                code, message):
     """
     A deadlock or a long wait gives a message, with nothing written; any
-    other database error stays an error.
+    other database error stays an error.  Every revision keeps its value,
+    and the operation goes through when it is tried again.
     """
     def fail(*args, **kwargs):
         """Fail as the database does."""
         raise OperationalError(code, 'database error')
 
+    before = _page_counts(change)
     monkeypatch.setattr(bulk, '_write_record', fail)
     if message:
         assert bulk.CHANGE_BUSY in _text(_operate(client, change, PAGES))
@@ -1106,5 +1114,6 @@ def test_lock_errors_while_working_on_a_change(client, change, monkeypatch,
 
     monkeypatch.undo()
     assert change.comments.count() == 1
-    assert {revision.page_count for revision in _revisions(change)} != \
-        {Decimal('36')}
+    assert _page_counts(change) == before
+    assert _operate(client, change, PAGES).status_code == 302
+    assert _page_counts(change) == dict.fromkeys(before, Decimal('36'))
