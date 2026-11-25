@@ -3,9 +3,9 @@ from datetime import timedelta
 
 import pytest
 
-from apps.gcd.models import Issue
+from apps.gcd.models import Issue, Story
 from apps.oi.bulk import exact_diff
-from apps.oi.models import IssueRevision, RevisionLock
+from apps.oi.models import IssueRevision, RevisionLock, StoryRevision
 
 
 @pytest.mark.django_db
@@ -154,6 +154,31 @@ def test_points_leave_out_the_anchors(sequence_change, approved_stories):
     changeset.issuerevisions.filter(
       issue=approved_stories[0].issue).update(notes='Not from this change',
                                               price='9.99 USD')
+
+    changeset.calculate_imps()
+
+    assert changeset.imps == 1
+
+
+@pytest.mark.django_db
+def test_points_of_a_field_that_another_revision_changed(sequence_change,
+                                                         approved_stories):
+    """
+    A script of only '?' in one sequence earns nothing; "no script" in
+    another sequence, which left its empty script alone, earns its
+    point, as in a normal edit.
+    """
+    second = approved_stories[1]
+    Story.objects.filter(id=second.id).update(script='')
+    StoryRevision.objects.filter(story=second).update(script='')
+    second.refresh_from_db()
+    changeset = sequence_change(approved_stories)
+    first = changeset.storyrevisions.get(story=approved_stories[0])
+    first.script = '?'
+    first.save()
+    other = changeset.storyrevisions.get(story=second)
+    other.no_script = True
+    other.save()
 
     changeset.calculate_imps()
 

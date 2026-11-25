@@ -6,7 +6,6 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 from apps.oi import states
 from apps.oi.models import Changeset, CTYPES
@@ -119,11 +118,11 @@ def clear_reservations(request=None, changes=None):
                 if story.is_changed:
                     changed = True
 
-        info_text = 'Created: %s <a href="%s%s">Change: %s</a> Indexer: %s' % \
-          (str(changeset.created), settings.SITE_URL,
-           urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
-           str(changeset),
-           str(changeset.indexer.indexer))
+        info_text = format_html(
+          'Created: {} <a href="{}{}">Change: {}</a> Indexer: {}',
+          changeset.created, settings.SITE_URL,
+          urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
+          changeset, changeset.indexer.indexer)
         if changed:
             notes = ('This is an automatic submit for an old reservation. If '
                      'the change contains useful information but needs '
@@ -137,11 +136,10 @@ def clear_reservations(request=None, changes=None):
                 notes += '\nThe saved data does not pass the edit form: ' + \
                     reasons
                 info_text = format_html('{} The saved data does not pass the '
-                                        'edit form: {}', mark_safe(info_text),
-                                        reasons)
+                                        'edit form: {}', info_text, reasons)
             if not SCRIPT_DEBUG:
                 changeset.submit(notes=notes)
-            submitted_list.append(mark_safe(info_text))
+            submitted_list.append(info_text)
         else:
             if revision:
                 notes = ('This is an automatic discard of an unchanged '
@@ -151,7 +149,7 @@ def clear_reservations(request=None, changes=None):
                          'which was not submitted in time.')
             if not SCRIPT_DEBUG:
                 changeset.discard(changeset.indexer, notes=notes)
-            discarded_list.append(mark_safe(info_text))
+            discarded_list.append(info_text)
     return render(request, 'oi/edit/clear_reservations.html',
                   {'submitted_list': submitted_list,
                    'discarded_list': discarded_list})

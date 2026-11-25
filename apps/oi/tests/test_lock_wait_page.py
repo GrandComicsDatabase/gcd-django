@@ -1,6 +1,6 @@
 """
 When the database gives up on a lock wait or breaks a deadlock, the user gets
-a page that says so, and the request has saved nothing.
+an error page that asks to try again, and the request has saved nothing.
 """
 import pytest
 from django.db import OperationalError
@@ -10,8 +10,8 @@ from apps.indexer.models import Error
 from urls import urlpatterns as site_patterns
 
 KEY = 'written by the failed request'
-MESSAGE = ('Another request was saving the same data at this moment, so '
-           'nothing was saved. Please try again.')
+MESSAGE = ('An error occurred when processing the request. Please check and '
+           'try again.')
 
 
 def _failing_view(request, code):
