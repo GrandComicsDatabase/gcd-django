@@ -66,8 +66,9 @@ def _apply(client, token=TOKEN, data=PRICE):
 
 def _together(*calls):
     """
-    Run calls in threads that start together; return their results, or
-    the exceptions they raised.
+    Run calls in threads that start together and return their results.
+    Fail if one of them is still running after its join, and raise the
+    exception that one of them raised.
     """
     barrier = threading.Barrier(len(calls))
     results = [None] * len(calls)
@@ -87,6 +88,11 @@ def _together(*calls):
         thread.start()
     for thread in threads:
         thread.join(60)
+    assert not any(thread.is_alive() for thread in threads), \
+        'a request did not end in 60 seconds'
+    for result in results:
+        if isinstance(result, Exception):
+            raise result
     return results
 
 
