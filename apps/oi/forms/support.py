@@ -524,6 +524,14 @@ ISSUE_LABELS = {
     'no_brand': "No publisher's brand emblem",
 }
 
+# a migrated text credit can bring a description such as "Editor"
+CREDIT_NAME_LABEL = (
+    'Credit description: '
+    '<button type="button" class="mx-0 btn-blue-editing inline" '
+    'onclick="const field = this.parentElement.control; '
+    'field.value = field.value.toLowerCase()">To Lower Case</button> '
+    )
+
 ISSUE_HELP_TEXTS = {
     'number':
         'The issue number (or other label) as it appears in the indicia. '
