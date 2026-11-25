@@ -13,7 +13,7 @@ import django.urls as urlresolvers
 from django.http import HttpResponse, HttpResponseBadRequest, \
                         HttpResponseRedirect, JsonResponse
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -857,15 +857,22 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
                                                              story_id,
                                                              cache_size)
         _sync_cached_order(request, 'cached_stories')
-        return HttpResponseRedirect(request.META['HTTP_REFERER'] + '#%s' %
-                                    story_id)
+        if 'HTTP_REFERER' in request.META:
+            return HttpResponseRedirect(request.META['HTTP_REFERER'] + '#%s' %
+                                        story_id)
     if cover_story_id:
         cached_covers = request.session.get('cached_covers', None)
         request.session['cached_covers'] = _process_caching(cached_covers,
                                                             cover_story_id,
                                                             cache_size)
         _sync_cached_order(request, 'cached_covers')
-    return HttpResponseRedirect(request.META['HTTP_REFERER'])
+    if 'HTTP_REFERER' in request.META:
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
+    if not issue_id:
+        issue_id = get_object_or_404(
+          Story, id=story_id or cover_story_id).issue_id
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'show_issue', kwargs={'issue_id': issue_id}))
 
 
 ##############################################################################
@@ -1282,7 +1289,7 @@ class KeywordAutocomplete(LoginRequiredMixin,
         if not auth:
             return False
 
-        if request.user.has_perm('gcd.can_vote'):
+        if request.user.has_perm('indexer.can_vote'):
             return True
 
         return False
@@ -1723,7 +1730,7 @@ def filter_issues(request, issues, story_type_filter=False,
                          language_filter=language_filter
                          )
     issues = filter.qs
-    if not issues:
+    if not issues.exists():
         filter.form.fields.pop('publisher', None)
         filter.form.fields.pop('country', None)
         filter.form.fields.pop('language', None)
@@ -1748,7 +1755,7 @@ def filter_sequences(request, sequences, language_filter=True):
                             publisher='issue__series__publisher',
                             language_filter=language_filter)
     sequences = filter.qs
-    if not sequences:
+    if not sequences.exists():
         filter.form.fields.pop('publisher', None)
         filter.form.fields.pop('country', None)
         filter.form.fields.pop('language', None)
