@@ -68,8 +68,9 @@ def _apply(client, token=TOKEN, data=PRICE):
 
 def _together(*calls):
     """
-    Run calls in threads that start together; return their results, or
-    the exceptions they raised.
+    Run calls in threads that start together and return their results.
+    Fail if one of them is still running after its join, and raise the
+    exception that one of them raised.
     """
     barrier = threading.Barrier(len(calls))
     results = [None] * len(calls)
@@ -89,6 +90,11 @@ def _together(*calls):
         thread.start()
     for thread in threads:
         thread.join(60)
+    assert not any(thread.is_alive() for thread in threads), \
+        'a request did not end in 60 seconds'
+    for result in results:
+        if isinstance(result, Exception):
+            raise result
     return results
 
 
@@ -155,14 +161,26 @@ def test_requests_at_the_same_moment(settings,
     twin = Client()
     twin.cookies = first.cookies
 
-    results = _together(lambda: _apply(first, token='twice'),
-                        lambda: _apply(twin, token='twice'))
+    # The indexer row is held until both requests wait for it, so both
+    # have passed the check of the page: apply refuses the second one,
+    # after the first one ends.
+    results, threads = {}, []
+    try:
+        with _held(_hold_indexer, reserving_indexer):
+            threads.append(_started(results, 'first', lambda: _apply(
+              first, token='twice')))
+            threads.append(_started(results, 'twin', lambda: _apply(
+              twin, token='twice')))
+            _wait_for_lock_wait(Indexer._meta.db_table, waiting=2)
+    finally:
+        for thread in threads:
+            thread.join(90)
 
     assert Changeset.objects.filter(change_type=CTYPES['bulk'],
                                     state=states.OPEN).count() == 1
-    assert sum(result.status_code == 302 for result in results) == 1
+    assert sum(result.status_code == 302 for result in results.values()) == 1
     assert any('This selection was applied already' in
-               result.content.decode() for result in results)
+               result.content.decode() for result in results.values())
 
     # Two tabs of one indexer, each with its own list, apply at once: the
     # requests take turns, and the second finds the first change active.
@@ -355,6 +373,7 @@ def test_requests_at_the_same_moment(settings,
                                          data=FREQUENCY))
         waits = _lock_waits_until_done(thread, 'gcd_issue')
     thread.join(90)
+    assert not thread.is_alive(), 'the Apply did not end'
 
     assert waits == 0
     assert results['apply'].status_code == 302
@@ -695,18 +714,19 @@ def _lock_waits(cursor, table):
     return cursor.fetchone()[0]
 
 
-def _wait_for_lock_wait(table, timeout=30):
+def _wait_for_lock_wait(table, waiting=1, timeout=30):
     """
-    Wait until a transaction waits for a lock on a row of table, as the
-    server shows it.
+    Wait until waiting transactions, one by default, wait for a lock on a
+    row of table, as the server shows it.
     """
     end = time.monotonic() + timeout
     with connection.cursor() as cursor:
         while time.monotonic() < end:
-            if _lock_waits(cursor, table):
+            if _lock_waits(cursor, table) >= waiting:
                 return
             time.sleep(0.05)
-    raise AssertionError('no transaction waits for %s' % table)
+    raise AssertionError('fewer than %d transactions wait for %s'
+                         % (waiting, table))
 
 
 def _row_locks(table):
@@ -720,10 +740,14 @@ def _row_locks(table):
 
 
 def _lock_waits_until_done(thread, table):
-    """Return how often a lock wait on table was seen while thread ran."""
+    """
+    Return how often a lock wait on table was seen while thread ran, for
+    at most 30 seconds.
+    """
     seen = 0
+    end = time.monotonic() + 30
     with connection.cursor() as cursor:
-        while thread.is_alive():
+        while thread.is_alive() and time.monotonic() < end:
             seen += _lock_waits(cursor, table)
             time.sleep(0.02)
     return seen
