@@ -131,7 +131,11 @@
     {{ publisher.notes|render_markdown }}
   {% endif %}
 {% endif %}
+{% if page.paginator.count %}
 {% render_table table %}
+{% else %}
+<p>No series found.</p>
+{% endif %}
 {% endblock content %}
 
 {% block editing %}
