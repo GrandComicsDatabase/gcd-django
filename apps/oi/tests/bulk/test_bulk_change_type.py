@@ -201,6 +201,29 @@ def test_old_bulk_change_is_discarded_not_submitted(
 
 
 @pytest.mark.django_db
+def test_clearing_page_escapes_the_name_of_a_change(
+        client, bulk_change, approved_issues, any_approver):
+    """
+    The name of a change, here from the variant name of its first issue,
+    shows as text on the clearing page, in the link to the change.
+    """
+    changeset = bulk_change(approved_issues[:1], IssueRevision,
+                            variant_name='<b>Variant</b>')
+    Changeset.objects.filter(id=changeset.id).update(
+      created=timezone.now() - timedelta(weeks=4))
+    any_approver.user_permissions.add(Permission.objects.get(
+      content_type__app_label='oi', codename='change_ongoingreservation'))
+    client.force_login(any_approver)
+
+    response = client.get(reverse('clear_issues'))
+
+    content = response.content.decode()
+    assert '<b>Variant</b>' not in content
+    assert 'Change: %s</a>' % escape(str(changeset)) in content
+    assert reverse('compare', kwargs={'id': changeset.id}) in content
+
+
+@pytest.mark.django_db
 def test_issue_bulk_change_keeps_its_behaviour(bulk_change,
                                                approved_issues):
     """A historical issue bulk change keeps its name and points."""
