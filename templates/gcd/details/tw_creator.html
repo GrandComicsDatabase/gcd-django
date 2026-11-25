@@ -19,9 +19,14 @@
   <tr>
     <td class="align-top">
       <div class="w-[100px] sm:w-[150px] sm:min-w-[150px]">
+        {% if creator.portrait %}
         <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img
           class="border-2 rounded-full" src="{{ creator.get_portrait_url }}"
-          alt="{% if creator.portrait %}Portrait{% endif %}">
+          alt="Change of the portrait"></a>
+        {% else %}
+        <img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}"
+          alt="">
+        {% endif %}
       </div>
     </td>
     <td>
@@ -248,7 +253,8 @@
   {% if creator.portrait %}
   <div class="m-2">
     <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img
-      src="{{ creator.portrait.scaled_image.url }}" alt="Portrait"></a>
+      src="{{ creator.portrait.scaled_image.url }}"
+      alt="Change of the portrait"></a>
   </div>
   {% endif %}
   {% if creator.samplescan %}
