@@ -19,6 +19,12 @@ ICON = re.compile(r'\{%\s*static\s|STATIC_URL|show_country_info')
 ALT = re.compile(r'\salt\s*=', re.IGNORECASE)
 THREE_BARS = re.compile(
     r'\{%\s*include\s+["\']gcd/bits/tw_three_bars\.html["\']')
+# A link or a button and what it holds, up to its end tag.
+LINK_OR_BUTTON = re.compile(
+    r'(?P<tag>%s)(?P<content>.*?)</(?P=name)>'
+    % (START_TAG % '(?P<name>a|button)'), re.IGNORECASE | re.DOTALL)
+DRAWING = re.compile(r'<svg\b.*?</svg>', re.IGNORECASE | re.DOTALL)
+NAME = re.compile(r'\s(?:aria-label|title)="[^"]+"', re.IGNORECASE)
 
 
 def _place(path, text, position):
@@ -64,6 +70,25 @@ def _buttons_with_three_bars():
     return buttons
 
 
+def _drawings_without_name():
+    """
+    Return the place and the start tag of each link or button of the
+    templates that holds only a drawing and has no name of its own.
+    """
+    missing = []
+    for path in TEMPLATES:
+        text = path.read_text(encoding='utf-8')
+        for element in LINK_OR_BUTTON.finditer(text):
+            content = element.group('content')
+            only_a_drawing = (DRAWING.search(content)
+                              and not DRAWING.sub('', content).strip())
+            if only_a_drawing and not NAME.search(element.group('tag')):
+                missing.append('%s %s' % (
+                    _place(path, text, element.start()),
+                    ' '.join(element.group('tag').split())))
+    return missing
+
+
 def test_every_icon_of_the_templates_has_an_alt():
     """
     An icon needs an alt: empty when the text next to it says the same,
@@ -89,3 +114,11 @@ def test_every_button_with_the_drawing_of_three_bars_has_a_name():
     assert buttons
     assert [place for place, tag in buttons
             if not re.search(r'\saria-label="[^"]+"', tag)] == []
+
+
+def test_every_link_or_button_with_only_a_drawing_has_a_name():
+    """
+    A drawing written in the template, such as that of the links that
+    show the items as a list or as a grid, gives its element no name.
+    """
+    assert _drawings_without_name() == []
