@@ -7101,11 +7101,19 @@ class StoryRevision(Revision):
                 # Changed StoryCredits of this type give also positive
                 # is_changed and therefore corresponding IMP here.
                 if field_name == name and getattr(self, field_name) == '?':
-                    if not self.story_credit_revisions.filter(
-                      credit_type_id=CREDIT_TYPES[name]).exists():
+                    if not self._credits_changed(name):
                         return 0
                 return 1
         return 0
+
+    def _credits_changed(self, credit_type):
+        """Return whether a StoryCredit of the credit type changed."""
+        for credit in self.story_credit_revisions.filter(
+          credit_type_id=CREDIT_TYPES[credit_type]):
+            credit.compare_changes()
+            if credit.is_changed:
+                return True
+        return False
 
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue
