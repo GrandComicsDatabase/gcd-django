@@ -4432,7 +4432,9 @@ class IssueRevision(Revision):
         return self.changeset.issuerevisions.filter(series=self.series)
 
     def _same_series_open_with_after(self):
-        return self._same_series_revisions().filter(after__isnull=False,
+        # an 'after' in another series, e.g. of a new issue moved to another
+        # series, does not place the issue
+        return self._same_series_revisions().filter(after__series=self.series,
                                                     committed=None)
 
     def _open_prereq_revisions(self):
@@ -4562,6 +4564,8 @@ class IssueRevision(Revision):
         #       committing the variant_of_rev if necessary.
         #       Idea may be good for other new dependent object situations.
         if self.added or self.series_changed:
+            if self.after and self.after.series_id != self.series_id:
+                self.after = None
             if not self.after:
                 # If we're handling a run of issues, this is the
                 # previous issue in the run, if any.
@@ -4805,6 +4809,13 @@ class IssueRevision(Revision):
                                                 remainder_note.find(']')]
                             else:
                                 note = remainder_note
+                    elif (note.startswith('credited as ')
+                          and end_note != -1
+                          and '(' not in note):
+                        # "(credited as X)" is how the site shows a credit
+                        is_credited = True
+                        credited_as = note[len('credited as '):].strip()
+                        note = remainder_note
                     else:
                         note = with_note[with_note.find('('):].strip()
                 else:
@@ -4844,6 +4855,9 @@ class IssueRevision(Revision):
                         note = note[1:-1]
                     if note == '':
                         note = 'editor'
+                    if credited_as == creator.name:
+                        # the credit form refuses the creator name here
+                        credited_as = ''
                     credit_revision = IssueCreditRevision(
                         changeset=self.changeset,
                         issue_revision_id=self.id,
@@ -5658,7 +5672,7 @@ class StoryCharacterRevision(Revision):
         but a different translation. A translation in kept, a set of pairs
         of character id and universe id, gets no revision.
         """
-        language = story_revision.issue.series.language
+        language = story_revision.language
         translations = character.character.character.translations(
             language)
         if translations.count() == 0 and \
@@ -6209,7 +6223,7 @@ class StoryRevision(Revision):
                 revision.type = StoryType.objects.get(
                   name='cover reprint (on interior page)')
         credits = story.active_credits
-        if revision.issue.series.language != story.issue.series.language:
+        if issue_revision.series.language != story.issue.series.language:
             if revision.letters:
                 revision.letters = '?'
             revision.title = ''
@@ -6223,7 +6237,7 @@ class StoryRevision(Revision):
                 # extend to StoryArcs
                 # in particular, use .translations(language)
                 translations = feature_name.feature.translations().filter(
-                  to_feature__language=revision.issue.series.language)
+                  to_feature__language=issue_revision.series.language)
                 if translations.count() == 1:
                     # revision is a translation from original
                     revision.feature_name.add(translations.get()
@@ -6232,12 +6246,12 @@ class StoryRevision(Revision):
                       feature_name.feature.translated_from() is not None):
                     translated_from = feature_name.feature.translated_from()
                     if translated_from.language == \
-                       revision.issue.series.language:
+                       issue_revision.series.language:
                         # revision is the source of a translation
                         revision.feature_name.add(translated_from
                                                   .official_name())
                     else:
-                        lang = revision.issue.series.language
+                        lang = issue_revision.series.language
                         other_translations = (
                             feature_name.feature.translated_from()
                             .translations()
@@ -6829,6 +6843,13 @@ class StoryRevision(Revision):
                                                   remainder_note.find(']')]
                                 else:
                                     note = remainder_note
+                        elif (note.startswith('credited as ')
+                              and end_note != -1
+                              and '(' not in note):
+                            # "(credited as X)" is how the site shows a credit
+                            is_credited = True
+                            credited_as = note[len('credited as '):].strip()
+                            note = remainder_note
                         elif note in ['signed', 'signert', 'signiert']:
                             is_signed = True
                             note = ''
@@ -6839,6 +6860,15 @@ class StoryRevision(Revision):
                                                 remainder_note.find(']')]
                                 else:
                                     note = remainder_note
+                        elif (note.startswith('signed as ')
+                              and end_note != -1
+                              and '(' not in note
+                              and '[' not in credit):
+                            # "(signed as X)" is how the site shows a
+                            # signature; a name in [as ...] would replace X
+                            is_signed = True
+                            signed_as = note[len('signed as '):].strip()
+                            note = remainder_note
                         elif note == 'painted':
                             note = 'painting'
                         elif (note == 'signed, credited' or
@@ -6894,6 +6924,9 @@ class StoryRevision(Revision):
                                                   is_official_name=True)
                         if note and note[0] == '(' and note[-1] == ')':
                             note = note[1:-1]
+                        if credited_as == creator.name:
+                            # the credit form refuses the creator name here
+                            credited_as = ''
                         credit_revision = StoryCreditRevision(
                           changeset=self.changeset,
                           story_revision_id=self.id,
@@ -7046,6 +7079,17 @@ class StoryRevision(Revision):
             self._saved_my_issue_revision = \
                 self.changeset.issuerevisions.filter(issue=self.issue)[0]
         return self._saved_my_issue_revision
+
+    @property
+    def language(self):
+        """
+        The language of the series of this sequence.
+
+        The sequence of a variant that is not approved yet has no issue, so
+        the series comes from the issue revision of the variant.
+        """
+        issue = self.issue or self.my_issue_revision
+        return issue.series.language
 
     def moveable(self):
         """
