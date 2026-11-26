@@ -4,7 +4,7 @@
 {% load static %}
 {% load credits %}
 
-{% block title %} GCD :: Covers To Replace {% endblock %}
+{% block title %} GCD :: {% trans "Covers To Replace" %} {% endblock %}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
@@ -17,14 +17,21 @@
 <div class="left">
   {% trans "Covers marked for replacement" %}
   {% if starts_with %}
+  {% blocktrans trimmed %}
   for series starting with {{ starts_with }}
+  {% endblocktrans %}
   {% endif %}
 </div>
 </h1>
 
 <div class="item_id">
   <div class="left">
-  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers needing replacement.
+  {% with start=page.start_index end=page.end_index %}
+  {% blocktrans trimmed with total=page.paginator.count %}
+  Displaying {{ start }} to {{ end }} of {{ total }} covers needing
+  replacement.
+  {% endblocktrans %}
+  {% endwith %}
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}
@@ -33,7 +40,7 @@
 <div class="item_id">
   <div class="left pagination">
   {% if starts_with %}
-  <a href="../../">all marked covers</a>
+  <a href="../../">{% trans "all marked covers" %}</a>
   {% endif %}
   {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"|make_list %}
   |
@@ -50,9 +57,12 @@
   </div>
 </div>
 <div id="info_links">
+  {% blocktrans trimmed %}
   A click on the cover leads to the large cover view, a click on the issue name to the issue data, or one can replace the cover directly.
+  {% endblocktrans %}
 </div>
 
+{% trans "upload replacement cover" as upload %}
 <table id="covers">
   <tr>
   {% for cover, issue, tag in tags %}
@@ -60,7 +70,7 @@
       <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
       <br/>
       <div class="cover_caption">
-        <a href="{{ cover.get_status_url }}">upload replacement cover</a><br>
+        <a href="{{ cover.get_status_url }}">{{ upload }}</a><br>
         <a href="{{ issue.get_absolute_url }}">{{ issue.series.name }} #{{ issue.display_number }}</a><br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }})
       </div>
@@ -81,7 +91,7 @@
 <div id="item_id_footer_replace_bottom" class="item_id">
   <div class="left pagination">
   {% if starts_with %}
-  <a href="../../">all marked covers</a>
+  <a href="../../">{% trans "all marked covers" %}</a>
   {% endif %}
   {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"|make_list %}
   |

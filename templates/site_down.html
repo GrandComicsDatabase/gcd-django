@@ -1,22 +1,24 @@
-<html>
+{% load i18n %}<html>
 <head>
-<title>GCD Down for Upgrade</title>
+<title>{% trans "GCD Down for Upgrade" %}</title>
 </head>
 <body>
-<h1>The GCD is Down for Maintenance</h1>
+<h1>{% trans "The GCD is Down for Maintenance" %}</h1>
 <p>
 {{ settings.SITE_DOWN_MESSAGE }}
 </p>
 <p>
 {% if settings.SITE_BACK_UP_AT %}
-We expect the site to be back up at {{ settings.SITE_BACK_UP_AT }}.  Please
+{% blocktrans trimmed with back_up_at=settings.SITE_BACK_UP_AT %}
+We expect the site to be back up at {{ back_up_at }}.  Please
 check back for updates.
+{% endblocktrans %}
 {% else %}
-We are working to bring the site back online as soon as possible.
+{% trans "We are working to bring the site back online as soon as possible." %}
 {% endif %}
 <p>
-thanks,<br>
--The GCD Tech Team
+{% trans "thanks," %}<br>
+{% trans "-The GCD Tech Team" %}
 </p>
 
 </body>

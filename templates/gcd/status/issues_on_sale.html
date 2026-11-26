@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 {% load static %}
+{% load i18n %}
 {% load django_tables2 %}
 
 {% block title %}
@@ -30,7 +31,25 @@
 
 <div class="item_id">
   <div class="flex_left" class="item_data">
-  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} issue{{ page.paginator.count|pluralize }} on-sale {% if date %} that month{% else %}the week {{ dates }}{%  endif %}.
+  {% with start=page.start_index end=page.end_index %}
+  {% if date %}
+  {% blocktrans trimmed count counter=page.paginator.count %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} issue on-sale
+  that month.
+  {% plural %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} issues on-sale
+  that month.
+  {% endblocktrans %}
+  {% else %}
+  {% blocktrans trimmed count counter=page.paginator.count %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} issue on-sale
+  the week {{ dates }}.
+  {% plural %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} issues on-sale
+  the week {{ dates }}.
+  {% endblocktrans %}
+  {% endif %}
+  {% endwith %}
   </div>
   <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
@@ -38,20 +57,22 @@
 </div>
 <div class="left" style="margin-top: 0.5em">
   {% if variant == True %}
-  <a href="{{ path }}"><button>Show Without Variants</button></a>
+  <a href="{{ path }}"><button>{% trans "Show Without Variants" %}</button></a>
   {% else %}
-  <a href="{{ path }}"><button>Show With Variants</button></a>
+  <a href="{{ path }}"><button>{% trans "Show With Variants" %}</button></a>
   {% endif %}
 </div>
 {% if dates %}
 <div class="right">
   {% if MYCOMICS %}
   <div class="www_comics_cross_link">
-    <a href="http://www.comics.org{{ request.path }}">Weekly on-sale list at www.comics.org</a>
+    {% trans "Weekly on-sale list at www.comics.org" as cross_link %}
+    <a href="http://www.comics.org{{ request.path }}">{{ cross_link }}</a>
   </div>
   {% else %}
   <div class="my_comics_cross_link">
-    <a href="http://my.comics.org{{ request.path }}">Weekly on-sale list at my.comics.org</a>
+    {% trans "Weekly on-sale list at my.comics.org" as cross_link %}
+    <a href="http://my.comics.org{{ request.path }}">{{ cross_link }}</a>
   </div>
   {% endif %}
 </div>
@@ -65,7 +86,7 @@
   {% if filter %}
 <form method="get">
     {{ filter.form }}
- <input type="submit" value='filter results'/>
+ <input type="submit" value='{% trans "filter results" %}'/>
 </form>
   {% endif %}
   {% render_table table %}
@@ -84,7 +105,15 @@
 
 <div class="item_id">
   <div class="left" class="item_data">
-  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} issue{{ page.paginator.count|pluralize }} on-sale the week from {{ dates }}.
+  {% with start=page.start_index end=page.end_index %}
+  {% blocktrans trimmed count counter=page.paginator.count %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} issue on-sale
+  the week from {{ dates }}.
+  {% plural %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} issues on-sale
+  the week from {{ dates }}.
+  {% endblocktrans %}
+  {% endwith %}
   </div>
   {% include "gcd/bits/pagination_bar.html" %}
 </div>

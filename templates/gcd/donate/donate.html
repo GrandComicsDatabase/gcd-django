@@ -1,5 +1,6 @@
 {% extends "gcd/tw_base_view.html" %}
 {% load static %}
+{% load i18n %}
 {% block head %}
 {{ block.super }}
 <script
@@ -7,22 +8,30 @@
 </script>
 {% endblock %}
 
-{% block title %} GCD :: Donations {% endblock %}
+{% block title %} GCD :: {% trans "Donations" %} {% endblock %}
 
 {% block view_body %}
 
-<h2>Donations</h2>
+<h2>{% trans "Donations" %}</h2>
 <p class="mb-2">
+{% blocktrans trimmed %}
 The GCD is available for public use within our licensing guidelines. However, operating the website is not free for the Grand Comicbook Database Foundation and your donations are needed to meet our ongoing costs. Please note that neither the GCD nor the Foundation have any paid employees -- 100% of your donation goes directly to making the GCD appear in your browser window and to furthering research in and education on comics and their history.
+{% endblocktrans %}
 </p>
 <p class="mb-2">
+{% blocktrans trimmed %}
 Donations are accepted from most countries via PayPal. In order to receive official acknowledgment of your donation, you must include a (non-email) mailing address with your contribution.
+{% endblocktrans %}
 </p>
 <p class="mb-2">
+{% blocktrans trimmed %}
 The Grand Comicbook Database Foundation, Inc. is a 501(c)3, non-profit organization, incorporated in the state of Arkansas, USA. Your donations may be tax deductible. Please contact your tax advisor for further information. A donation to the GCD does not constitute a purchase of goods, services or membership. A donation does not entitle the donor to any rights or privileges.
+{% endblocktrans %}
 </p>
 <p class="mb-2">
+{% blocktrans trimmed %}
 The Grand Comicbook Database Foundation Board and the membership of the GCD thank you for your support in whatever form it takes and we hope that we continue to meet your research needs.
+{% endblocktrans %}
 </p>
 <table class="w-full border border-gray-400 mb-2">
   <tr>
