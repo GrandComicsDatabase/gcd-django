@@ -67,6 +67,26 @@ def test_exact_diff_finds_the_previous_revision_of_a_discard(
 
 
 @pytest.mark.django_db
+def test_exact_diff_of_a_discard_on_a_tie(bulk_change, approved_issues,
+                                          approve_change):
+    """
+    A revision approved after a discarded one but stored with the same
+    time is not its previous revision: a tie goes by id.
+    """
+    issue = approved_issues[0]
+    changeset = bulk_change([issue], IssueRevision, price='0.12 USD')
+    changeset.discard(changeset.indexer)
+    revision = changeset.issuerevisions.get()
+    later = bulk_change([issue], IssueRevision, price='0.15 USD')
+    approve_change(later)
+    later.issuerevisions.update(created=revision.created)
+
+    diff = exact_diff(IssueRevision, [revision.id])
+
+    assert diff == {revision.id: {'price': ('0.10 USD', '0.12 USD')}}
+
+
+@pytest.mark.django_db
 def test_exact_diff_of_a_discard_without_committed_flags(bulk_change,
                                                          approved_issues):
     """
