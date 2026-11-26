@@ -116,10 +116,18 @@ concurrent changes read. It does not give the editor global MySQL privileges
 or root credentials. This hook runs in the database container on a new volume,
 not in an already-populated database. A volume set up by an earlier version of
 the hook keeps its grants: the tests of concurrent changes fail on it with
-error 1142 until the two `GRANT SELECT` statements of
-`.devcontainer/init-test-database.sh` are run on it as the MySQL root user. An
-unexpected test-database permission error should be investigated; it is not a
-reason to grant global privileges or reset a preserved volume.
+error 1142 until these two statements are run on it as the MySQL root user.
+They name the default application account `gcd_dev`; if `MYSQL_USER` sets
+another name, put that name in its place:
+
+```sql
+GRANT SELECT ON performance_schema.data_locks TO 'gcd_dev'@'%';
+GRANT SELECT ON performance_schema.data_lock_waits TO 'gcd_dev'@'%';
+```
+
+They add the two grants without resetting the volume. An unexpected
+test-database permission error should be investigated; it is not a reason to
+grant global privileges or reset a preserved volume.
 
 There is no Docker socket or Docker-in-Docker service in the editor container.
 Use Python commands there, not the Docker-backed `./bin/dev` commands. Manage
