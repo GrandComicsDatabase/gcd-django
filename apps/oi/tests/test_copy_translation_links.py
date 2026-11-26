@@ -1,7 +1,7 @@
 """A character or a group goes to another language by its translation."""
 import pytest
 
-from apps.gcd.models import Issue, Series
+from apps.gcd.models import Issue, Series, StoryCharacter, StoryGroup
 from apps.gcd.models.character import (
     Character, CharacterNameDetail, CharacterRelation, CharacterRelationType,
     Group, GroupNameDetail, GroupRelation, GroupRelationType)
@@ -85,3 +85,61 @@ def test_other_relations_are_no_translations(
     assert copied is not None
     assert copied.character.name == 'Spinne'
     assert [name.name for name in copied.group_name.all()] == ['Spinne']
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('model', [Character, Group],
+                         ids=['character', 'group'])
+@pytest.mark.parametrize('links, expected', [
+    ([('Item', 'Spinne')], 'Spinne'),
+    ([('Spinne', 'Item')], 'Spinne'),
+    ([('Araignee', 'Item'), ('Araignee', 'Spinne')], 'Spinne'),
+    ([('Item', 'Araignee')], None),
+    ([('Item', 'Spinne'), ('Item', 'Other')], None),
+], ids=['translation', 'source', 'other translation of the source', 'none',
+        'two'])
+def test_translation_in(model, links, expected, any_language, german):
+    """The one object in German is found; with none or two, nothing."""
+    french = Language.objects.create(code='XZF', name='Test French')
+    items = {'Item': new(model, 'Item', any_language),
+             'Araignee': new(model, 'Araignee', french),
+             'Spinne': new(model, 'Spinne', german),
+             'Other': new(model, 'Other', german)}
+    for source, target in links:
+        relate(items[source], items[target], TRANSLATION)
+
+    found = items['Item'].translation_in(german)
+
+    assert getattr(found, 'name', None) == expected
+
+
+@pytest.mark.django_db
+def test_copy_keeps_the_translations(any_added_story, any_added_variant_rev,
+                                     any_language, german):
+    """A sequence copied to German gets the German character and group."""
+    series = Series.objects.get(id=any_added_variant_rev.series_id)
+    series.pk = None
+    series.language = german
+    series.save()
+    any_added_variant_rev.series = series
+    any_added_variant_rev.save()
+    spider = new(Character, 'Spider', any_language)
+    team = new(Group, 'Team', any_language)
+    relate(spider, new(Character, 'Spinne', german), TRANSLATION)
+    relate(new(Group, 'Mannschaft', german), team, TRANSLATION)
+    appearance = StoryCharacter.objects.create(
+      story=any_added_story, character=spider.official_name(), notes='')
+    appearance.group_name.add(team.official_name())
+    StoryGroup.objects.create(story=any_added_story,
+                              group_name=team.official_name(), notes='')
+
+    revision = StoryRevision.copied_revision(
+      any_added_story, any_added_variant_rev.changeset,
+      issue_revision=any_added_variant_rev, copy_characters=True)
+
+    character = revision.story_character_revisions.get()
+    assert character.character.name == 'Spinne'
+    assert [name.name for name in character.group_name.all()] == [
+      'Mannschaft']
+    assert [group.group_name.name for group
+            in revision.story_group_revisions.all()] == ['Mannschaft']

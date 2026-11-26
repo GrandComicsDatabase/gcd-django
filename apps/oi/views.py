@@ -4292,14 +4292,10 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             else:
                 language = revision.language
 
-                translations = group.group_name.group.translations(language)
-                if translations.count() == 0 and \
-                   group.group_name.group.translated_from():
-                    translations = group.group_name.group.translated_from()\
-                                                   .translations(language)
-                if translations.count() == 1 and \
-                   (translations.get().id, group.universe_id) not in kept:
-                    group.group_name = translations.get().official_name()
+                translation = group.group_name.group.translation_in(language)
+                if translation is not None and \
+                   (translation.id, group.universe_id) not in kept:
+                    group.group_name = translation.official_name()
                     new_group = StoryGroupRevision.clone(
                       group, revision.changeset, fork=True,
                       story_revision=revision)
