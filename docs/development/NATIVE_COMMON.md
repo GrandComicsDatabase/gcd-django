@@ -74,7 +74,17 @@ setting to follow the guide. See [MySQL database-level grants](https://dev.mysql
 The tests of concurrent changes read the two Performance Schema tables, so
 the last two grants give `SELECT` on those tables only.
 
-There are no global privileges, grant option, or remote-host account. Django
+MariaDB has no such tables. There the tests read
+`information_schema.INNODB_LOCK_WAITS` and `INNODB_LOCKS`, which need the
+global `PROCESS` privilege, so on a MariaDB server replace the last two grants
+with:
+
+```sql
+GRANT PROCESS ON *.* TO 'gcd_dev'@'127.0.0.1';
+```
+
+Apart from that one on MariaDB, there are no global privileges, grant option,
+or remote-host account. Django
 creates and removes `test_gcd_dev` when running database tests; never store
 valuable data there. Run tests without parallel workers, which require additional
 database names not covered by these grants.
