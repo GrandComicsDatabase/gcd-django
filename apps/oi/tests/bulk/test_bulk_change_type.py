@@ -211,7 +211,8 @@ def test_clearing_page_escapes_the_name_of_a_change(
     changeset = bulk_change(approved_issues[:1], IssueRevision,
                             variant_name='<b>Variant</b>')
     Changeset.objects.filter(id=changeset.id).update(
-      created=timezone.now() - timedelta(weeks=4))
+      created=timezone.now() - timedelta(weeks=4),
+      modified=timezone.now() - timedelta(weeks=4))
     any_approver.user_permissions.add(Permission.objects.get(
       content_type__app_label='oi', codename='change_ongoingreservation'))
     client.force_login(any_approver)
