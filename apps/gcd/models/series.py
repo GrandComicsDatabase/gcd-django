@@ -8,7 +8,7 @@ from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc, format_html
 from django.utils.functional import cached_property
-from django.utils.translation import gettext as _, gettext_lazy
+from django.utils.translation import gettext as _, gettext_lazy, ngettext
 import django_tables2 as tables
 
 from taggit.managers import TaggableManager
@@ -538,7 +538,9 @@ class SeriesTable(tables.Table):
         return (QuerySet, True)
 
     def render_issue_count(self, record):
-        return _('%(issues)d issues (%(indexed)d indexed)') % {
+        return ngettext('%(issues)d issue (%(indexed)d indexed)',
+                        '%(issues)d issues (%(indexed)d indexed)',
+                        record.issue_count) % {
           'issues': record.issue_count,
           'indexed': record.issue_indexed_count}
 

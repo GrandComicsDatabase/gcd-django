@@ -70,10 +70,13 @@
             <li><a href='{{ page_url }}'>{% trans "Character List" %}</a></li>
   {% if series.issues_to_migrate.count %}
     {% url "series_migrate" series_id=series.id as page_url %}
-    {% with count=series.issues_to_migrate.count %}
-            <li>{% blocktrans trimmed %}
-              <a href='{{ page_url }}'>{{ count }} issues</a> with content to
-              migrate.
+    {% with issues=series.issues_to_migrate.count %}
+            <li>{% blocktrans trimmed count counter=issues %}
+              <a href='{{ page_url }}'>{{ counter }} issue</a> with content
+              to migrate.
+            {% plural %}
+              <a href='{{ page_url }}'>{{ counter }} issues</a> with content
+              to migrate.
             {% endblocktrans %}</li>
     {% endwith %}
   {% endif %}
