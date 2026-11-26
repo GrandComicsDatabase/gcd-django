@@ -206,6 +206,7 @@ class Command(BaseCommand):
         publisher, _ = Publisher.objects.get_or_create(
             name=f'{SAMPLE_PREFIX} Example Comics',
             defaults={'notes': 'Deterministic publisher for local development.',
+                      'sort_name': f'{SAMPLE_PREFIX} Example Comics',
                       'country': country},
         )
         series, _ = Series.objects.get_or_create(

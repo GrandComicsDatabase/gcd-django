@@ -84,6 +84,11 @@ class Publisher(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
+    # The name without its leading article, for the sorted lists of the
+    # site.  serialize=False keeps it out of the API, whose serializer
+    # takes every serializable field, and out of dumpdata.
+    sort_name = models.CharField(max_length=255, db_index=True, default='',
+                                 serialize=False)
     country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     # Cached counts.
@@ -520,6 +525,13 @@ class PublisherSearchTable(PublisherBaseTable):
       initial_sort_descending=True,
       attrs={'td': {'class':
                     TW_COLUMN_ALIGN_RIGHT}})
+
+    def order_name(self, query_set, is_descending):
+        """Sort by the name without its leading article."""
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'sort_name',
+                                       'year_began')
+        return (query_set, True)
 
     def render_brand_count(self, value, record):
         return mark_safe('<a href="%sbrands/">%d</a>' %
