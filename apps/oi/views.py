@@ -130,6 +130,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            CreatorDegreeRevisionForm,
                            CreatorSignatureRevisionForm,
                            DateRevisionForm)
+from apps.oi.forms.story import non_comics_sequence_types
 from apps.oi.forms.support import CREATOR_HELP_LINKS
 
 from apps.oi.covers import get_preview_image_tag, \
@@ -5432,10 +5433,11 @@ def _matching_sequence_refusal(issue_revision, story):
     Return why a copy of story cannot be added to issue_revision, or None.
 
     A variant holds a single cover sequence, and only if its cover artwork
-    differs from the base issue.
+    differs from the base issue. Any other issue refuses a type that its
+    non-comics series cannot hold.
     """
     if not issue_revision.variant_of:
-        return None
+        return _non_comics_type_refusal(issue_revision, story)
     if issue_revision.variant_cover_status != VCS_Codes.ARTWORK_DIFFERENCE:
         return 'A cover sequence can only be added to a variant if its ' \
                'cover artwork is different from the base issue.'
@@ -5446,6 +5448,29 @@ def _matching_sequence_refusal(issue_revision, story):
         return 'You cannot add more than one cover sequence to a variant ' \
                'issue.'
     return None
+
+
+def _non_comics_type_refusal(issue_revision, story):
+    """
+    Return why a copy of story cannot be added to issue_revision, or None.
+
+    An issue of a series which is not a comics publication holds only the
+    sequence types offered by its sequence form.
+    """
+    series = issue_revision.series
+    if series.is_comics_publication or issue_revision.issue is None:
+        return None
+    if non_comics_sequence_types(series, issue_revision.issue).filter(
+      id=story.type_id).exists():
+        return None
+    # StoryRevision.copied_revision turns a second cover into a cover reprint
+    if story.type_id == STORY_TYPES['cover'] and \
+       issue_revision.changeset.storyrevisions.filter(
+         issue=issue_revision.issue, type_id=STORY_TYPES['cover'],
+         deleted=False).exists():
+        return None
+    return 'Sequences of type "%s" cannot be added to this issue of a ' \
+           'non-comics publication.' % story.type.name
 
 
 def _reprint_sequence_refusal(reprint, changeset):
