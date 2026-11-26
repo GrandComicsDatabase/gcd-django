@@ -50,7 +50,6 @@ GERMAN = {
     'time you did such a pull.':
         'Laufende Serien koennen <a href="%(url)s">abonniert</a> werden.',
     'Owned': 'Im Besitz',
-    'Tracked in %(total)s collections.': 'In %(total)s Sammlungen erfasst.',
     'Change': 'Aendern',
     'Add This Issue To Collection': 'Heft in eine Sammlung',
     'Issue at www.comics.org': 'Heft auf www.comics.org',
@@ -88,7 +87,72 @@ GERMAN_PLURAL = [
      'Recorded as for sale by %(counter)s users.',
      'Bei %(counter)s Benutzer zu verkaufen.',
      'Bei %(counter)s Benutzern zu verkaufen.'),
+    ('Tracked in %(total)s collection.',
+     'Tracked in %(total)s collections.',
+     'In %(total)s Sammlung erfasst.',
+     'In %(total)s Sammlungen erfasst.'),
 ]
+
+# The three texts with a number of the My Comics box of the issue page, as
+# singular and plural msgids, and their test translations in six languages:
+# the Plural-Forms of the language, then the forms of each text in the
+# order of its plural rule.
+BOX_PLURALS = [
+    ('Tracked in %(total)s collection.', 'Tracked in %(total)s collections.'),
+    ('I own %(count)d copy of this comic.',
+     'I own %(count)d copies of this comic.'),
+    ('Recorded as for sale by %(counter)s user.',
+     'Recorded as for sale by %(counter)s users.'),
+]
+SIX_LANGUAGES = {
+    'it': ('nplurals=2; plural=(n != 1);', [
+      ('Registrato in %(total)s collezione.',
+       'Registrato in %(total)s collezioni.'),
+      ('Possiedo %(count)d copia di questo fumetto.',
+       'Possiedo %(count)d copie di questo fumetto.'),
+      ('In vendita presso %(counter)s utente.',
+       'In vendita presso %(counter)s utenti.')]),
+    'de': ('nplurals=2; plural=(n != 1);', [
+      ('In %(total)s Sammlung erfasst.', 'In %(total)s Sammlungen erfasst.'),
+      ('Ich besitze %(count)d Exemplar dieses Hefts.',
+       'Ich besitze %(count)d Exemplare dieses Hefts.'),
+      ('Bei %(counter)s Benutzer zu verkaufen.',
+       'Bei %(counter)s Benutzern zu verkaufen.')]),
+    'fr': ('nplurals=2; plural=(n > 1);', [
+      ('Suivi dans %(total)s collection.',
+       'Suivi dans %(total)s collections.'),
+      ('Je possede %(count)d exemplaire de ce comic.',
+       'Je possede %(count)d exemplaires de ce comic.'),
+      ('En vente chez %(counter)s utilisateur.',
+       'En vente chez %(counter)s utilisateurs.')]),
+    'es': ('nplurals=2; plural=(n != 1);', [
+      ('Seguido en %(total)s coleccion.', 'Seguido en %(total)s colecciones.'),
+      ('Tengo %(count)d ejemplar de este comic.',
+       'Tengo %(count)d ejemplares de este comic.'),
+      ('En venta por %(counter)s usuario.',
+       'En venta por %(counter)s usuarios.')]),
+    'sr': ('nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && '
+           'n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);', [
+      ('Praceno: %(total)s zbirka.', 'Praceno: %(total)s zbirke.',
+       'Praceno: %(total)s zbirki.'),
+      ('Imam %(count)d primerak ovog stripa.',
+       'Imam %(count)d primerka ovog stripa.',
+       'Imam %(count)d primeraka ovog stripa.'),
+      ('Na prodaju: %(counter)s prodavac.',
+       'Na prodaju: %(counter)s prodavca.',
+       'Na prodaju: %(counter)s prodavaca.')]),
+    'ja': ('nplurals=1; plural=0;', [
+      ('%(total)s korekushon de kanri.',),
+      ('Kono komikku o %(count)d-satsu motte imasu.',),
+      ('%(counter)s-nin ga urimasu.',)]),
+}
+# The numbers shown, and the form that each language takes for each of
+# them: French takes the singular for 0 and 1, Serbian has three forms (1
+# and 21 / 2 to 4 / 0, 5 to 20), Japanese has one.
+COUNTS = (0, 1, 2, 5, 21)
+FORMS = {'it': (1, 0, 1, 1, 1), 'de': (1, 0, 1, 1, 1),
+         'fr': (0, 0, 1, 1, 1), 'es': (1, 0, 1, 1, 1),
+         'sr': (2, 0, 1, 2, 0), 'ja': (0, 0, 0, 0, 0)}
 
 
 def _reload_urls():
@@ -245,10 +309,10 @@ PAGES = {
      'subscribed</a> to a collection.', '>Help</a>']),
   'issue': (
     'show_issue', lambda d: {'issue_id': d['issue'].id}, '',
-    ['In 1 Sammlungen erfasst.', 'Ich besitze 1 Exemplar dieses Hefts.',
+    ['In 1 Sammlung erfasst.', 'Ich besitze 1 Exemplar dieses Hefts.',
      '<br>Bei 1 Benutzer zu verkaufen.', '>Aendern</button>',
      'value="Heft in eine Sammlung"', '>Heft auf www.comics.org</a>'],
-    ['Tracked in 1 collections.', 'I own 1 copy of this comic.',
+    ['Tracked in 1 collection.', 'I own 1 copy of this comic.',
      '<br>Recorded as for sale by 1 user.', '>Change</button>',
      'value="Add This Issue To Collection"',
      '>Issue at www.comics.org</a>']),
@@ -332,3 +396,52 @@ def test_issue_added_message_in_german(client, data):
     assert response.status_code == 302
     assert shown[-1].endswith(' ist jetzt in der Sammlung '
                               '<b>Some Collection</b>.')
+
+
+@pytest.fixture
+def six_languages(settings, tmp_path, german):
+    """
+    Message files of six languages, each with its plural rule, hold the test
+    translations of the three texts with a number of the issue page box.
+    """
+    for lang, (plural_forms, texts) in SIX_LANGUAGES.items():
+        catalog = polib.POFile()
+        catalog.metadata = {'Content-Type': 'text/plain; charset=UTF-8',
+                            'Plural-Forms': plural_forms}
+        for (msgid, plural), forms in zip(BOX_PLURALS, texts):
+            catalog.append(polib.POEntry(msgid=msgid, msgid_plural=plural,
+                                         msgstr_plural=dict(enumerate(forms))))
+        folder = tmp_path / 'six' / lang / 'LC_MESSAGES'
+        folder.mkdir(parents=True)
+        catalog.save_as_mofile(str(folder / 'django.mo'))
+    settings.LOCALE_PATHS = [str(tmp_path / 'six')]
+    settings.LANGUAGES = list(settings.LANGUAGES) + [
+      ('fr', 'French'), ('es', 'Spanish'), ('sr', 'Serbian'),
+      ('ja', 'Japanese')]
+
+
+@pytest.mark.parametrize('lang', SIX_LANGUAGES)
+def test_issue_page_box_numbers_in_six_languages(client, data, six_languages,
+                                                 lang):
+    """
+    For 0, 1, 2, 5 and 21 items, the box shows each text with a number in
+    the form that the plural rule of the language takes for that number.
+    """
+    issue = data['issue']
+    url = reverse('show_issue', kwargs={'issue_id': issue.id})
+    texts = SIX_LANGUAGES[lang][1]
+    for count, form in zip(COUNTS, FORMS[lang]):
+        CollectionItem.objects.filter(issue=issue).delete()
+        for number in range(count):
+            item = CollectionItem.objects.create(issue=issue, own=True,
+                                                 for_sale=True)
+            item.collections.add(data['have'])
+        content = client.get(url + '?lang=' + lang).content.decode()
+        expected = [texts[0][form] % {'total': count}]
+        if count:
+            # without items the box shows neither the copies nor the users
+            expected += [texts[1][form] % {'count': count},
+                         texts[2][form] % {'counter': count}]
+
+        for text in expected:
+            assert text in content, (lang, count, text)

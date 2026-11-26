@@ -22,7 +22,9 @@
   </ul>
   {% endif %}
   <div>
-{% blocktrans trimmed with total=issue.collectionitem_set.count %}
+{% blocktrans trimmed count total=issue.collectionitem_set.count %}
+Tracked in {{ total }} collection.
+{% plural %}
 Tracked in {{ total }} collections.
 {% endblocktrans %}
   {% if request.user.is_authenticated %}
