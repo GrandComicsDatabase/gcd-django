@@ -126,7 +126,16 @@ LANGUAGES = (
   ('nl', 'Dutch'),
   ('pt', 'Portuguese'),
   ('it', 'Italian'),
-  ('sv', 'Swedish')
+  ('sv', 'Swedish'),
+  ('es', 'Spanish'),
+  ('fr', 'French'),
+  ('no', 'Norwegian'),
+  ('da', 'Danish'),
+  ('fi', 'Finnish'),
+  ('tl', 'Tagalog'),
+  ('ja', 'Japanese'),
+  ('ar', 'Arabic'),
+  ('el', 'Greek'),
 )
 
 # The router where all our site URLs is defined.
