@@ -874,7 +874,8 @@ def universe_by_name(request, universe_name='', sort=ORDER_ALPHA,
                 Q(designation__icontains=universe_name)
         return generic_by_name(request, universe_name, q_obj, sort,
                                Universe, template,
-                               include_template=include_template)
+                               include_template=include_template,
+                               related=['verse'])
 
 
 def feature_search_hx(request):
