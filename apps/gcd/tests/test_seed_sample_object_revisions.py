@@ -18,7 +18,7 @@ from apps.gcd.models import (
     Universe,
 )
 from apps.oi import states
-from apps.oi.models import CTYPES, Changeset, ReprintRevision
+from apps.oi.models import Changeset, ReprintRevision
 
 SAMPLE_SERIES = '[GCD DEV] Adventures'
 
@@ -86,11 +86,15 @@ def test_the_sample_changes_can_be_shown(client):
 def test_seeding_again_adds_changesets_only_where_missing():
     call_command('seed_development_data')
     changesets = Changeset.objects.count()
-    Changeset.objects.filter(change_type=CTYPES['creator']).delete()
+    creator = Creator.objects.get(gcd_official_name='[GCD DEV] Alex Example')
+    # As in a database seeded before; its name revisions go with it. Its
+    # changeset stays: in the whole suite deleting one also queries a test
+    # model that has no table.
+    creator.revisions.all().delete()
 
     call_command('seed_development_data')
 
-    assert Changeset.objects.count() == changesets
-    creator = Creator.objects.get(gcd_official_name='[GCD DEV] Alex Example')
-    assert creator.revisions.filter(
-      changeset__state=states.APPROVED).count() == 1
+    assert Changeset.objects.count() == changesets + 1
+    for data_object in (creator, *creator.active_names()):
+        assert data_object.revisions.filter(
+          changeset__state=states.APPROVED).count() == 1
