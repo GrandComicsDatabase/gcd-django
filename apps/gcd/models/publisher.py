@@ -5,7 +5,6 @@ from django.db import models
 from django.conf import settings
 from django.db.models import F
 import django.urls as urlresolvers
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
 
@@ -297,13 +296,17 @@ class Brand(BasePublisher):
 
     @property
     def emblem(self):
-        img = Image.objects.filter(
-          object_id=self.id, deleted=False,
-          content_type=ContentType.objects.get_for_model(self), type__id=3)
-        if img:
-            return img.get()
-        else:
-            return None
+        """
+        Return the image of the emblem, or None.
+
+        The images come from image_resources, so the emblems of a list
+        that prefetches them show their images without a query each.
+        """
+        images = [image for image in self.image_resources.all()
+                  if image.type_id == 3 and not image.deleted]
+        if images:
+            return images[0]
+        return None
 
     def has_dependents(self):
         return bool(self.issue_count or
