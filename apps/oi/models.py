@@ -6070,6 +6070,23 @@ class StoryRevision(Revision):
                 if revision.added:
                     revision.delete()
 
+    def add_characters_as_text(self, appearances):
+        """
+        Write the character appearances that could not be copied as links,
+        as their characters have no translation, in front of the characters
+        text: the name and role of each. Save when there is any.
+        """
+        characters = []
+        for character in appearances:
+            characters.append(character.character.character.name)
+            if character.role:
+                characters[-1] += ' (%s)' % character.role.name
+        if characters:
+            if self.characters:
+                characters.append(self.characters)
+            self.characters = '; '.join(characters)
+            self.save()
+
     @classmethod
     def copied_revision(cls, story, changeset, issue_revision,
                         copy_credit_info=False,
@@ -6149,7 +6166,7 @@ class StoryRevision(Revision):
                                       fork=True, story_revision=revision,
                                       exclude=exclude)
         if copy_characters:
-            characters = []
+            untranslated = []
             if issue_revision.series.language == story.issue.series.language:
                 same_language = True
             else:
@@ -6164,14 +6181,8 @@ class StoryRevision(Revision):
                     translated = StoryCharacterRevision.copied_translation(
                       character, revision)
                     if translated is None:
-                        characters.append(character.character.character.name)
-                        if character.role:
-                            characters[-1] += ' (%s)' % character.role.name
-            if characters:
-                if revision.characters:
-                    characters.append(revision.characters)
-                revision.characters = '; '.join(characters)
-                revision.save()
+                        untranslated.append(character)
+            revision.add_characters_as_text(untranslated)
 
             for group in story.active_groups:
                 if same_language:

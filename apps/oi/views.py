@@ -4107,6 +4107,8 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             - Characters and groups (with language-aware handling)
         - When copying characters/groups between different languages, attempts
           to find appropriate translations
+        - A character without one goes into the characters text, unless
+          the characters of the target are kept
         - Removes existing credits/characters/groups that weren't in the
           source when copying
     """
@@ -4224,6 +4226,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
               'character__character_id', 'universe_id'))
             existing_characters = existing_characters.none()
 
+        untranslated = []
         for character in characters:
             if kept and (character.character.character_id,
                          character.universe_id) in kept:
@@ -4254,6 +4257,11 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                 if new_character_revision:
                     existing_characters = existing_characters.exclude(
                       id=new_character_revision.id)
+                # with no translation, the character goes into the text
+                # as in the copy of a sequence, unless keeping
+                elif not keep_characters:
+                    untranslated.append(character)
+        revision.add_characters_as_text(untranslated)
 
         for existing_character in existing_characters:
             if existing_character.story_character:

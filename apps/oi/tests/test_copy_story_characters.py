@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 
-from apps.gcd.models import Issue, Series
+from apps.gcd.models import CharacterRole, Issue, Series
 from apps.gcd.models.character import (
     Character, CharacterNameDetail, CharacterRelation, CharacterRelationType,
     Group, GroupNameDetail, GroupRelation, GroupRelationType, Universe)
@@ -82,11 +82,11 @@ def group(name, language):
                                           is_official_name=True)
 
 
-def appears(name, revision, notes='', universe=None):
+def appears(name, revision, notes='', universe=None, role=None):
     """Add a character to a revision."""
     StoryCharacterRevision.objects.create(
       changeset=revision.changeset, story_revision=revision, character=name,
-      notes=notes, universe=universe)
+      notes=notes, universe=universe, role=role)
 
 
 def group_appears(name, revision, notes=''):
@@ -218,6 +218,39 @@ def test_copy_to_a_reprint_replaces_without_keeping(
 
     assert characters(reprint) == [('Araignee', 'theirs'),
                                    ('Hulk FR', 'theirs')]
+
+
+@pytest.mark.django_db
+def test_copy_to_a_reprint_puts_the_untranslated_in_the_text(
+      indexer_client, source, reprint, any_language, french):
+    """A character with no translation is kept by name and role."""
+    spider = character('Spider', any_language)
+    araignee = character('Araignee', french)
+    translated(spider, araignee)
+    role = CharacterRole.objects.create(name='Test Role', sort_code=1)
+    appears(spider, source, 'theirs')
+    appears(character('Untranslated', any_language), source, 'theirs',
+            role=role)
+    source.characters = 'Theirs'
+    source.save()
+    reprint.characters = 'Mine'
+    reprint.save()
+
+    copied = copy(indexer_client, source, reprint, COPY)
+
+    assert characters(copied) == [('Araignee', 'theirs')]
+    assert copied.characters == 'Untranslated (Test Role); Theirs'
+
+
+@pytest.mark.django_db
+def test_keeping_on_a_reprint_leaves_the_text_alone(
+      indexer_client, source, reprint, any_language, french):
+    """The text kept already holds what the target had; nothing is added."""
+    reprint_characters(source, reprint, any_language, french)
+    reprint.characters = 'Mine'
+    reprint.save()
+
+    assert copy(indexer_client, source, reprint, KEEP).characters == 'Mine'
 
 
 @pytest.mark.django_db

@@ -10,9 +10,10 @@ from django.urls import reverse
 
 from apps.gcd.models import (
     Character, CharacterNameDetail, CharacterRelation, CharacterRelationType,
-    CREDIT_TYPES, Creator, CreatorNameDetail, CreditType, Feature,
-    FeatureNameDetail, FeatureRelation, FeatureRelationType, FeatureType,
-    Issue, STORY_TYPES, Series, StoryCharacter, StoryCredit, StoryType)
+    CharacterRole, CREDIT_TYPES, Creator, CreatorNameDetail, CreditType,
+    Feature, FeatureNameDetail, FeatureRelation, FeatureRelationType,
+    FeatureType, Issue, STORY_TYPES, Series, StoryCharacter, StoryCredit,
+    StoryType)
 from apps.oi import states
 from apps.oi.models import (
     CTYPES, IssueRevision, RevisionLock, StoryCharacterRevision, StoryRevision)
@@ -251,6 +252,23 @@ def test_copy_translates_to_the_language_of_the_variant(
                 translated_character]
     assert set(revision.feature_name.all()) == {translation, original,
                                                 other_sibling}
+
+
+@pytest.mark.django_db
+def test_copy_puts_the_untranslated_characters_in_the_text(
+        foreign_variant_rev, cover, any_language):
+    """A character with no translation is kept by name and role."""
+    role = CharacterRole.objects.create(name='Test Role', sort_code=1)
+    StoryCharacter.objects.create(story=cover, notes='', role=role,
+                                  character=add_character(any_language))
+    cover.characters = 'Some Text'
+    cover.save()
+
+    revision = copied(cover, foreign_variant_rev)
+
+    revision.refresh_from_db()
+    assert not revision.story_character_revisions.exists()
+    assert revision.characters == 'Test Character (Test Role); Some Text'
 
 
 @pytest.mark.django_db
