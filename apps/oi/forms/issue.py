@@ -544,6 +544,35 @@ class IssueCreditRevisionForm(forms.ModelForm):
 
         return cd
 
+    # The fields that a browser posts with a value also for a row left
+    # untouched: the credit type, whose list has no empty choice, and the
+    # hidden link to the change. The hidden id is posted empty for a new
+    # row and with a value for an existing credit.
+    UNTOUCHED_ROW_VALUES = ('credit_type', 'issue_revision')
+
+    def _is_untouched(self):
+        """
+        Return whether nothing was typed or ticked in the row: every field
+        is posted empty but the ones that a browser fills in by itself.
+        """
+        return not any(self[name].data for name in self.fields
+                       if name not in self.UNTOUCHED_ROW_VALUES)
+
+    def full_clean(self):
+        """
+        Check the row, and keep no errors on a row left untouched.
+
+        The list of credit types has one choice and no empty one, so a
+        browser posts it also for a row left untouched, and the row is
+        checked. clean() drops that row and the formset leaves it out, but
+        its errors would show when the page comes back for an error
+        elsewhere. A row with anything typed in it keeps its errors.
+        """
+        super(IssueCreditRevisionForm, self).full_clean()
+        cd = getattr(self, 'cleaned_data', {})
+        if cd.get('DELETE') and self._is_untouched():
+            self._errors.clear()
+
 
 IssueRevisionFormSet = inlineformset_factory(
     IssueRevision, IssueCreditRevision, form=IssueCreditRevisionForm,
