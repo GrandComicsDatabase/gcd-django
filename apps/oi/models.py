@@ -9187,11 +9187,6 @@ class ImageRevision(Revision):
             # copy replaced image back to revision
             prev_rev.image_file.save(str(prev_rev.id) + '.jpg',
                                      content=image.image_file)
-            # the scaled copies are named after the file, clear them first
-            _clear_image_cache(image.scaled_image)
-            _clear_image_cache(image.thumbnail)
-            _clear_image_cache(image.icon)
-            _clear_image_cache(image.cropped_face)
             image.image_file.delete()
         elif self.deleted:
             image.delete()
@@ -9216,15 +9211,15 @@ class ImageRevision(Revision):
                           marked=self.marked)
             image.save()
 
-        # then add the uploaded file, a replacement under a new name, so
-        # that no cache keeps showing the old file at the same address
-        if self.is_replacement:
-            file_name = '%d_%d.jpg' % (image.id, self.id)
-        else:
-            file_name = '%d.jpg' % image.id
-        image.image_file.save(file_name, content=self.image_file)
+        # then add the uploaded file
+        image.image_file.save(str(image.id) + '.jpg', content=self.image_file)
         self.image_file.delete()
         self.image = image
+        if self.is_replacement:
+            _clear_image_cache(image.scaled_image)
+            _clear_image_cache(image.thumbnail)
+            _clear_image_cache(image.icon)
+            _clear_image_cache(image.cropped_face)
         self.save()
 
     def __str__(self):
