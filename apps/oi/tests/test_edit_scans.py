@@ -79,8 +79,8 @@ def test_issue_edit_shows_indicia_scan(indexer_client, any_added_issue,
     html = _edit_page(indexer_client, revision, 'issue')
 
     assert INDICIA in html
-    assert 'src="%s"' % image.scaled_image.url in html
-    assert ('href="%s" target="_blank"' % image.image_file.url) in html
+    assert 'src="%s"' % image.scaled_image_url in html
+    assert ('href="%s" target="_blank"' % image.image_file_url) in html
     assert 'Open in a new window' in html
     assert SOO not in html
 
@@ -120,8 +120,8 @@ def test_soo_sequence_shows_soo_scan(indexer_client, any_edit_story_rev,
     html = _edit_page(indexer_client, revision, 'story')
 
     assert SOO in html
-    assert 'src="%s"' % image.scaled_image.url in html
-    assert ('href="%s" target="_blank"' % image.image_file.url) in html
+    assert 'src="%s"' % image.scaled_image_url in html
+    assert ('href="%s" target="_blank"' % image.image_file_url) in html
     assert INDICIA not in html
 
 
