@@ -151,8 +151,8 @@ def test_creator_page_names_where_the_portrait_links_lead(client, creator,
 
     linked = [(src, alt) for src, alt, link in page.pictures
               if link == compare]
-    assert linked == [(image.cropped_face.url, PORTRAIT_LINK),
-                      (image.scaled_image.url, PORTRAIT_LINK)]
+    assert linked == [(image.cropped_face_url, PORTRAIT_LINK),
+                      (image.scaled_image_url, PORTRAIT_LINK)]
     assert compare not in page.unclosed
 
 

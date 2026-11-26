@@ -30,7 +30,7 @@
     </li>
     <li><span class="font-bold">Feature Logo:</span>
   {% if feature_logo.logo %}
-    <img src="{{ feature_logo.logo.scaled_image.url }}"
+    <img src="{{ feature_logo.logo.scaled_image_url }}"
       alt="{{ feature_logo.name }}">
   {% endif %}
   {% if feature_logo.generic %}

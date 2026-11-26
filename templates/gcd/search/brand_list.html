@@ -17,7 +17,7 @@
     {% with brand|object_filter as brand %}
     <tr>
       <td> {% if brand.emblem %} <a href="{{ brand.get_absolute_url }}"> <img
-        src="{{ brand.emblem.thumbnail.url }}"
+        src="{{ brand.emblem.thumbnail_url }}"
         alt="{{ brand.name }}"> {% endif %} </a></td>
       <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
       <td class="listing_publisher"> {% for group in brand.group.all %}  <img {{ group.parent.country|show_country_info }}> <a href="{{ group.get_absolute_url }}">{{ group.name }}</a> {% endfor %} </td>
