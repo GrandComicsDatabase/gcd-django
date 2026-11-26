@@ -128,7 +128,7 @@ def test_ballot_open_subject_has_the_ballot_number(mailoutbox):
     topics = _two_ballots_with_the_same_name(on_vote_open=True)
 
     assert [mail.subject for mail in mailoutbox] == [
-      'GCD Ballot Open: #%d Same Name' % topic.id for topic in topics]
+      'GCD Ballot #%d Open: Same Name' % topic.id for topic in topics]
 
 
 @pytest.mark.django_db
@@ -142,4 +142,4 @@ def test_vote_result_subject_has_the_ballot_number(mailoutbox):
     _calculate_results(topics)
 
     assert [mail.subject for mail in mailoutbox] == [
-      'GCD Vote Result: #%d Same Name' % topic.id for topic in topics]
+      'GCD Vote #%d Result: Same Name' % topic.id for topic in topics]
