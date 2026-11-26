@@ -38,8 +38,10 @@
   {% if story.has_feature %} / {% endif %}
   {% if story.type %}{{ story.type }} / {% endif %}
   {{ story|show_page_count }}
-  {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
-    page{{ suffix }}
+  {% blocktrans trimmed count counter=story.page_count|default:0|ceil %}
+    page
+  {% plural %}
+    pages
   {% endblocktrans %}
         </span>
 {%endif %}
