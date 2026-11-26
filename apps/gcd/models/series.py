@@ -467,6 +467,26 @@ class Series(GcdData):
     def object_markdown_name(self):
         return self.full_name()
 
+    def meta_description(self):
+        """
+        Return one sentence on the series for link previews and search
+        engines: language, country, years and number of issues.
+        """
+        kind = 'Comic series' if self.is_comics_publication else 'Series'
+        years = '%s%s' % (self.year_began,
+                          self._date_uncertain(self.year_began_uncertain))
+        if self.is_current:
+            years = 'since %s' % years
+        elif self.year_ended:
+            years = 'from %s to %s%s' % (years, self.year_ended,
+                                         self._date_uncertain(
+                                           self.year_ended_uncertain))
+        else:
+            years = 'from %s' % years
+        return '%s published in %s (%s) %s; %d issue%s.' % (
+          kind, self.language, self.country, years, self.issue_count,
+          pluralize(self.issue_count))
+
     def __str__(self):
         return '%s (%s%s series)' % (self.name, self.year_began,
                                      self._date_uncertain(

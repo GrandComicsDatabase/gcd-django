@@ -167,6 +167,20 @@ class Publisher(BasePublisher):
             'show_publisher',
             kwargs={'publisher_id': self.id})
 
+    def meta_description(self):
+        """
+        Return one sentence on the publisher for link previews and search
+        engines: country and years of comics publishing.
+        """
+        text = 'Comics publisher (%s)' % self.country
+        if self.year_began:
+            text += ' from %s' % _display_year(self.year_began,
+                                               self.year_began_uncertain)
+        if self.year_ended:
+            text += ' until %s' % _display_year(self.year_ended,
+                                                self.year_ended_uncertain)
+        return text + '.'
+
     ############################
     # TODO related to OI functionality, to be re-factored
 
