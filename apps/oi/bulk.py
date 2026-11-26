@@ -37,6 +37,9 @@ NO_BREAK_SPACE = '\u00a0'
 # a line break.
 HIDDEN_SPACES = re.compile(r'\s{2,}|[^\S ]')
 
+# A run of spaces, which HTML would merge.
+SPACE_RUNS = re.compile(r' {2,}')
+
 # Spaces at the start and at the end of a value, which HTML hides at the
 # edges of a cell.
 LEADING_SPACES = re.compile(r'\A\s+')
@@ -674,12 +677,28 @@ def _object_names(field, values):
                  .items()}
 
 
+def _label_text(value):
+    r"""
+    Return a text as the label of an old value shows it, so that no two
+    values look alike: a backslash is \\, and a character that shows as
+    nothing or as a space, such as a tab, a line break or a no-break
+    space, is its Python escape; a run of spaces, which HTML would merge,
+    is no-break spaces.
+    """
+    text = ''.join(
+      char if char.isprintable() and char != '\\'
+      else char.encode('unicode_escape').decode('ascii')
+      for char in value)
+    return SPACE_RUNS.sub(
+      lambda match: NO_BREAK_SPACE * len(match.group()), text)
+
+
 def value_choices(field, values):
     """
     Return form choices for values, the (value, count) pairs of one
     field: the key of each value and a label with its count.  A text is
-    in quotes, with the spaces that HTML would hide as no-break spaces; a
-    link shows the name of its object.
+    in quotes, as _label_text() shows it; a link shows the name of its
+    object.
     """
     names = _object_names(field, [value for value, count in values])
     choices = []
@@ -687,8 +706,7 @@ def value_choices(field, values):
         if value is None or value == '':
             label = '(empty)'
         elif isinstance(value, str):
-            label = '"%s"' % HIDDEN_SPACES.sub(
-              lambda match: NO_BREAK_SPACE * len(match.group()), value)
+            label = '"%s"' % _label_text(value)
         else:
             label = _shown_value(field, value, names)
         choices.append((value_key(value), '%s (%d)' % (label, count)))
