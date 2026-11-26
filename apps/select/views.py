@@ -1003,7 +1003,7 @@ class CreatorSignatureAutocomplete(LoginRequiredMixin,
             return format_html(
               '%s <img class="inline" src="%s">' % (
                 creator_signature.name,
-                creator_signature.signature.icon.url))
+                creator_signature.signature.icon_url))
         else:
             return format_html('%s [generic]' % creator_signature.name)
 
@@ -1096,7 +1096,7 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         if feature_logo.logo:
             return format_html(
               '%s <img src="%s">' % (feature_logo.name,
-                                     feature_logo.logo.icon.url))
+                                     feature_logo.logo.icon_url))
         else:
             if feature_logo.generic:
                 return format_html('%s [generic]' % feature_logo.name)
@@ -1404,7 +1404,7 @@ class BrandEmblemAutocomplete(LoginRequiredMixin,
         if brand_emblem.emblem and not settings.FAKE_IMAGES:
             return format_html(
               '<img class="inline" src="%s"> %s' % (
-                brand_emblem.emblem.icon.url, brand_emblem.name))
+                brand_emblem.emblem.icon_url, brand_emblem.name))
         else:
             if brand_emblem.generic:
                 return format_html('%s [generic]' % brand_emblem.name)
