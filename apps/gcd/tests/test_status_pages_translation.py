@@ -111,9 +111,12 @@ class _Bracketed(trans_real.DjangoTranslation):
 def italian(monkeypatch):
     """
     A page asked with ?lang=it, or rendered in Italian, uses the test
-    translation.
+    translation. A request leaves its language active, so the end of the
+    test turns the active translation off.
     """
     monkeypatch.setitem(trans_real._translations, 'it', _Bracketed('it'))
+    yield
+    translation.deactivate()
 
 
 def _text(content):
@@ -328,6 +331,25 @@ def test_page_in_italian(client, italian, name, texts):
 
     assert response.status_code == 200
     _assert_italian(response.content, texts)
+
+
+@pytest.fixture
+def english_after():
+    """After the test, a text asked outside a request is in English."""
+    yield
+    assert translation.gettext('Donations') == 'Donations'
+
+
+@pytest.mark.django_db
+def test_test_translation_ends_with_the_test(english_after, client,
+                                             italian):
+    """
+    A request leaves its language active, and with it the test
+    translation; it is no longer the active one when the test is over.
+    """
+    client.get(reverse('donate') + '?lang=it')
+
+    assert translation.gettext('Donations') == '[it] Donations'
 
 
 @pytest.mark.django_db
