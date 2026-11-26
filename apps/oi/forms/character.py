@@ -5,11 +5,12 @@ from django.forms.models import inlineformset_factory
 
 from collections import OrderedDict
 
-from dal import autocomplete
+from dal import autocomplete, forward
 
 from apps.gcd.models import Character, Group, CharacterRelationType, \
                             GroupMembership, GroupRelationType, Universe, \
                             StoryCharacter
+from apps.stddata.models import Language
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -494,6 +495,9 @@ class GroupRelationRevisionForm(forms.ModelForm):
         # help_texts = FEATURE_RELATION_HELP_TEXTS
         labels = {'relation_type': 'Relation', }
 
+    field_order = ['from_group', 'relation_type', 'to_group_language',
+                   'to_group']
+
     from_group = forms.ModelChoiceField(
         queryset=Group.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='group_autocomplete',
@@ -501,11 +505,25 @@ class GroupRelationRevisionForm(forms.ModelForm):
         label='Group A'
     )
 
+    # only narrows the list of Group B, it is not saved
+    to_group_language = forms.ModelChoiceField(
+        queryset=Language.objects.filter(
+          id__in=Group.objects.filter(deleted=False).values('language')),
+        to_field_name='code',
+        required=False,
+        empty_label='All languages',
+        label='Language of Group B',
+        help_text='Group B lists only the groups of this language.'
+    )
+
     to_group = forms.ModelChoiceField(
         queryset=Group.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='group_autocomplete',
                                          forward=['language_code',
-                                                  'relation_type'],
+                                                  'relation_type',
+                                                  forward.Field(
+                                                    'to_group_language',
+                                                    'language')],
                                          attrs={'style': 'min-width: 45em'}),
         label='Group B'
     )
