@@ -35,7 +35,8 @@ RUNTIME_MESSAGES = [
     'German', 'English', 'Dutch', 'Portuguese', 'Italian', 'Swedish',
 ]
 
-# The names of the statistics, singular and plural.
+# The names of the statistics, singular and plural, with their context.
+STAT_CONTEXT = 'msgctxt "statistics"\n'
 STAT_NAMES = [
     ('publisher', 'publishers'), ('brand', 'brands'),
     ('indicia publisher', 'indicia publishers'), ('series', 'series'),
@@ -101,14 +102,14 @@ def compile_catalog(language, text, settings, folder):
 
 
 def fill_plural(text, singular, forms):
-    """TEXT with the plural entry of SINGULAR filled with FORMS.
+    """TEXT with the statistics entry of SINGULAR filled with FORMS.
 
     The entry gets one msgstr for each plural form that the header of
     TEXT names (makemessages writes two in a new file, whatever the
     language); the last of FORMS fills the forms beyond them. TEXT
     without that entry comes back as it is.
     """
-    head = 'msgid "%s"\nmsgid_plural ' % singular
+    head = '%smsgid "%s"\nmsgid_plural ' % (STAT_CONTEXT, singular)
     start = text.find(head)
     if start < 0:
         return text
@@ -116,7 +117,7 @@ def fill_plural(text, singular, forms):
     end = len(text) if end < 0 else end
     lines = text[start:end].split('\n')
     nplurals = int(re.search(r'nplurals=(\d+)', text).group(1))
-    lines[2:] = ['msgstr[%d] "%s"' % (n, forms[min(n, len(forms) - 1)])
+    lines[3:] = ['msgstr[%d] "%s"' % (n, forms[min(n, len(forms) - 1)])
                  for n in range(nplurals)]
     return text[:start] + '\n'.join(lines) + text[end:]
 
@@ -128,8 +129,8 @@ def test_makemessages_finds_the_runtime_messages(catalogs):
 
     assert [msgid for msgid in RUNTIME_MESSAGES if msgid not in found] == []
     assert [singular for singular, plural in STAT_NAMES
-            if 'msgid "%s"\nmsgid_plural "%s"\n' % (singular, plural)
-            not in catalog] == []
+            if '%smsgid "%s"\nmsgid_plural "%s"\n'
+            % (STAT_CONTEXT, singular, plural) not in catalog] == []
     assert EDITOR_ENTRY in catalog
 
 
@@ -168,6 +169,33 @@ def test_front_page_statistics_by_count(catalogs, client, settings,
                                  re.MULTILINE).group(1)
 
     assert shown == expected
+
+
+@pytest.mark.django_db
+def test_statistics_name_apart_from_a_plain_entry(catalogs, client,
+                                                  settings, tmp_path):
+    """A plain entry of the same word keeps its own text.
+
+    The story type "cover" is such an entry once the code marks it.
+    Without the context the two entries are one, and msgfmt refuses the
+    file or one of the two texts is lost.
+    """
+    settings.USE_TEMPLATESADMIN = False
+    text = fill_plural(catalogs['it'], 'cover', ['copertina', 'copertine'])
+    plain = '\nmsgid "cover"\nmsgstr ""\n'
+    if plain in text:
+        text = text.replace(plain, plain[:-3] + '"Copertina (tipo)"\n')
+    else:
+        text += '\nmsgid "cover"\nmsgstr "Copertina (tipo)"\n'
+    compile_catalog('it', text, settings, tmp_path)
+    CountStats.objects.create(name='covers', count=2)
+
+    page = client.get('/?lang=it').content.decode()
+    with translation.override('it'):
+        story_type = translation.gettext('cover')
+
+    assert '2 copertine<br>' in page
+    assert story_type == 'Copertina (tipo)'
 
 
 def test_editor_credit_label_from_the_credit_context(catalogs, settings,

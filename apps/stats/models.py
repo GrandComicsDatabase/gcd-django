@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.conf import settings
-from django.utils.translation import ngettext_lazy
+from django.utils.translation import npgettext_lazy
 from django.contrib.auth.models import User
 
 from apps.stddata.models import Country, Language
@@ -134,21 +134,26 @@ class CountStatsManager(models.Manager):
 
 
 # The values of CountStats.name with their singular and plural, for the
-# message files. The key 'count' makes ngettext_lazy choose the form when
-# the name is formatted with {'count': ...}: see name_for_count().
+# message files. The key 'count' makes npgettext_lazy choose the form when
+# the name is formatted with {'count': ...}: see name_for_count(). The
+# context keeps these plural entries apart from a plain entry of the same
+# word, such as the story type 'cover'.
 STAT_NAMES = {
-    'publishers': ngettext_lazy('publisher', 'publishers', 'count'),
-    'brands': ngettext_lazy('brand', 'brands', 'count'),
-    'indicia publishers': ngettext_lazy(
-        'indicia publisher', 'indicia publishers', 'count'),
-    'series': ngettext_lazy('series', 'series', 'count'),
-    'issues': ngettext_lazy('issue', 'issues', 'count'),
-    'variant issues': ngettext_lazy(
-        'variant issue', 'variant issues', 'count'),
-    'issue indexes': ngettext_lazy('issue index', 'issue indexes', 'count'),
-    'covers': ngettext_lazy('cover', 'covers', 'count'),
-    'stories': ngettext_lazy('story', 'stories', 'count'),
-    'creators': ngettext_lazy('creator', 'creators', 'count'),
+    'publishers': npgettext_lazy(
+        'statistics', 'publisher', 'publishers', 'count'),
+    'brands': npgettext_lazy('statistics', 'brand', 'brands', 'count'),
+    'indicia publishers': npgettext_lazy(
+        'statistics', 'indicia publisher', 'indicia publishers', 'count'),
+    'series': npgettext_lazy('statistics', 'series', 'series', 'count'),
+    'issues': npgettext_lazy('statistics', 'issue', 'issues', 'count'),
+    'variant issues': npgettext_lazy(
+        'statistics', 'variant issue', 'variant issues', 'count'),
+    'issue indexes': npgettext_lazy(
+        'statistics', 'issue index', 'issue indexes', 'count'),
+    'covers': npgettext_lazy('statistics', 'cover', 'covers', 'count'),
+    'stories': npgettext_lazy('statistics', 'story', 'stories', 'count'),
+    'creators': npgettext_lazy(
+        'statistics', 'creator', 'creators', 'count'),
 }
 
 
