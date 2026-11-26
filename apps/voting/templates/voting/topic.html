@@ -53,13 +53,13 @@ Your current vote{{ votes.count|pluralize }}:
         {% else %}
           {% if not topic.vote_type.max_votes %}
 <table>
-  <tr class="bg-blue-100 md:top-0">
+  <tr class="bg-blue-100 md:top-0 [&_th]:px-2">
     <th> Option </th>
     <th> Rank </th>
     <th> Text </th>
   </tr>
             {% for vote in votes|order_by:"votes__rank" %}
-  <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+  <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
     <td> {{ vote.name }} </td>
     <td> {{ vote|show_rank:request.user }} </td>
     <td> {{ vote.text }}</td>
