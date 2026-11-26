@@ -314,6 +314,10 @@ def vote(request):
     if not options:
         return render_error(request,
                             'You must choose at least one option to vote.')
+    # The checks below look at the ballot of the first option only.
+    if len({option.topic_id for option in options}) > 1:
+        return render_error(request,
+                            'You can vote on only one ballot at a time.')
     for option in options:
         if first is True:
             first = False
