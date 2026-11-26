@@ -6,7 +6,7 @@ from django.db.models import Value
 import django.urls as urlresolvers
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
-from django.utils.translation import ngettext
+from django.utils.translation import gettext, ngettext
 
 from taggit.managers import TaggableManager
 
@@ -124,7 +124,11 @@ def character_notes(character, html=False):
         note = ' (%s)' % note
 
     if character.role:
-        note += ' (%s)' % (esc(character.role) if html else character.role)
+        if html:
+            # The page shows the role in its language, see vocabulary.py.
+            note += ' (%s)' % esc(gettext(str(character.role)))
+        else:
+            note += ' (%s)' % character.role
 
     if character.notes:
         # Short appearance annotations are plain text, even in HTML views.

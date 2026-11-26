@@ -1,5 +1,5 @@
 {% load static %}
-{% load credits %}
+{% load credits i18n %}
 <div style="display: flex; align-items: center;">
     <div>
         <a hx-get="{% url "show_story_modal" story_id=record.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
@@ -11,7 +11,7 @@
         {% if record.has_feature %}
             {{ record.show_feature }} /
         {% endif %}
-        {% if record.type %}{{ record.type }} /
+        {% if record.type %}{% trans record.type.name %} /
         {% endif %}
         {{ record.show_page_count }}
     </div>
