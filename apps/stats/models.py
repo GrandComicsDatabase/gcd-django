@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.conf import settings
+from django.utils.translation import gettext_noop
 from django.contrib.auth.models import User
 
 from apps.stddata.models import Country, Language
@@ -130,6 +131,18 @@ class CountStatsManager(models.Manager):
                 delta = -deltas[field] if negate else deltas[field]
                 self.update_count(field=field, delta=delta,
                                   language=language, country=country)
+
+
+# The values of CountStats.name. The pages translate them with
+# {% trans stat.name %}, which makemessages cannot read, so they are
+# marked here for the message files.
+STAT_NAMES = (
+    gettext_noop('publishers'), gettext_noop('brands'),
+    gettext_noop('indicia publishers'), gettext_noop('series'),
+    gettext_noop('issues'), gettext_noop('variant issues'),
+    gettext_noop('issue indexes'), gettext_noop('covers'),
+    gettext_noop('stories'), gettext_noop('creators'),
+)
 
 
 class CountStats(models.Model):

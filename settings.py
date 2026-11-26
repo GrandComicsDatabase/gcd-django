@@ -4,6 +4,8 @@ import datetime
 from os.path import abspath, dirname, join
 from os import environ # helps determine MEDIA_URL.
 
+from django.utils.translation import gettext_lazy
+
 """
 This is the main settings file.  It should not be changed unless the change
 is meant to apply to all installations, development and production, of the project.
@@ -121,12 +123,12 @@ MIDDLEWARE = (
 )
 
 LANGUAGES = (
-  ('de', 'German'),
-  ('en', 'English'),
-  ('nl', 'Dutch'),
-  ('pt', 'Portuguese'),
-  ('it', 'Italian'),
-  ('sv', 'Swedish')
+  ('de', gettext_lazy('German')),
+  ('en', gettext_lazy('English')),
+  ('nl', gettext_lazy('Dutch')),
+  ('pt', gettext_lazy('Portuguese')),
+  ('it', gettext_lazy('Italian')),
+  ('sv', gettext_lazy('Swedish'))
 )
 
 # The router where all our site URLs is defined.
