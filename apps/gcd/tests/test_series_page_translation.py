@@ -592,3 +592,27 @@ def test_counts(client, message_files, catalog, tr):
           tr.plural(INDEXED, indexed) % {'counter': indexed})])
 
     assert missing == []
+
+
+@pytest.mark.parametrize('tr', LANGUAGES, ids=CODES)
+@pytest.mark.django_db
+def test_issues_to_migrate(client, message_files, catalog, tr):
+    """
+    The series with 1, 2 and 5 issues with content to migrate say so in the
+    plural form that the language gives the number: the singular for 1 and
+    the plural for 2 and 5 in the languages with two forms, one form for 1,
+    one for 2 and one for 5 in Serbian, the one form in Japanese. A series
+    with none does not show the sentence, so 0 has no form on the page.
+    """
+    for key in ('magazine', 'weekly'):
+        catalog[key].active_issues().update(editing='Some Editor')
+    missing = []
+    for key, count in (('main', 1), ('magazine', 2), ('weekly', 5)):
+        page = _get(client, _url('show_series', catalog[key]), tr)
+        missing += _missing(page, [tr.plural(MIGRATE, count) % {
+          'page_url': _url('series_migrate', catalog[key]),
+          'counter': count}])
+    none = _get(client, _url('show_series', catalog['annual']), tr)
+
+    assert missing == []
+    assert 'with content to migrate' not in _text(none)
