@@ -296,11 +296,13 @@ class Character(CharacterGroupBase):
             return Character.objects.filter(
               language=language,
               from_related_character__from_character=self,
+              from_related_character__relation_type_id=1,
               deleted=False)
         if relations.filter(from_character__language=language).count():
             return Character.objects.filter(
               language=language,
               to_related_character__to_character=self,
+              to_related_character__relation_type_id=1,
               deleted=False)
         return Character.objects.none()
 
@@ -486,11 +488,13 @@ class Group(CharacterGroupBase):
             return Group.objects.filter(
               language=language,
               from_related_group__from_group=self,
+              from_related_group__relation_type_id=1,
               deleted=False)
         if relations.filter(from_group__language=language).count():
             return Group.objects.filter(
               language=language,
               to_related_group__to_group=self,
+              to_related_group__relation_type_id=1,
               deleted=False)
         return Group.objects.none()
 
