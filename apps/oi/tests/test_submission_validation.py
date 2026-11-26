@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 import pytest
 
@@ -132,6 +133,32 @@ def test_submission_validation_accepts_empty_multiple_choice(
       any_edit_story_rev.changeset, _request_for(any_indexer))
 
     assert invalid == []
+
+
+def test_page_count_sum_message_keeps_the_decimals(any_edit_story_rev,
+                                                   any_indexer):
+    """
+    The message on a sum of sequence page counts above the issue page
+    count gives both counts as the site shows them, with their decimals.
+    """
+    changeset = any_edit_story_rev.changeset
+    changeset.change_type = CTYPES['issue']
+    changeset.save()
+    issue_revision = changeset.issuerevisions.get()
+    issue_revision.page_count = 52
+    issue_revision.save()
+    any_edit_story_rev.page_count = Decimal('52.5')
+    any_edit_story_rev.page_count_uncertain = False
+    any_edit_story_rev.save()
+
+    invalid = validate_changeset_revisions(
+      changeset, _request_for(any_indexer))
+
+    assert len(invalid) == 1
+    assert invalid[0][0] == issue_revision
+    assert invalid[0][1][0].startswith(
+      'Sum of the page count of all sequences is 52.5, which exceeds the '
+      'issue page count of 52. ')
 
 
 def test_submit_keeps_invalid_changeset_open(any_edit_story_rev,
