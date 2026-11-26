@@ -135,7 +135,9 @@ def _previous_ids(rev_class, source, rows):
     the latest revision of its object created no later than itself takes
     its place, with one query for all of them: a revision of an approved
     change, as the clone that made the discarded one required, whatever
-    its committed flag, which not every approved revision has.
+    its committed flag, which not every approved revision has.  Of two
+    revisions stored with the same time, the one with the lower id was
+    made first.
     """
     previous = {revision_id: row['previous_revision_id']
                 for revision_id, row in rows.items()}
@@ -154,7 +156,8 @@ def _previous_ids(rev_class, source, rows):
         approved[row[source]].append(row)
     for row in lost:
         earlier = [other['id'] for other in approved[row[source]]
-                   if other['created'] <= row['created']]
+                   if (other['created'], other['id'])
+                   < (row['created'], row['id'])]
         if not earlier:
             raise ValueError('Revision %d of a bulk change has no previous '
                              'revision.' % row['id'])
