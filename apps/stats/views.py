@@ -11,7 +11,7 @@ from django.conf import settings
 from django.http import FileResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, ngettext
 
 from apps.indexer.views import render_error
 from apps.stats.models import Download
@@ -43,11 +43,18 @@ def download(request):
                                        timestamp__gt=recently).count():
                 return render_error(
                     request,
-                    _("You have started a download of this file within the "
+                    ngettext(
+                      "You have started a download of this file within the "
+                      "last %(minutes)d minute.  Please check your download "
+                      "window.  If you need to start a new download, please "
+                      "wait at least %(minutes)d minute in order to avoid "
+                      "consuming excess bandwidth.",
+                      "You have started a download of this file within the "
                       "last %(minutes)d minutes.  Please check your download "
                       "window.  If you need to start a new download, please "
                       "wait at least %(minutes)d minutes in order to avoid "
-                      "consuming excess bandwidth.") % {'minutes': delta})
+                      "consuming excess bandwidth.",
+                      delta) % {'minutes': delta})
 
             desc = {'file': file, 'accepted license': True}
             if 'purpose' in cd and cd['purpose']:

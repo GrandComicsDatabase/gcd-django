@@ -27,8 +27,11 @@
 <div class="item_id">
   <div class="left">
   {% with start=page.start_index end=page.end_index %}
-  {% blocktrans trimmed with total=page.paginator.count %}
-  Displaying {{ start }} to {{ end }} of {{ total }} covers needing
+  {% blocktrans trimmed count counter=page.paginator.count %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} cover needing
+  replacement.
+  {% plural %}
+  Displaying {{ start }} to {{ end }} of {{ counter }} covers needing
   replacement.
   {% endblocktrans %}
   {% endwith %}

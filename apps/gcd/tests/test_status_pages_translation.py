@@ -3,14 +3,15 @@ The pages of the data download, the international statistics, the daily
 changes, the covers to replace, the weekly on-sale list of My Comics, the
 projects, the donations, the privacy policy and the site-down notice show
 their texts in the language of the page when the message file translates
-them.
+them, and their counts take the plural forms of the language.
 """
 import html
 import importlib
 import re
-from datetime import date
+from datetime import date, timedelta
 from types import SimpleNamespace
 
+import polib
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
@@ -62,7 +63,7 @@ DAILY_CHANGES = (
     'Numbering From', 'Continues In', 'Image', 'Change History')
 COVERS = (
     'Covers To Replace', 'for series starting with T', 'all marked covers',
-    'Displaying 1 to 1 of 1 covers needing replacement.',
+    'Displaying 1 to 1 of 1 cover needing replacement.',
     'A click on the cover leads', 'upload replacement cover')
 ON_SALE = (
     'Displaying 1 to 1 of 1 issue on-sale the week',
@@ -124,9 +125,13 @@ def _text(content):
 
 def _assert_italian(content, texts):
     """Each of the texts is on the page after "[it] "."""
+    _assert_shown(content, ['[it] ' + text for text in texts])
+
+
+def _assert_shown(content, texts):
+    """Each of the texts is on the page."""
     page = _text(content)
-    missing = [text for text in texts
-               if _text('[it] ' + text) not in page]
+    missing = [text for text in texts if _text(text) not in page]
     assert not missing
 
 
@@ -197,6 +202,99 @@ def site_data():
           indexer=member, state=states.APPROVED,
           change_type=CTYPES[change_type]), **values)
     return member
+
+
+# The texts with a number: singular, plural, and what the test translation
+# shows after "[<language> <form>]".
+PLURALS = (
+    ('Displaying %(start)s to %(end)s of %(counter)s issue on-sale the '
+     'week %(dates)s.',
+     'Displaying %(start)s to %(end)s of %(counter)s issues on-sale the '
+     'week %(dates)s.', 'week %(counter)s'),
+    ('Displaying %(start)s to %(end)s of %(counter)s issue on-sale the '
+     'week from %(dates)s.',
+     'Displaying %(start)s to %(end)s of %(counter)s issues on-sale the '
+     'week from %(dates)s.', 'week from %(counter)s'),
+    ('Displaying %(start)s to %(end)s of %(counter)s cover needing '
+     'replacement.',
+     'Displaying %(start)s to %(end)s of %(counter)s covers needing '
+     'replacement.', 'covers %(counter)s'),
+    ('You have started a download of this file within the last '
+     '%(minutes)d minute.  Please check your download window.  If you '
+     'need to start a new download, please wait at least %(minutes)d '
+     'minute in order to avoid consuming excess bandwidth.',
+     'You have started a download of this file within the last '
+     '%(minutes)d minutes.  Please check your download window.  If you '
+     'need to start a new download, please wait at least %(minutes)d '
+     'minutes in order to avoid consuming excess bandwidth.',
+     'minutes %(minutes)d'))
+PLAIN = ('Show With Variants', 'Covers To Replace', 'all marked covers')
+# The plural rule of each language, and the form it gives 0, 1, 2 and 5.
+PLURAL_FORMS = {
+    'it': ('nplurals=2; plural=(n != 1);', {0: 1, 1: 0, 2: 1, 5: 1}),
+    'de': ('nplurals=2; plural=(n != 1);', {0: 1, 1: 0, 2: 1, 5: 1}),
+    'fr': ('nplurals=2; plural=(n > 1);', {0: 0, 1: 0, 2: 1, 5: 1}),
+    'es': ('nplurals=2; plural=(n != 1);', {0: 1, 1: 0, 2: 1, 5: 1}),
+    'sr': ('nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && '
+           'n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);',
+           {0: 2, 1: 0, 2: 1, 5: 2}),
+    'ja': ('nplurals=1; plural=0;', {0: 0, 1: 0, 2: 0, 5: 0})}
+# The series whose names start with these letters have 0, 1, 2 and 5
+# covers to replace, and as many issues on sale in one week.
+COUNTS = {0: 'D', 1: 'A', 2: 'B', 5: 'C'}
+
+
+@pytest.fixture
+def catalogs(settings, tmp_path):
+    """
+    A message file in each of the six languages, with its plural rule:
+    each form of a text with a number is "[<language> <form>]" and the
+    number, and a plain text is "[<language>]" and the text.
+    """
+    for language, (rule, _) in PLURAL_FORMS.items():
+        catalog = polib.POFile()
+        catalog.metadata = {'Content-Type': 'text/plain; charset=UTF-8',
+                            'Plural-Forms': rule}
+        forms = int(rule.split(';')[0].split('=')[1])
+        for one, more, shown in PLURALS:
+            catalog.append(polib.POEntry(
+              msgid=one, msgid_plural=more, msgstr_plural={
+                form: '[%s %d] %s' % (language, form, shown)
+                for form in range(forms)}))
+        for text in PLAIN:
+            catalog.append(polib.POEntry(
+              msgid=text, msgstr='[%s] %s' % (language, text)))
+        folder = tmp_path / language / 'LC_MESSAGES'
+        folder.mkdir(parents=True)
+        catalog.save_as_mofile(str(folder / 'django.mo'))
+    settings.LOCALE_PATHS = [str(tmp_path)]
+
+
+@pytest.fixture
+def counted(member):
+    """
+    For each count of COUNTS, a series with as many issues, all on sale in
+    the same past week and each with a cover marked for replacement.
+    Returns the year and week of each count.
+    """
+    publisher = Publisher.objects.get(id=709)
+    language = Language.objects.get(id=961)
+    today = date.today()
+    weeks = {}
+    for weeks_ago, (count, letter) in enumerate(COUNTS.items(), start=1):
+        monday = today - timedelta(days=today.weekday(), weeks=weeks_ago)
+        weeks[count] = monday.isocalendar()[:2]
+        series = Series.objects.create(
+          name='%s Series' % letter, sort_name='%s Series' % letter,
+          year_began=1990, country=publisher.country, language=language,
+          publisher=publisher, is_comics_publication=True,
+          publication_dates='1990')
+        for number in range(1, count + 1):
+            Cover.objects.create(issue=Issue.objects.create(
+              number=str(number), series=series, sort_code=number,
+              publication_date='1990', key_date='1990-01-00',
+              on_sale_date=monday.isoformat()), marked=True)
+    return weeks
 
 
 @pytest.fixture
@@ -367,3 +465,71 @@ def test_date_help_text_in_italian(italian):
 
     assert help_text == ('[it] Enter date as YYYY-MM-DD. A ? can be used in '
                          'each part to indicate uncertainty.')
+
+
+@pytest.mark.parametrize('language', PLURAL_FORMS)
+def test_on_sale_count_in_six_languages(client, catalogs, counted,
+                                        my_comics, language):
+    """
+    The counts of the weekly on-sale list of My Comics take the plural
+    form of the language: in French 0 and 1 take the first form, in
+    Serbian 1, 2 to 4 and 5 or more take three forms, in Japanese every
+    number takes the one form.
+    """
+    forms = PLURAL_FORMS[language][1]
+    for count, (year, week) in counted.items():
+        address = reverse('on_sale_weekly', kwargs={'year': year,
+                                                    'week': week})
+
+        response = client.get(address + '?lang=' + language)
+
+        tag = '[%s %d]' % (language, forms[count])
+        _assert_shown(response.content, (
+          '%s week %d' % (tag, count), '%s week from %d' % (tag, count),
+          '[%s] Show With Variants' % language))
+
+
+@pytest.mark.parametrize('language', PLURAL_FORMS)
+def test_covers_count_in_six_languages(client, catalogs, counted, language):
+    """The count of the covers to replace takes the plural form."""
+    forms = PLURAL_FORMS[language][1]
+    for count, letter in COUNTS.items():
+        response = client.get('/covers_to_replace/with/%s/?lang=%s'
+                              % (letter, language))
+
+        _assert_shown(response.content, (
+          '[%s %d] covers %d' % (language, forms[count], count),
+          '[%s] Covers To Replace' % language,
+          '[%s] all marked covers' % language))
+
+
+@pytest.mark.parametrize('language', PLURAL_FORMS)
+def test_download_minutes_in_six_languages(client, catalogs, member,
+                                           settings, language):
+    """
+    The minutes of the error of a download started again too soon take
+    the plural form.
+    """
+    forms = PLURAL_FORMS[language][1]
+    Download.objects.create(user=member, description=repr(
+      {'file': settings.MYSQL_DUMP}))
+    client.force_login(member)
+    for minutes in (1, 2, 5):
+        settings.DOWNLOAD_DELTA = minutes
+
+        response = client.post(
+          reverse('stats:download') + '?lang=' + language,
+          {'accept_license': 'on'}, follow=True)
+
+        _assert_shown(response.content, (
+          '[%s %d] minutes %d' % (language, forms[minutes], minutes),))
+
+
+@pytest.mark.parametrize('letter, shown', (
+  ('A', 'Displaying 1 to 1 of 1 cover needing replacement.'),
+  ('B', 'Displaying 1 to 2 of 2 covers needing replacement.')))
+def test_covers_count_in_english(client, counted, letter, shown):
+    """In English one cover is "1 cover", more are "covers"."""
+    response = client.get('/covers_to_replace/with/%s/' % letter)
+
+    _assert_shown(response.content, (shown,))
