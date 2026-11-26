@@ -207,7 +207,7 @@ def is_overdue(changeset):
         start = changeset.modified if changeset.change_type == CTYPES['bulk'] \
             else changeset.created
         changeset.expires = start + \
-          timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
+            timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
         if datetime.now(timezone.utc) - start > \
                 timedelta(weeks=settings.RESERVE_ISSUE_WEEKS-1):
             return mark_safe("class='text-red-700'")
