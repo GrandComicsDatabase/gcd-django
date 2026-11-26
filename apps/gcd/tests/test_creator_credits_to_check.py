@@ -11,7 +11,7 @@ from apps.gcd.models import (CreditType, Issue, Publisher, Series, Story,
 from apps.gcd.models.creator import (Creator, CreatorNameDetail,
                                      NAME_TYPES, NameType)
 from apps.gcd.models.story import CREDIT_TYPES
-from apps.stddata.models import Country, Language, Script
+from apps.stddata.models import Country, Date, Language, Script
 
 LINK = re.compile(r"""href=['"]([^'"]+)['"]>Credits to Check<""")
 NOTE = 'Non-official name selected without credited-flag'
@@ -37,8 +37,9 @@ def world(db):
         publication_dates='1970')
     issue = Issue.objects.create(number='1', series=series, sort_code=1,
                                  publication_date='1970')
-    creator = Creator.objects.create(gcd_official_name='Some Writer',
-                                     sort_name='Writer, Some')
+    creator = Creator.objects.create(
+        gcd_official_name='Some Writer', sort_name='Writer, Some',
+        birth_date=Date.objects.create(), death_date=Date.objects.create())
     official = CreatorNameDetail.objects.create(
         name='Some Writer', creator=creator, is_official_name=True,
         in_script=latin)
