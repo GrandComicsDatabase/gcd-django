@@ -53,17 +53,6 @@ queries return empty sets, and all queries succeeded. An existing account at
 any host is a reason to stop and review. Do not drop it, change its password,
 or use `IF NOT EXISTS` to skip these checks.
 
-One exception: an account `'gcd_dev'@'127.0.0.1'` made with an earlier
-version of this guide lacks the two Performance Schema grants below, and the
-tests of concurrent changes fail on it with error 1142. For that account only,
-run these two statements as the MySQL root user and skip the rest of this
-section. They do not drop or recreate the account or change its password:
-
-```sql
-GRANT SELECT ON performance_schema.data_locks TO 'gcd_dev'@'127.0.0.1';
-GRANT SELECT ON performance_schema.data_lock_waits TO 'gcd_dev'@'127.0.0.1';
-```
-
 For a fresh server with `partial_revokes=0`, run:
 
 ```sql
