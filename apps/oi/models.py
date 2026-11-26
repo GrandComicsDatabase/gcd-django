@@ -9044,11 +9044,11 @@ class ReprintRevision(Revision):
             elif self.previous_revision.target and \
                     self.previous_revision.target.issue == base_issue:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.target)
             else:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.origin)
         return mark_safe(reprint)
 
