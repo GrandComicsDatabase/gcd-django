@@ -341,7 +341,9 @@ class Command(BaseCommand):
         if script is None:
             script = Script.objects.filter(code='latn').first()
         if script is None:
-            script = Script.objects.create(number=37, code='latn', name='Latin')
+            # Creator names default to Latin by its id on the site.
+            script = Script.objects.create(pk=Script.LATIN_PK, number=37,
+                                           code='latn', name='Latin')
         creator_name, _ = CreatorNameDetail.objects.get_or_create(
             creator=creator,
             name=f'{SAMPLE_PREFIX} Alex Example',
