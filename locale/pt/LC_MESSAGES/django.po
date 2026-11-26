@@ -2,6 +2,7 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
+# Entries with the comment "Automatic translation (AI)" were translated by AI.
 #, fuzzy
 msgid ""
 msgstr ""
@@ -11,376 +12,478 @@ msgstr ""
 "PO-Revision-Date: 2023-08-18 16:55+0000\n"
 "Last-Translator: Antonio Pontes Junior <acfpjr@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/gcd/models/story.py:1263 apps/gcd/templatetags/credits.py:610
 msgid "page"
 msgid_plural "pages"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "página"
+msgstr[1] "páginas"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/gcd/templatetags/credits.py:280
 msgid "Job Number"
-msgstr ""
+msgstr "Código de produção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/gcd/templatetags/credits.py:284
 msgid "First Line of Dialogue or Text"
-msgstr ""
+msgstr "Primeira linha de diálogo ou texto"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/gcd/templatetags/credits.py:292
 msgid "Reprinted"
-msgstr ""
+msgstr "Republicado"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/gcd/templatetags/credits.py:883
 msgid "Reprints"
-msgstr ""
+msgstr "Republicações"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/gcd/templatetags/credits.py:909
 msgid "Parts of this issue are reprinted"
-msgstr ""
+msgstr "Partes desta edição são republicadas"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_complete.html:5
 #: apps/indexer/templates/indexer/password_reset_complete.html:9
 msgid "Password reset complete"
-msgstr ""
+msgstr "Redefinição de senha concluída"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_complete.html:11
 msgid "Your password has been set.  You may go ahead and log in now."
-msgstr ""
+msgstr "Sua senha foi definida. Você já pode entrar."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_complete.html:13
 #: templates/mycomics/user_base.html:62
 msgid "Log In"
-msgstr ""
+msgstr "Entrar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:5
 #: apps/indexer/templates/indexer/password_reset_form.html:5
 #: apps/indexer/templates/indexer/password_reset_form.html:9
 msgid "Password reset"
-msgstr ""
+msgstr "Redefinição de senha"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:11
 msgid "Enter new password"
-msgstr ""
+msgstr "Digite a nova senha"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:13
 msgid ""
 "Please enter your new password twice so we can verify you typed it in "
 "correctly."
 msgstr ""
+"Digite a nova senha duas vezes para podermos verificar se você a digitou "
+"corretamente."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:18
 msgid "New password:"
-msgstr ""
+msgstr "Nova senha:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:20
 msgid "Confirm password:"
-msgstr ""
+msgstr "Confirme a senha:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:21
 msgid "Change my password"
-msgstr ""
+msgstr "Alterar minha senha"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:26
 msgid "Password reset unsuccessful"
-msgstr ""
+msgstr "A redefinição de senha não foi concluída"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_confirm.html:28
 msgid ""
 "The password reset link was invalid, possibly because it has already been "
 "used.  Please request a new password reset."
 msgstr ""
+"O link de redefinição de senha é inválido, possivelmente porque já foi "
+"usado. Solicite uma nova redefinição de senha."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_done.html:5
 msgid "Password reset successful"
-msgstr ""
+msgstr "Pedido de redefinição de senha enviado"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_done.html:9
 msgid "Password reset sent"
-msgstr ""
+msgstr "Redefinição de senha enviada"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_done.html:11
 msgid ""
 "We've e-mailed you instructions for setting your password to the e-mail "
 "address you submitted. You should receive it shortly."
 msgstr ""
+"Enviamos as instruções para definir sua senha para o endereço de e-mail "
+"informado. Você deve recebê-las em breve."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_email.html:3
 msgid "You're receiving this e-mail because you requested a password reset"
 msgstr ""
+"Você está recebendo este e-mail porque solicitou a redefinição da senha"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_email.html:4
 #, python-format
 msgid "for your user account at %(site_name)s"
-msgstr ""
+msgstr "da sua conta de usuário em %(site_name)s"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_email.html:6
 msgid "Please go to the following page and choose a new password:"
-msgstr ""
+msgstr "Acesse a página a seguir e escolha uma nova senha:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_email.html:10
 msgid "Thanks for using our site!"
-msgstr ""
+msgstr "Obrigado por usar o nosso site!"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_email.html:12
 #, python-format
 msgid "The %(site_name)s team"
-msgstr ""
+msgstr "A Equipe do %(site_name)s"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_form.html:11
 msgid ""
 "Forgotten your password? Enter your e-mail address below, and we'll e-mail "
 "instructions for setting a new one."
 msgstr ""
+"Esqueceu sua senha? Digite seu endereço de e-mail abaixo e enviaremos por "
+"e-mail as instruções para definir uma nova."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_form.html:16
 msgid "E-mail address:"
-msgstr ""
+msgstr "Endereço de e-mail:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/indexer/templates/indexer/password_reset_form.html:16
 msgid "Reset my password"
-msgstr ""
+msgstr "Redefinir minha senha"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/inducks/templatetags/flatfile.py:27
 #: apps/inducks/templatetags/flatfile.py:118
 msgid "translation"
-msgstr ""
+msgstr "tradução"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/inducks/templatetags/flatfile.py:105
 msgid "script"
-msgstr ""
+msgstr "roteiro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/inducks/templatetags/flatfile.py:110
 msgid "plot"
-msgstr ""
+msgstr "argumento"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:229
 msgid "Collection saved."
-msgstr ""
+msgstr "Coleção salva."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:251
 #, python-format
 msgid "Collection <b>%s</b> deleted."
-msgstr ""
+msgstr "Coleção <b>%s</b> excluída."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:378
 #, python-format
 msgid "Item <b>%s</b> removed from %s"
-msgstr ""
+msgstr "Item <b>%s</b> removido de %s"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:418
 msgid "Item moved between collections"
-msgstr ""
+msgstr "Item movido entre coleções"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:425
 #, python-format
 msgid ""
 "Item status for own/want differed from default of new collection <b>%s</b> "
 "and was changed."
 msgstr ""
+"O status tenho/quero do item era diferente do padrão da nova coleção "
+"<b>%s</b> e foi alterado."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:435 apps/mycomics/views.py:457
 #, python-format
 msgid ""
 "Item status is set to for sale due to default of new collection <b>%s</b>."
 msgstr ""
+"O item foi marcado como à venda pelo padrão da nova coleção <b>%s</b>."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:444
 msgid "Item copied between collections"
-msgstr ""
+msgstr "Item copiado entre coleções"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:448
 msgid "Own/want default for new collection differs from item status."
-msgstr ""
+msgstr "O padrão tenho/quero da nova coleção é diferente do status do item."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:462 apps/mycomics/views.py:464
 msgid "Item unchanged"
-msgstr ""
+msgstr "Item não alterado"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:503 apps/mycomics/views.py:601
 msgid "Sell date"
-msgstr ""
+msgstr "Data de venda"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:507 apps/mycomics/views.py:604
 msgid "Acquisition date"
-msgstr ""
+msgstr "Data de aquisição"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:598
 msgid "Item saved."
-msgstr ""
+msgstr "Item salvo."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:605
 msgid "Date was entered in wrong format."
-msgstr ""
+msgstr "A data foi digitada em formato errado."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:612 apps/mycomics/views.py:690
 #: apps/mycomics/views.py:1415
 msgid "Some data was entered incorrectly."
-msgstr ""
+msgstr "Alguns dados foram digitados incorretamente."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:684
 msgid "Items saved."
-msgstr ""
+msgstr "Itens salvos."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:869
 msgid "More than 500 lines. Please split the import file into smaller chunks."
 msgstr ""
+"Mais de 500 linhas. Divida o arquivo de importação em partes menores."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1075
 #, python-format
 msgid "%s is already subscribed for the collection %s."
-msgstr ""
+msgstr "A série %s já está assinada para a coleção %s."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1083
 #, python-format
 msgid "Series %s is now subscribed for the collection %s."
-msgstr ""
+msgstr "A série %s agora está assinada para a coleção %s."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1087
 msgid "Selected series is not ongoing."
-msgstr ""
+msgstr "A série selecionada não está em andamento."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1152
 msgid "Reading order saved."
-msgstr ""
+msgstr "Ordem de leitura salva."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1187
 #, python-format
 msgid "Reading Order <b>%s</b> deleted."
-msgstr ""
+msgstr "Ordem de leitura <b>%s</b> excluída."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1421
 #, python-format
 msgid "Item %s saved."
-msgstr ""
+msgstr "Item %s salvo."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1450
 #, python-format
 msgid "Item <b>%s</b> removed from Reading List %s"
-msgstr ""
+msgstr "Item <b>%s</b> removido da lista de leitura %s"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1470
 msgid "Settings saved."
-msgstr ""
+msgstr "Configurações salvas."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1501
 msgid "Location saved."
-msgstr ""
+msgstr "Local salvo."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1504
 msgid "Entered data was incorrect."
-msgstr ""
+msgstr "Os dados digitados estavam incorretos."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/mycomics/views.py:1523
 msgid "Location deleted."
-msgstr ""
+msgstr "Local excluído."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:230
 msgid "Submit Changes For Approval"
-msgstr ""
+msgstr "Enviar mudanças para aprovação"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:231
 msgid "Approve"
-msgstr ""
+msgstr "Aprovar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:232
 msgid "Send Back To Indexer"
-msgstr ""
+msgstr "Devolver ao indexador"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:758
 msgid "This change still contains invalid issue or sequence data."
 msgstr ""
+"Esta mudança ainda contém dados inválidos de edição ou de sequência."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:793
 #, python-brace-format
 msgid ""
 "Correct and save the revisions, then select <strong>{submit}</strong>. "
 "Affected revisions:"
 msgstr ""
+"Corrija e salve as revisões e depois selecione <strong>{submit}</strong>. "
+"Revisões afetadas:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:1687
 #, python-brace-format
 msgid ""
 "Enter an explanation in the comment field before selecting "
 "<strong>{send_back}</strong>."
 msgstr ""
+"Escreva uma explicação no campo de comentário antes de selecionar "
+"<strong>{send_back}</strong>."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/stddata/forms.py:35
 msgid "Date given in a wrong format"
-msgstr ""
+msgstr "Data informada em formato errado"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/stddata/forms.py:68
 msgid "Month is not between 1 and 12."
-msgstr ""
+msgstr "O mês não está entre 1 e 12."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/stddata/forms.py:81
 msgid "Day is not between 1 and 31."
-msgstr ""
+msgstr "O dia não está entre 1 e 31."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:6
 msgid "day before"
-msgstr ""
+msgstr "dia anterior"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:8
 msgid "year before"
-msgstr ""
+msgstr "ano anterior"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:10
 #: templates/gcd/bits/choose_month.html:4
 msgid "month before"
-msgstr ""
+msgstr "mês anterior"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:27
 msgid "January"
-msgstr ""
+msgstr "Janeiro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:28
 msgid "February"
-msgstr ""
+msgstr "Fevereiro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:29
 msgid "March"
-msgstr ""
+msgstr "Março"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:30
 msgid "April"
-msgstr ""
+msgstr "Abril"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:31
 msgid "May"
-msgstr ""
+msgstr "Maio"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:32
 msgid "June"
-msgstr ""
+msgstr "Junho"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:33
 msgid "July"
-msgstr ""
+msgstr "Julho"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:34
 msgid "August"
-msgstr ""
+msgstr "Agosto"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:35
 msgid "September"
-msgstr ""
+msgstr "Setembro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:36
 msgid "October"
-msgstr ""
+msgstr "Outubro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:37
 msgid "November"
-msgstr ""
+msgstr "Novembro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:38
 msgid "December"
-msgstr ""
+msgstr "Dezembro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:43
 #: templates/gcd/bits/choose_month.html:10
 #: templates/gcd/bits/choose_week.html:13
@@ -389,28 +492,33 @@ msgstr ""
 #: templates/gcd/bits/tw_pagination_bar.html:81
 #: templates/gcd/bits/tw_series_navigation.html:24
 msgid "Go"
-msgstr ""
+msgstr "Ir"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:48
 msgid "day after"
-msgstr ""
+msgstr "dia seguinte"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:50
 msgid "year after"
-msgstr ""
+msgstr "ano seguinte"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_date.html:52
 #: templates/gcd/bits/choose_month.html:12
 msgid "month after"
-msgstr ""
+msgstr "mês seguinte"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_week.html:5
 msgid "week before"
-msgstr ""
+msgstr "semana anterior"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/choose_week.html:17
 msgid "week after"
-msgstr ""
+msgstr "semana seguinte"
 
 #: templates/gcd/bits/front_page_login.html:6
 msgid "You are logged in as "
@@ -424,17 +532,19 @@ msgstr "Edição"
 msgid "Profile"
 msgstr "Perfil"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/front_page_login.html:11
 msgid "Admin"
-msgstr ""
+msgstr "Administração"
 
 #: templates/gcd/bits/front_page_login.html:15
 msgid "Logout"
 msgstr "Sair"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/front_page_login.html:21 templates/mycomics/index.html:49
 msgid "email"
-msgstr ""
+msgstr "e-mail"
 
 #: templates/gcd/bits/front_page_login.html:23 templates/mycomics/index.html:50
 msgid "password"
@@ -453,29 +563,34 @@ msgstr "Esqueceu sua senha?"
 msgid "Register"
 msgstr "Registro"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/front_page_menu.html:8 templates/gcd/tw_index.html:23
 msgid "About the GCD"
-msgstr ""
+msgstr "Sobre o GCD"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/front_page_menu.html:11 templates/gcd/tw_index.html:27
 msgid "How to Help"
-msgstr ""
+msgstr "Como Ajudar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/front_page_menu.html:13
 msgid "Documentation Wiki"
-msgstr ""
+msgstr "Wiki de documentação"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/front_page_menu.html:16
 msgid "Mailing Lists"
-msgstr ""
+msgstr "Listas de discussão"
 
 #: templates/gcd/bits/front_page_menu.html:17 templates/gcd/tw_index.html:24
 msgid "Contact Us"
 msgstr "Contate-nos"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/front_page_menu.html:19
 msgid "Donate"
-msgstr ""
+msgstr "Doe"
 
 #: templates/gcd/bits/front_page_search_box.html:6
 #: templates/gcd/bits/front_page_search_box.html:19
@@ -490,54 +605,63 @@ msgstr "Ordenar por"
 msgid "Advanced&nbsp;Query"
 msgstr "Busca Avançada"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:8
 #: templates/gcd/bits/tw_issue_data.html:28
 msgid "Volume"
-msgstr ""
+msgstr "Volume"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:11
 #: templates/gcd/bits/tw_issue_data.html:31 templates/inducks/issue.html:20
 msgid "Price"
-msgstr ""
+msgstr "Preço"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:13
 #: templates/gcd/bits/tw_issue_data.html:33 templates/inducks/issue.html:21
 #: templates/inducks/issue.html:30
 msgid "Pages"
-msgstr ""
+msgstr "Páginas"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:16
 #: templates/gcd/bits/tw_issue_data.html:36
 msgid "Indicia Frequency"
-msgstr ""
+msgstr "Periodicidade no colofão"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:20
 #: templates/gcd/bits/tw_issue_data.html:40
 msgid "On-sale Date"
-msgstr ""
+msgstr "Data de lançamento"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:25
 #: templates/gcd/bits/tw_issue_data.html:45
 msgid "Publisher's Age Guidelines"
-msgstr ""
+msgstr "Classificação etária da editora"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:29
 #: templates/gcd/bits/tw_issue_data.html:49
 msgid "Indicia&nbsp;/&nbsp;Colophon Publisher"
-msgstr ""
+msgstr "Editora no expediente&nbsp;/&nbsp;colofão"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/issue_data.html:32
 #: templates/gcd/bits/tw_issue_data.html:52
 msgid "Publisher's Brand"
-msgstr ""
+msgstr "Selo da editora"
 
 #: templates/gcd/bits/legalese.html:7
 msgid "contact us"
 msgstr "Contate-nos"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/legalese.html:10
 msgid "donate"
-msgstr ""
+msgstr "Doe"
 
 #: templates/gcd/bits/legalese.html:15
 #, python-format
@@ -591,10 +715,11 @@ msgstr ""
 "esquema de banco de dados e formato de distribuição de dados.\n"
 "    "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/legalese.html:40
 #, python-format
 msgid "The GCD <a href=\"%(privacy_url)s\">Privacy Policy</a>."
-msgstr ""
+msgstr "A <a href=\"%(privacy_url)s\">Política de Privacidade</a> do GCD."
 
 #: templates/gcd/bits/legalese.html:43
 msgid ""
@@ -606,20 +731,23 @@ msgstr ""
 "django\">site do GCD</a> é licenciado sob a <a href=\"http://www.gnu.org/"
 "licenses/gpl.html\">GNU General Public License</a>"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/series_issue_header.html:57
 #: templates/gcd/bits/series_issue_header.html:59
 #: templates/gcd/bits/tw_series_navigation.html:6
 #: templates/gcd/bits/tw_series_navigation.html:8
 msgid "Previous Issue"
-msgstr ""
+msgstr "Edição anterior"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/series_issue_header.html:81
 #: templates/gcd/bits/series_issue_header.html:83
 #: templates/gcd/bits/tw_series_navigation.html:28
 #: templates/gcd/bits/tw_series_navigation.html:30
 msgid "Next Issue"
-msgstr ""
+msgstr "Próxima edição"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/bits/single_story_credits.html:18
 #, python-format
 msgid ""
@@ -627,6 +755,9 @@ msgid ""
 "      page%(suffix)s\n"
 "    "
 msgstr ""
+"\n"
+"      página%(suffix)s\n"
+"    "
 
 #: templates/gcd/bits/tw_front_page_content.html:32
 #, python-format
@@ -688,22 +819,27 @@ msgstr "Recomenda-se o uso de critério por parte do leitor."
 msgid "The Grand Comics Database Team"
 msgstr "A Equipe do Grand Comics Database"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/details/tw_feature_logo.html:68
 msgid "Replace Feature Logo Scan"
-msgstr ""
+msgstr "Substituir scan do logotipo do protagonista"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/details/tw_feature_logo.html:72
 msgid "Delete Feature Logo Scan"
-msgstr ""
+msgstr "Excluir scan do logotipo do protagonista"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/details/tw_feature_logo.html:80
 msgid "Add Feature Logo Scan"
-msgstr ""
+msgstr "Adicionar scan do logotipo do protagonista"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/details/tw_issue.html:363
 msgid "Edit With Another Issue"
-msgstr ""
+msgstr "Editar junto com outra edição"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/details/tw_single_story.html:41
 #, python-format
 msgid ""
@@ -711,6 +847,9 @@ msgid ""
 "    page%(suffix)s\n"
 "  "
 msgstr ""
+"\n"
+"    página%(suffix)s\n"
+"  "
 
 #: templates/gcd/index.html:130
 msgid "Useful Links"
@@ -736,13 +875,15 @@ msgstr "lançamentos do mês"
 msgid "International statistics"
 msgstr "Estatísticas internacionais"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/index.html:140 templates/gcd/tw_index.html:126
 msgid "by Language"
-msgstr ""
+msgstr "por idioma"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/index.html:141 templates/gcd/tw_index.html:127
 msgid "by Country"
-msgstr ""
+msgstr "por país"
 
 #: templates/gcd/index.html:167 templates/gcd/tw_index.html:88
 msgid "Last Updated Language Issues"
@@ -764,24 +905,28 @@ msgstr "Estatísticas"
 msgid "Covers marked for replacement"
 msgstr "Capas para substituir"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/status/daily_changes.html:15
 #: templates/gcd/status/daily_changes.html:229
 msgid "Changes for "
-msgstr ""
+msgstr "Mudanças de "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/status/daily_covers.html:18
 #: templates/gcd/status/daily_covers.html:44
 msgid "Covers for "
-msgstr ""
+msgstr "Capas de "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/status/daily_covers.html:25
 #: templates/gcd/status/daily_covers.html:50
 msgid " covers posted"
-msgstr ""
+msgstr " capas enviadas"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/gcd/tw_index.html:25
 msgid "How to Search"
-msgstr ""
+msgstr "Como Buscar"
 
 #: templates/gcd/tw_index.html:28
 msgid "Today's Covers"
@@ -803,6 +948,7 @@ msgstr "lançamentos do mês"
 msgid "International Statistics"
 msgstr "Estatísticas internacionais"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/help.html:7 templates/mycomics/bits/help.html:14
 #: templates/mycomics/collection_item.html:15
 #: templates/mycomics/collection_item.html:66
@@ -813,49 +959,59 @@ msgstr "Estatísticas internacionais"
 #: templates/mycomics/settings.html:14 templates/mycomics/settings.html:32
 #: templates/mycomics/settings.html:50 templates/mycomics/settings.html:70
 msgid "Close"
-msgstr ""
+msgstr "Fechar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/help.html:8
 msgid "Help for "
-msgstr ""
+msgstr "Ajuda do "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/indexing_links.html:6
 msgid "Search Inside Collection"
-msgstr ""
+msgstr "Buscar na coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/indexing_links.html:9
 msgid "Unindexed Issues"
-msgstr ""
+msgstr "Edições não indexadas"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/indexing_links.html:12
 msgid "Needed Covers"
-msgstr ""
+msgstr "Capas que faltam"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/series_control.html:19
 msgid "Subscribe"
-msgstr ""
+msgstr "Assinar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/series_control.html:31
 #: templates/mycomics/bits/tw_series_control.html:42
 msgid "subscribed for"
-msgstr ""
+msgstr "assinada para"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/bits/tw_series_control.html:30
 msgid "Subscribe Series For"
-msgstr ""
+msgstr "Assinar série para"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:21
 #: templates/mycomics/collection_item.html:45
 msgid "Remove issue from collection "
-msgstr ""
+msgstr "Remover edição da coleção "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:22
 #: templates/mycomics/collection_item.html:46
 #: templates/mycomics/reading_order.html:22
 #: templates/mycomics/reading_order_item.html:40
 msgid "Do you want to remove the issue <b>"
-msgstr ""
+msgstr "Deseja remover a edição <b>"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:24
 #: templates/mycomics/collection_item.html:29
 #: templates/mycomics/collection_item.html:48
@@ -874,8 +1030,9 @@ msgstr ""
 #: templates/mycomics/settings.html:60 templates/mycomics/settings.html:80
 #: templates/mycomics/tw_generic_edit_form.html:41
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:25
 #: templates/mycomics/collection_item.html:49
 #: templates/mycomics/collection_subscriptions.html:16
@@ -889,190 +1046,224 @@ msgstr ""
 #: templates/mycomics/settings.html:23 templates/mycomics/settings.html:41
 #: templates/mycomics/settings.html:61 templates/mycomics/settings.html:81
 msgid "Confirm"
-msgstr ""
+msgstr "Confirmar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:42
 msgid "Collection Details"
-msgstr ""
+msgstr "Detalhes da coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:46
-#, fuzzy
-#| msgid "series"
 msgid "Series"
-msgstr "séries"
+msgstr "Séries"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:53
 #: templates/mycomics/collection_series.html:20
 #: templates/mycomics/collection_subscriptions.html:54
 msgid "Subscriptions"
-msgstr ""
+msgstr "Assinaturas"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:56
 #: templates/mycomics/collection_item.html:107
 #: templates/mycomics/collection_series.html:23
 #: templates/mycomics/reading_order.html:46
 #: templates/mycomics/reading_order_item.html:78
 #: templates/mycomics/settings.html:145 templates/mycomics/settings.html:168
-#, fuzzy
-#| msgid "Editing"
 msgid "Edit"
-msgstr "Edição"
+msgstr "Editar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:66
 msgid "Filters"
-msgstr ""
+msgstr "Filtros"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:74
 msgid "Edit Shown Items"
-msgstr ""
+msgstr "Editar itens exibidos"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:76
 #: templates/mycomics/collection_series.html:33
 #: templates/mycomics/collection_subscriptions.html:67
 #: templates/mycomics/user_base.html:35
 msgid "Collections"
-msgstr ""
+msgstr "Coleções"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:16
 #: templates/mycomics/reading_order_item.html:16
 msgid "Editing item in collection"
-msgstr ""
+msgstr "Editando item da coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:30
 #: templates/mycomics/generic_edit_form.html:19
 #: templates/mycomics/reading_order_item.html:24
 #: templates/mycomics/settings.html:128
 #: templates/mycomics/tw_generic_edit_form.html:42
 msgid "Submit"
-msgstr ""
+msgstr "Enviar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:75
 msgid "Copy"
-msgstr ""
+msgstr "Copiar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:76
 msgid "Move"
-msgstr ""
+msgstr "Mover"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:100
 #: templates/mycomics/reading_order_item.html:71
 msgid "Also in:"
-msgstr ""
+msgstr "Também em:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:110
 msgid "Delete from collection"
-msgstr ""
+msgstr "Excluir da coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:113
 msgid "To other collection"
-msgstr ""
+msgstr "Para outra coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:133
 msgid "Issue is in digital form."
-msgstr ""
+msgstr "Edição em formato digital."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:135
 msgid "Notes: "
-msgstr ""
+msgstr "Observações: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:136
 msgid "Tags: "
-msgstr ""
+msgstr "Tags: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:138
 msgid "Location: "
-msgstr ""
+msgstr "Local: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:141
 msgid "Purchase location: "
-msgstr ""
+msgstr "Local de compra: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:144
 msgid "Grade: "
-msgstr ""
+msgstr "Estado de conservação: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:147
 #: templates/mycomics/reading_order_item.html:101
 msgid "Was read: "
-msgstr ""
+msgstr "Lido: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:150
 msgid "For sale: "
-msgstr ""
+msgstr "À venda: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:153
 msgid "Signed: "
-msgstr ""
+msgstr "Autografado: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:156
 msgid "Price paid: "
-msgstr ""
+msgstr "Preço pago: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:159
 msgid "Market value: "
-msgstr ""
+msgstr "Valor de mercado: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:162
 msgid "Sell price: "
-msgstr ""
+msgstr "Preço de venda: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:165
 msgid "Acquisition date: "
-msgstr ""
+msgstr "Data de aquisição: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:168
 msgid "Sell date: "
-msgstr ""
+msgstr "Data de venda: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:171
 msgid "My rating: "
-msgstr ""
+msgstr "Minha avaliação: "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_series.html:9
 msgid "Collection details"
-msgstr ""
+msgstr "Detalhes da coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_series.html:13
-#, fuzzy
-#| msgid "issues"
 msgid "Issues"
-msgstr "edições"
+msgstr "Edições"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_subscriptions.html:12
 #: templates/mycomics/collection_subscriptions.html:29
 msgid "Unsubscribe series in collection "
-msgstr ""
+msgstr "Cancelar assinatura da série na coleção "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_subscriptions.html:13
 #: templates/mycomics/collection_subscriptions.html:30
 msgid "Do you want to unsubscribe from the series <b>"
-msgstr ""
+msgstr "Deseja cancelar a assinatura da série <b>"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_subscriptions.html:58
 msgid "Pull"
-msgstr ""
+msgstr "Buscar novas edições"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:13
 #: templates/mycomics/collections.html:32
 msgid "Remove Collection"
-msgstr ""
+msgstr "Remover coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:14
 msgid "Do you want to remove the collection <b>"
-msgstr ""
+msgstr "Deseja remover a coleção <b>"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:35
 msgid "Do you want to remove this collection?"
-msgstr ""
+msgstr "Deseja remover esta coleção?"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:50
 msgid "Import Issues Into A Collection"
-msgstr ""
+msgstr "Importar edições para uma coleção"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:53
 msgid "Select file:"
-msgstr ""
+msgstr "Selecione o arquivo:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:57
 msgid ""
 "\n"
@@ -1106,155 +1297,288 @@ msgid ""
 "imported file, Annuals do as well as.</p>\n"
 "            "
 msgstr ""
+"\n"
+"              <p>Na página seguinte você recebe uma lista de edições "
+"candidatas com base no arquivo enviado.\n"
+"              Nela, marque as edições que deseja importar para uma coleção; "
+"no caso de\n"
+"              variantes, provavelmente você vai querer adicionar só uma. "
+"Depois de clicar em 'Select issues', você\n"
+"              pode escolher uma coleção e confirmar a importação.</p>\n"
+"\n"
+"              <p>Por motivos de processamento, não importe mais de 500 "
+"linhas por arquivo.\n"
+"              Arquivos maiores precisam ser divididos antes.</p>\n"
+"\n"
+"              <p>É possível importar um arquivo csv em que cada linha "
+"tem os dados de uma edição separados por tabulação.\n"
+"              O primeiro dado é o nome da série, o segundo o número da "
+"edição.\n"
+"              Opcionalmente, um terceiro dado com o nome da editora e um "
+"quarto com o código do idioma.</p>\n"
+"\n"
+"              <p>Também é possível tentar importar um arquivo exportado do "
+"comicbookdb.com, que será reconhecido por uma primeira linha que começa "
+"com \"Title,Issue Number,Issue Name\".\n"
+"              O nome da série, o número da edição, o nome da editora "
+"e o ano de início da série serão obtidos das listas exportadas.\n"
+"              Observe que os nomes das editoras podem precisar de um "
+"localizar e substituir antes da importação; algumas editoras (p.ex. DC, "
+"Image) são tratadas pelo código.\n"
+"              Alguns nomes de séries também precisam de um localizar e "
+"substituir no arquivo a importar, assim como os Annuals.</p>\n"
+"            "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:78
 msgid "Import No Variants"
-msgstr ""
+msgstr "Importar sem variantes"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:79
 #: templates/mycomics/collections.html:92
 msgid "Import"
-msgstr ""
+msgstr "Importar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:90
 msgid "Collections List"
-msgstr ""
+msgstr "Lista de coleções"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collections.html:95
 #: templates/mycomics/reading_orders.html:51
 msgid "Add New"
-msgstr ""
+msgstr "Adicionar nova"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/index.html:30 templates/mycomics/user_base.html:37
 msgid "Help"
-msgstr ""
+msgstr "Ajuda"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/index.html:44
 msgid "Your username and password didn't match. Please try again."
-msgstr ""
+msgstr "Usuário e senha não conferem. Tente novamente."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_order.html:21
 #: templates/mycomics/reading_order_item.html:39
 msgid "Remove issue from reading order "
-msgstr ""
+msgstr "Remover edição da ordem de leitura "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_order.html:42
 msgid "Reading Order"
-msgstr ""
+msgstr "Ordem de leitura"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_order_item.html:81
 msgid "Delete from reading order"
-msgstr ""
+msgstr "Excluir da ordem de leitura"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_order_item.html:98
 msgid "Story:"
-msgstr ""
+msgstr "História:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_orders.html:13
 #: templates/mycomics/reading_orders.html:32
 msgid "Remove Reading List"
-msgstr ""
+msgstr "Remover lista de leitura"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_orders.html:14
 msgid "Do you want to remove the reading list <b>"
-msgstr ""
+msgstr "Deseja remover a lista de leitura <b>"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_orders.html:35
 msgid "Do you want to remove this reading list?"
-msgstr ""
+msgstr "Deseja remover esta lista de leitura?"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/reading_orders.html:49
 #: templates/mycomics/user_base.html:36
 msgid "Reading Lists"
-msgstr ""
+msgstr "Listas de leitura"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:15 templates/mycomics/settings.html:33
 msgid "Remove Location"
-msgstr ""
+msgstr "Remover local"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:18
 msgid "Do you want to remove this location?"
-msgstr ""
+msgstr "Deseja remover este local?"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:19 templates/mycomics/settings.html:37
 msgid "This location is selected for some of your items."
-msgstr ""
+msgstr "Este local está selecionado em alguns dos seus itens."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:36
 msgid "Do you want to remove this purchase location?"
-msgstr ""
+msgstr "Deseja remover este local de compra?"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:51
-#, fuzzy
-#| msgid "Editing"
 msgid "Edit Location"
-msgstr "Edição"
+msgstr "Editar local"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:71
 msgid "Edit Purchase Location"
-msgstr ""
+msgstr "Editar local de compra"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:120
 msgid "Settings"
-msgstr ""
+msgstr "Configurações"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:132
 msgid "Locations"
-msgstr ""
+msgstr "Locais"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:135 templates/mycomics/settings.html:158
 msgid "Add"
-msgstr ""
+msgstr "Adicionar"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:149 templates/mycomics/settings.html:172
 msgid "Delete"
-msgstr ""
+msgstr "Excluir"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/settings.html:155
 msgid "Purchase Locations"
-msgstr ""
+msgstr "Locais de compra"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/tw_reading_order.html:37
 msgid "Edit Reading List"
-msgstr ""
+msgstr "Editar lista de leitura"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/tw_reading_order.html:45
 msgid "Copy Reading List"
-msgstr ""
+msgstr "Copiar lista de leitura"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/user_base.html:9
 msgid "News for "
-msgstr ""
+msgstr "Novidades do "
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/user_base.html:38
 msgid "News"
-msgstr ""
+msgstr "Novidades"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/user_base.html:56
 msgid "Log Out"
-msgstr ""
+msgstr "Sair"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/oi/base_view.html:8
 msgid ""
 "Cloudflare verification is required. <a href=\"/\" target=\"_blank\" "
 "rel=\"noopener\"> Verify in a new tab </a>, close that tab, then retry this "
 "field. Your unsaved changes will remain here."
 msgstr ""
+"É necessária a verificação do Cloudflare. <a href=\"/\" target=\"_blank\" "
+"rel=\"noopener\"> Verifique em uma nova aba </a>, feche essa aba e tente "
+"este campo de novo. Suas alterações não salvas continuarão aqui."
 
-#~ msgid "username"
-#~ msgstr "usuário"
+msgid "username"
+msgstr "usuário"
 
-#~ msgid "creators"
-#~ msgstr "criadores"
+msgid "creators"
+msgstr "criadores"
 
-#~ msgid "brands"
-#~ msgstr "selos"
+msgid "brands"
+msgstr "selos"
 
-#~ msgid "indicia publishers"
-#~ msgstr "editoras - colofão"
+msgid "indicia publishers"
+msgstr "editoras - colofão"
 
-#~ msgid "issue indexes"
-#~ msgstr "edições indexadas"
+msgid "issue indexes"
+msgstr "edições indexadas"
 
-#~ msgid "stories"
-#~ msgstr "histórias"
+msgid "stories"
+msgstr "histórias"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "publishers"
+msgstr "editoras"
+
+msgid "series"
+msgstr "séries"
+
+msgid "issues"
+msgstr "edições"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "variant issues"
+msgstr "edições variantes"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "covers"
+msgstr "capas"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Script"
+msgstr "Roteiro"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Pencils"
+msgstr "Desenhos"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Inks"
+msgstr "Arte-final"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Colors"
+msgstr "Cores"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Letters"
+msgstr "Letras"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Characters"
+msgstr "Personagens"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Feature"
+msgstr "Protagonista"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Genre"
+msgstr "Gênero"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Keywords"
+msgstr "Palavras-chave"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Synopsis"
+msgstr "Sinopse"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Title"
+msgstr "Título"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Isbn"
+msgstr "ISBN"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Barcode"
+msgstr "Código de barras"

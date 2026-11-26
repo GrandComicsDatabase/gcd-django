@@ -2,6 +2,7 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
+# Entries with the comment "Automatic translation (AI)" were translated by AI.
 #, fuzzy
 msgid ""
 msgstr ""
@@ -296,35 +297,46 @@ msgstr "I dati inseriti non erano corretti."
 msgid "Location deleted."
 msgstr "Posizione eliminata."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:230
 msgid "Submit Changes For Approval"
-msgstr ""
+msgstr "Invia le modifiche per l'approvazione"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:231
 msgid "Approve"
-msgstr ""
+msgstr "Approva"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:232
 msgid "Send Back To Indexer"
-msgstr ""
+msgstr "Rimanda all'indicizzatore"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:758
 msgid "This change still contains invalid issue or sequence data."
 msgstr ""
+"Questa modifica contiene ancora dati non validi del numero o delle sezioni."
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:793
 #, python-brace-format
 msgid ""
 "Correct and save the revisions, then select <strong>{submit}</strong>. "
 "Affected revisions:"
 msgstr ""
+"Correggi e salva le revisioni, poi seleziona <strong>{submit}</strong>. "
+"Revisioni interessate:"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: apps/oi/views.py:1687
 #, python-brace-format
 msgid ""
 "Enter an explanation in the comment field before selecting "
 "<strong>{send_back}</strong>."
 msgstr ""
+"Inserisci una spiegazione nel campo del commento prima di selezionare "
+"<strong>{send_back}</strong>."
 
 #: apps/stddata/forms.py:35
 msgid "Date given in a wrong format"
@@ -1288,52 +1300,129 @@ msgstr "Notizie"
 msgid "Log Out"
 msgstr "Esci"
 
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/oi/base_view.html:8
 msgid ""
 "Cloudflare verification is required. <a href=\"/\" target=\"_blank\" "
 "rel=\"noopener\"> Verify in a new tab </a>, close that tab, then retry this "
 "field. Your unsaved changes will remain here."
 msgstr ""
+"È richiesta la verifica di Cloudflare. <a href=\"/\" target=\"_blank\" "
+"rel=\"noopener\"> Esegui la verifica in una nuova scheda </a>, chiudi quella "
+"scheda, poi riprova a usare questo campo. Le modifiche non salvate "
+"resteranno in questa pagina."
 
-#~ msgid "Replace Publisher's Brand Image"
-#~ msgstr "Sostituisci immagine marchio dell'editore"
+msgid "Replace Publisher's Brand Image"
+msgstr "Sostituisci immagine marchio dell'editore"
 
-#~ msgid "Delete Publisher's Brand Image"
-#~ msgstr "Elimina immagine marchio dell'editore"
+msgid "Delete Publisher's Brand Image"
+msgstr "Elimina immagine marchio dell'editore"
 
-#~ msgid "Add Publisher's Brand Image"
-#~ msgstr "Aggiungi immagine marchio dell'editore"
+msgid "Add Publisher's Brand Image"
+msgstr "Aggiungi immagine marchio dell'editore"
 
-#~ msgid "Edit with another issue"
-#~ msgstr "Modifica con un altro numero"
+msgid "Edit with another issue"
+msgstr "Modifica con un altro numero"
 
 #, python-format
-#~ msgid ""
-#~ "\n"
-#~ "            page%(suffix)s\n"
-#~ "          "
-#~ msgstr ""
-#~ "\n"
-#~ "            pagina%(suffix)s\n"
-#~ "          "
+msgid ""
+"\n"
+"            page%(suffix)s\n"
+"          "
+msgstr ""
+"\n"
+"            pagina%(suffix)s\n"
+"          "
 
-#~ msgid "Reading Orders"
-#~ msgstr "Liste di lettura"
+msgid "Reading Orders"
+msgstr "Liste di lettura"
 
-#~ msgid "username"
-#~ msgstr "nome utente"
+msgid "username"
+msgstr "nome utente"
 
-#~ msgid "creators"
-#~ msgstr "autori"
+msgid "creators"
+msgstr "autori"
 
-#~ msgid "brands"
-#~ msgstr "marchi"
+msgid "brands"
+msgstr "marchi"
 
-#~ msgid "indicia publishers"
-#~ msgstr "dettagli editori"
+msgid "indicia publishers"
+msgstr "dettagli editori"
 
-#~ msgid "issue indexes"
-#~ msgstr "indici di pubblicazione"
+msgid "issue indexes"
+msgstr "indici di pubblicazione"
 
-#~ msgid "stories"
-#~ msgstr "sezioni"
+msgid "stories"
+msgstr "sezioni"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "publishers"
+msgstr "editori"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "series"
+msgstr "serie"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "issues"
+msgstr "numeri"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "variant issues"
+msgstr "varianti"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "covers"
+msgstr "copertine"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Script"
+msgstr "Sceneggiatura"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Pencils"
+msgstr "Disegni"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Inks"
+msgstr "Chine"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Colors"
+msgstr "Colori"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Letters"
+msgstr "Lettering"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Characters"
+msgstr "Personaggi"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Feature"
+msgstr "Testata"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Genre"
+msgstr "Genere"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Keywords"
+msgstr "Parole chiave"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Synopsis"
+msgstr "Sinossi"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Title"
+msgstr "Titolo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Isbn"
+msgstr "ISBN"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Barcode"
+msgstr "Codice a barre"
