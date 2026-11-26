@@ -622,6 +622,24 @@ def test_operation_errors(started, params, error):
 
 
 @pytest.mark.django_db
+def test_only_replace_needs_an_old_value_still_held(started):
+    """
+    An old value that no object holds any more, as after another edit
+    since the page was shown, stops Replace, which reads it, but not
+    Set, which does not.
+    """
+    gone = {'field': 'price', 'shown': 'price', 'old_value': '=0.99 USD',
+            'new_value': '0.12 USD'}
+
+    replaced = started(operation='replace_exact', **gone)
+    set_for_all = started(operation='set', **gone)
+
+    assert list(replaced.context['form'].errors) == ['old_value']
+    assert set_for_all.context['form'].errors == {}
+    assert set_for_all.context['bulk_preview']['changed'] == 3
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize('name, new_value, label', [
     ('key_date', '1950-01-00', 'Key Date'),
     ('publication_date', 'January 1950', 'Publication Date'),
