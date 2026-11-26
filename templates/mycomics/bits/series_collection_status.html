@@ -1,14 +1,14 @@
 {% load gcdtable %}
 {% load collecting %}
-
+{% load i18n %}
 <div>
   <table class="status">
     <tr class="flex flex-wrap font-bold [&_td]:px-3 [&_td]:border-t-2 [&_td]:border-b-2">
-      <td class="bg-green-600 border-s-2"> Owned </td>
-      <td class="bg-red-400"> Wanted </td>
-      <td class="bg-yellow-400">Owned and Wanted</td>
-      <td class="bg-indigo-200"> In a Collection </td>
-      <td> Not in a Collection </td>
+      <td class="bg-green-600 border-s-2"> {% trans "Owned" %} </td>
+      <td class="bg-red-400"> {% trans "Wanted" %} </td>
+      <td class="bg-yellow-400">{% trans "Owned and Wanted" %}</td>
+      <td class="bg-indigo-200"> {% trans "In a Collection" %} </td>
+      <td> {% trans "Not in a Collection" %} </td>
     </tr>
   </table>
   <div class="flex flex-wrap">

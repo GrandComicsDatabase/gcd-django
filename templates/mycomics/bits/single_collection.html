@@ -1,5 +1,5 @@
 {% load collecting %}
-
+{% load i18n %}
 <div class="panel panel-default">
   <div class="panel-heading"
        onclick="window.location.href='{% url "view_collection" collection.id %}'">
@@ -8,9 +8,11 @@
   <div class="panel-body">
     <div class="btn-group pull-left">
   {% if collection.public %}
-      <span title="public collection" class="glyphicon glyphicon-eye-open">&thinsp;</span>
+      <span title="{% trans 'public collection' %}"
+            class="glyphicon glyphicon-eye-open">&thinsp;</span>
   {% else %}
-      <span title="non-public collection" class="glyphicon glyphicon-eye-close">&thinsp;</span>
+      <span title="{% trans 'non-public collection' %}"
+            class="glyphicon glyphicon-eye-close">&thinsp;</span>
   {% endif %}
     </div>
     <div class="btn-group pull-right">

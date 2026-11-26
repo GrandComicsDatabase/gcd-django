@@ -69,9 +69,11 @@
         {% for col_item in collection_list %}
           <a href="{% url "view_collection" col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
           {% if col_item.public %}
-            <span title="public collection" class="glyphicon glyphicon-eye-open">&thinsp;</span>
+            <span title="{% trans 'public collection' %}"
+                  class="glyphicon glyphicon-eye-open">&thinsp;</span>
           {% else %}
-            <span title="non-public collection" class="glyphicon glyphicon-eye-close"></span>
+            <span title="{% trans 'non-public collection' %}"
+                  class="glyphicon glyphicon-eye-close"></span>
           {% endif %}
             {{ col_item }}</a>
         {% endfor %}
@@ -96,7 +98,11 @@
             <div class="thumbnail">
               <a href="{{ subscription.series.get_absolute_url }}">
               {{ subscription.series.first_issue|show_cover_tag }}
-              <div class="caption">{{ subscription.series.full_name_with_link }}<br>Issue added {{ subscription.last_pulled|date:"Y-m-d" }}</div>
+              {% with date=subscription.last_pulled|date:"Y-m-d" %}
+              <div class="caption"
+              >{{ subscription.series.full_name_with_link }}<br
+              >{% blocktrans %}Issue added {{ date }}{% endblocktrans %}</div>
+              {% endwith %}
               <div class="clearfix"></div>
             </div>
           </div>

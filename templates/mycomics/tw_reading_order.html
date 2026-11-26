@@ -8,7 +8,7 @@
   {{ block.super }}
 <nav class="flex items-center justify-between flex-wrap bg-red-100 px-1 lg:px-2">
   <div class="flex-1 font-bold text-2xl self-start">
-Reading List: {{ reading_order.name }}
+{% trans "Reading List:" %} {{ reading_order.name }}
   </div>
   {% with mycomics_red=True %}
     {% include "gcd/bits/tw_pagination_bar.html" %}
@@ -38,15 +38,19 @@ Reading List: {{ reading_order.name }}
     </btn></a>
   </div>
   {% else %} 
-    {% if request.user.collector %}
+    {% if request.user.collector %}{% with owner=reading_order.collector.user %}
   <div class="btn-group my-1 pull-right">
-    provided by <a href="{{ reading_order.collector.user.get_absolute_url }}">{{ reading_order.collector.user.indexer }}</a>  
+    {% blocktrans trimmed with url=owner.get_absolute_url name=owner.indexer %}
+    provided by <a href="{{ url }}">{{ name }}</a>
+    {% endblocktrans %}
     <a class="hover:no-underline" href="{% url 'copy_reading_order' reading_order.id %}">
       <btn class="inline btn-blue-editing">{% trans "Copy Reading List" %}
     </btn></a>
   </div>
-    {% else %}
-    provided by {{ reading_order.collector.user.indexer }}
+    {% endwith %}{% else %}
+    {% blocktrans trimmed with name=reading_order.collector.user.indexer %}
+    provided by {{ name }}
+    {% endblocktrans %}
     {% endif %}
   {% endif %}
   </div>
