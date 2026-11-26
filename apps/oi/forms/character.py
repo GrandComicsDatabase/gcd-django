@@ -512,7 +512,7 @@ class GroupRelationRevisionForm(forms.ModelForm):
         to_field_name='code',
         required=False,
         empty_label='All languages',
-        label='Language of Group B',
+        label='Language of B',
         help_text='Group B lists only the groups of this language.'
     )
 
