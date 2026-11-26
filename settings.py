@@ -134,7 +134,7 @@ LANGUAGES = (
   ('fi', 'Finnish'),
   ('tl', 'Tagalog'),
   ('ja', 'Japanese'),
-  ('ar', 'Arabic'),
+  ('sr', 'Serbian'),
   ('el', 'Greek'),
 )
 
