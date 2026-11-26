@@ -3685,6 +3685,7 @@ def add_character_relation(request, character_id):
                        cancel=cancel)
 
 
+@permission_required('indexer.can_reserve')
 def add_group(request):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
