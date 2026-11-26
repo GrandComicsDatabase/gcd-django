@@ -50,6 +50,11 @@ NO_BREAK_SPACE = '\u00a0'
 # a line break.
 HIDDEN_SPACES = re.compile(r'\s{2,}|[^\S ]')
 
+# Spaces at the start and at the end of a value, which HTML hides at the
+# edges of a cell.
+LEADING_SPACES = re.compile(r'\A\s+')
+TRAILING_SPACES = re.compile(r'\s+\Z')
+
 # The models that a bulk change can change, with their revision classes.
 BULK_TARGETS = {Issue: IssueRevision}
 
@@ -321,6 +326,12 @@ def exact_diff(rev_class, revision_ids):
     single, multi = _compared_fields(rev_class)
     source = rev_class._meta.get_field(rev_class.source_name).attname
     columns = [field.attname for field in single]
+    # The links of the revisions are read before their rows.  A removal
+    # deletes a revision and its links together: if it ends before the
+    # row is read, the row is missing and the revision has no changes; if
+    # it ends after, its links were read before it too.
+    linked = {field.name: _linked_ids(field, revision_ids)
+              for field in multi}
     rows = {row['id']: row for row in rev_class.objects
             .filter(id__in=revision_ids)
             .values(*dict.fromkeys(['id', 'previous_revision_id',
@@ -329,11 +340,16 @@ def exact_diff(rev_class, revision_ids):
     old_rows = {row['id']: row for row in rev_class.objects
                 .filter(id__in=set(previous.values()))
                 .values('id', *columns)}
-    linked = {field.name: _linked_ids(field, list(rows) + list(old_rows))
-              for field in multi}
+    for field in multi:
+        linked[field.name].update(_linked_ids(field, list(old_rows)))
 
     diff = {}
     for revision_id in revision_ids:
+        # A revision deleted since its id was read, as when its object left
+        # the change, has no row and so no changes.
+        if revision_id not in rows:
+            diff[revision_id] = {}
+            continue
         new = rows[revision_id]
         old = old_rows[previous[revision_id]]
         changes = {}
@@ -350,6 +366,32 @@ def exact_diff(rev_class, revision_ids):
     return diff
 
 
+def _seen_flags(revision):
+    """
+    Return the names of the flags, such as _seen_volume, that the IMP
+    rules of revision have set since its _start_imp_sum.
+    """
+    return {name for name, value in vars(revision).items()
+            if name.startswith('_seen_') and value is True}
+
+
+def _logical_points(revision, names):
+    """
+    Return {logical field: points} for the fields names that revision
+    changed, scored in model order as a normal edit scores them.  The
+    logical field of a name is the flag that its rule sets, such as
+    _seen_volume for volume and no_volume, else the name itself.
+    """
+    revision._start_imp_sum()
+    points = {}
+    for name in names:
+        seen = _seen_flags(revision)
+        earned = revision._imps_for(name)
+        key = ' '.join(sorted(_seen_flags(revision) - seen)) or name
+        points[key] = points.get(key, 0) + earned
+    return points
+
+
 def changeset_imps(changeset):
     """
     Return the Index Measurement Points of a bulk change.
@@ -357,13 +399,13 @@ def changeset_imps(changeset):
     Each logical field changed in the change counts once, with the rules
     of a normal edit (_start_imp_sum and _imps_for of the revision class),
     which join a value and its flags into one field.  The rules run on
-    each changed revision for all the changed fields, so that a value
-    and its flags count once, and a field earns the most points that a
-    revision which changed it gets: a rule that reads the values of a
-    revision, such as the page count that an uncertain flag needs,
-    counts if any revision that changed the field meets it.  Only the
-    changed objects count, not the revisions that anchor them, such as
-    the issues of changed sequences.
+    each changed revision for the fields that it changed only, so that
+    a field it left alone takes nothing from those it changed, and a
+    logical field earns the most points that a revision which changed
+    it gets: a rule that reads the values of a revision, such as the
+    page count that an uncertain flag needs, counts if any revision that
+    changed the field meets it.  Only the changed objects count, not the
+    revisions that anchor them, such as the issues of changed sequences.
     """
     name, revisions = changeset.bulk_target()
     if name is None:
@@ -372,19 +414,13 @@ def changeset_imps(changeset):
     diff = exact_diff(revisions.model, revision_ids)
     changed_ids = [revision_id for revision_id in revision_ids
                    if diff[revision_id]]
-    changed_fields = set()
-    for revision_id in changed_ids:
-        changed_fields.update(diff[revision_id])
     single, multi = _compared_fields(revisions.model)
-    names = [field.name for field in single + multi
-             if field.name in changed_fields]
-    points = dict.fromkeys(names, 0)
+    points = defaultdict(int)
     for revision in revisions.filter(id__in=changed_ids):
-        revision._start_imp_sum()
-        for changed in names:
-            earned = revision._imps_for(changed)
-            if changed in diff[revision.id]:
-                points[changed] = max(points[changed], earned)
+        names = [field.name for field in single + multi
+                 if field.name in diff[revision.id]]
+        for key, earned in _logical_points(revision, names).items():
+            points[key] = max(points[key], earned)
     return sum(points.values())
 
 
@@ -449,6 +485,8 @@ def _shown_change(field, old, new, names):
     Return the old and the new value of field as HTML, with the deleted
     and the added parts marked.  Text is compared character by character
     and keeps spaces and case; any other value is marked as a whole.
+    The spaces that HTML would hide show as no-break spaces: those of a
+    changed part, and those at the start and at the end of each value.
     """
     old = _shown_value(field, old, names)
     new = _shown_value(field, new, names)
@@ -457,9 +495,38 @@ def _shown_change(field, old, new, names):
         diff_match_patch().diff_cleanupSemantic(diff)
     else:
         diff = [(-1, old), (1, new)]
-    diff = [(op, NO_BREAK_SPACE * len(text) if op and text.isspace()
-             else text) for op, text in diff if text]
-    return show_diff(diff, 'orig'), show_diff(diff, 'change')
+    diff = [(op, _shown_spaces(text) if op else text)
+            for op, text in diff if text]
+    old_side = _shown_edges([part for part in diff if part[0] <= 0])
+    new_side = _shown_edges([part for part in diff if part[0] >= 0])
+    return show_diff(old_side, 'orig'), show_diff(new_side, 'change')
+
+
+def _shown_edges(parts):
+    """
+    Return parts, the (op, text) parts of one side of a value, with the
+    spaces at the start of the first part and at the end of the last
+    one as no-break spaces, changed or not: HTML hides them at the edges
+    of a cell.
+    """
+    for index, edge in ((0, LEADING_SPACES), (-1, TRAILING_SPACES)):
+        if parts:
+            op, text = parts[index]
+            parts[index] = (op, edge.sub(
+              lambda match: NO_BREAK_SPACE * len(match.group()), text))
+    return parts
+
+
+def _shown_spaces(text):
+    """
+    Return a changed part of a text with no-break spaces in place of the
+    spaces that HTML would merge or hide; a part of spaces only is all
+    no-break spaces, so that it does not vanish.
+    """
+    if text.isspace():
+        return NO_BREAK_SPACE * len(text)
+    return HIDDEN_SPACES.sub(
+      lambda match: NO_BREAK_SPACE * len(match.group()), text)
 
 
 # The fields of an issue that feed the notes of the compare page of one
@@ -827,12 +894,18 @@ def distinct_values(model, ids, name):
 
 
 def value_key(value):
-    """
+    r"""
     Return the text that stands for a stored value in a form choice:
     'None' for None, else '=' and the value, so that no value, the empty
-    text included, looks like no choice.
+    text included, looks like no choice.  A backslash, a carriage return
+    and a line feed are written \\, \r and \n: a browser changes the line
+    breaks of a radio value before it sends it, and each value keeps a
+    key of its own.
     """
-    return 'None' if value is None else '=' + str(value)
+    if value is None:
+        return 'None'
+    return '=' + str(value).replace('\\', '\\\\').replace('\r', '\\r') \
+                           .replace('\n', '\\n')
 
 
 def _object_names(field, values):

@@ -11,6 +11,7 @@ from django.utils.html import strip_tags
 
 from apps.gcd.models import Issue, Series
 from apps.oi import states
+from apps.oi.bulk import _shown_change
 from apps.oi.models import (
     Changeset, IndiciaPrinterRevision, IndiciaPublisherRevision,
     IssueRevision, CTYPES)
@@ -80,6 +81,42 @@ def test_one_row_for_each_changed_object(client, bulk_change,
     assert reverse('preview_revision',
                    kwargs={'model_name': 'issue',
                            'id': rows[0][0].id}) not in content
+
+
+@pytest.mark.parametrize('old, new, shown', [
+  ('X', 'A  B', "<span class='added'>A  B</span>"),
+  ('X', 'A	B', "<span class='added'>A B</span>"),
+  ('X', 'A B', "<span class='added'>A B</span>")])
+def test_changed_text_keeps_the_spaces_html_hides(old, new, shown):
+    """
+    A changed part shows as no-break spaces the spaces that HTML would
+    merge or hide, as the value lists of the entry page do; a single
+    space between words stays a space.
+    """
+    field = IssueRevision._meta.get_field('notes')
+
+    assert _shown_change(field, old, new, {})[1] == shown
+
+
+@pytest.mark.parametrize('old, new, shown', [
+  ('X', ' A', ("<span class='deleted'>X</span>",
+               "<span class='added'>\u00a0A</span>")),
+  ('X', 'A ', ("<span class='deleted'>X</span>",
+               "<span class='added'>A\u00a0</span>")),
+  (' X', 'A', ("<span class='deleted'>\u00a0X</span>",
+               "<span class='added'>A</span>")),
+  ('X A', ' A', ("<span class='deleted'>X</span> A", "\u00a0A")),
+  ('A X', 'A Y', ("A <span class='deleted'>X</span>",
+                  "A <span class='added'>Y</span>"))])
+def test_a_space_at_the_edge_of_a_value_is_shown(old, new, shown):
+    """
+    A space at the start or at the end of a value, which HTML hides at
+    the edge of a cell, is a no-break space, in a changed part or not; a
+    space between words stays a space.
+    """
+    field = IssueRevision._meta.get_field('notes')
+
+    assert _shown_change(field, old, new, {}) == shown
 
 
 @pytest.mark.django_db

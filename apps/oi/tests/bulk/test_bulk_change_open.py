@@ -127,6 +127,12 @@ def _prices(changeset):
     return [revision.price for revision in _revisions(changeset)]
 
 
+def _page_counts(changeset):
+    """The page count of each revision of changeset, by revision id."""
+    return {revision.id: revision.page_count
+            for revision in _revisions(changeset)}
+
+
 def _sent_back(changeset, approver):
     """Submit changeset, let approver review it and send it back."""
     changeset.submit()
@@ -567,6 +573,49 @@ def test_remove_cannot_empty_the_change(client, change):
 
 
 @pytest.mark.django_db
+def test_rows_of_revisions_read_before_a_removal(client, change):
+    """
+    The page reads the revisions of the change, then their values: an
+    object removed in between has no values, so no changes and no row.
+    """
+    revisions = _revisions(change)
+    assert _remove(client, change, revisions[0].id).status_code == 302
+
+    rows = bulk.compare_rows(revisions)
+
+    assert [row[0] for row in rows] == revisions[1:]
+    assert bulk.exact_diff(IssueRevision, [revisions[0].id]) == \
+        {revisions[0].id: {}}
+
+
+@pytest.mark.django_db
+def test_links_read_before_the_row_of_a_removed_revision(
+      client, change, approved_issues, monkeypatch):
+    """
+    An object removed after the page has read the row of its revision
+    shows no false change of its links, such as its brand emblems, as
+    the links of the revision were read before its row.
+    """
+    revision = change.issuerevisions.get(issue=approved_issues[0])
+    assert revision.brand_emblem.exists()
+    previous_ids = bulk._previous_ids
+    removed = []
+
+    def remove_between_reads(*args):
+        """Remove the object once, after the row of its revision."""
+        if not removed:
+            removed.append(revision.id)
+            assert _remove(client, change, revision.id).status_code == 302
+        return previous_ids(*args)
+
+    monkeypatch.setattr(bulk, '_previous_ids', remove_between_reads)
+    diff = bulk.exact_diff(IssueRevision, [revision.id])
+
+    assert removed == [revision.id]
+    assert diff == {revision.id: {'price': ('0.10 USD', '0.12 USD')}}
+
+
+@pytest.mark.django_db
 def test_remove_needs_objects_of_the_change(client, change, bulk_change,
                                             approved_variant):
     """
@@ -737,6 +786,30 @@ def test_sweep_counts_from_the_last_work(client, change, any_approver, work):
     assert change.state == states.OPEN
     assert is_overdue(change) == ''
     assert change.expires > django_timezone.now() + timedelta(days=20)
+
+
+@pytest.mark.django_db
+def test_unassigning_is_no_work(client, change, any_approver):
+    """
+    The approver of a change sent back can unassign it, which is no work
+    on it: its last work stays as it was, and the sweep discards it.
+    """
+    _sent_back(change, any_approver)
+    _made_long_ago(change)
+    client.force_login(any_approver)
+    assert 'name="release"' in client.get(_compare(change)).content.decode()
+
+    assert client.post(_process(change),
+                       {'release': 'Unassign',
+                        'comments': ''}).status_code == 302
+
+    last_work = change.modified
+    change.refresh_from_db()
+    assert change.approver is None
+    assert change.modified == last_work
+    _sweep(client, any_approver)
+    change.refresh_from_db()
+    assert change.state == states.DISCARDED
 
 
 @pytest.mark.django_db
@@ -1051,12 +1124,14 @@ def test_lock_errors_while_working_on_a_change(client, change, monkeypatch,
                                                code, message):
     """
     A deadlock or a long wait gives a message, with nothing written; any
-    other database error stays an error.
+    other database error stays an error.  Every revision keeps its value,
+    and the operation goes through when it is tried again.
     """
     def fail(*args, **kwargs):
         """Fail as the database does."""
         raise OperationalError(code, 'database error')
 
+    before = _page_counts(change)
     monkeypatch.setattr(bulk, '_write_record', fail)
     if message:
         assert bulk.CHANGE_BUSY in _text(_operate(client, change, PAGES))
@@ -1066,5 +1141,6 @@ def test_lock_errors_while_working_on_a_change(client, change, monkeypatch,
 
     monkeypatch.undo()
     assert change.comments.count() == 1
-    assert {revision.page_count for revision in _revisions(change)} != \
-        {Decimal('36')}
+    assert _page_counts(change) == before
+    assert _operate(client, change, PAGES).status_code == 302
+    assert _page_counts(change) == dict.fromkeys(before, Decimal('36'))

@@ -19,6 +19,7 @@ from apps.oi.models import (
     Changeset, IssueCreditRevision, IssueRevision, RevisionLock,
     SeriesRevision, StoryCreditRevision, StoryRevision, ACTION_MODIFY,
     CTYPES)
+from apps.oi.templatetags.compare import field_value
 from apps.oi.templatetags.editing import header_link
 from apps.stddata.models import Script
 
@@ -201,6 +202,29 @@ def test_old_bulk_change_is_discarded_not_submitted(
 
 
 @pytest.mark.django_db
+def test_clearing_page_escapes_the_name_of_a_change(
+        client, bulk_change, approved_issues, any_approver):
+    """
+    The name of a change, here from the variant name of its first issue,
+    shows as text on the clearing page, in the link to the change.
+    """
+    changeset = bulk_change(approved_issues[:1], IssueRevision,
+                            variant_name='<b>Variant</b>')
+    Changeset.objects.filter(id=changeset.id).update(
+      created=timezone.now() - timedelta(weeks=4))
+    any_approver.user_permissions.add(Permission.objects.get(
+      content_type__app_label='oi', codename='change_ongoingreservation'))
+    client.force_login(any_approver)
+
+    response = client.get(reverse('clear_issues'))
+
+    content = response.content.decode()
+    assert '<b>Variant</b>' not in content
+    assert 'Change: %s</a>' % escape(str(changeset)) in content
+    assert reverse('compare', kwargs={'id': changeset.id}) in content
+
+
+@pytest.mark.django_db
 def test_issue_bulk_change_keeps_its_behaviour(bulk_change,
                                                approved_issues):
     """A historical issue bulk change keeps its name and points."""
@@ -218,9 +242,10 @@ def test_issue_bulk_change_keeps_its_behaviour(bulk_change,
 
 
 def _test_creator():
-    """A creator name for credits."""
+    """The official name of a creator, for credits."""
     return CreatorNameDetail.objects.create(
-      name='Test Creator', creator=Creator.objects.create(
+      name='Test Creator', is_official_name=True,
+      creator=Creator.objects.create(
         gcd_official_name='Test Creator', sort_name='Test Creator'),
       in_script=Script.objects.get_or_create(code='Tst', number=999,
                                              name='Test Script')[0])
@@ -248,6 +273,25 @@ def test_issue_credits_stay_unchanged(bulk_change, approved_issues,
 
     assert [field for field, changed in revision.changed.items()
             if changed] == ['price']
+
+
+@pytest.mark.django_db
+def test_compare_shows_the_kept_issue_credits(bulk_change, approved_issues):
+    """
+    The compare value of the editing field of a bulk change of issues
+    shows the credits the issue keeps, as for an issue bulk change.
+    """
+    issue = approved_issues[0]
+    editing = CreditType.objects.get_or_create(
+      id=CREDIT_TYPES['editing'],
+      defaults={'name': 'editing', 'sort_code': 6})[0]
+    IssueCredit.objects.create(issue=issue, creator=_test_creator(),
+                               credit_type=editing)
+    changeset = bulk_change([issue], IssueRevision, price='0.25 USD')
+
+    shown = field_value(changeset.issuerevisions.get(), 'editing')
+
+    assert 'Test Creator' in shown
 
 
 @pytest.mark.django_db

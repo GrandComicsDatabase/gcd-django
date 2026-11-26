@@ -955,7 +955,12 @@ class Changeset(models.Model):
                              new_state=new_state)
         self.approver = None
         self.state = new_state
-        self.save()
+        if self.change_type == CTYPES['bulk'] and new_state == states.OPEN:
+            # An open bulk change counts its reservation from its last
+            # work, which unassigning it is not.
+            self.save(update_fields=['approver'])
+        else:
+            self.save()
 
     def discuss(self, commenter, notes=''):
         if self.state not in [states.OPEN, states.REVIEWING] or \
