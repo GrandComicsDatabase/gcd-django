@@ -248,7 +248,7 @@ def delete_collection(request, collection_id):
     CollectionItem.objects.filter(collections=None).delete()
     messages.success(
       request,
-      mark_safe(_('Collection <b>%s</b> deleted.' % esc(collection.name))))
+      mark_safe(_('Collection <b>%s</b> deleted.') % esc(collection.name)))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
@@ -375,9 +375,9 @@ def delete_item(request, item_id, collection_id):
     collection.items.remove(item)
     messages.success(
       request,
-      mark_safe(_("Item <b>%s</b> removed from %s" % (
+      mark_safe(_("Item <b>%s</b> removed from %s") % (
                   esc(item.issue.full_name()),
-                  esc(collection)))))
+                  esc(collection))))
     if not item.collections.count():
         if item.acquisition_date:
             item.acquisition_date.delete()
@@ -424,7 +424,7 @@ def move_item(request, item_id, collection_id):
                       request,
                       mark_safe(_("Item status for own/want differed from"
                                   " default of new collection <b>%s</b> and "
-                                  "was changed." % esc(to_collection.name))))
+                                  "was changed.") % esc(to_collection.name)))
             if to_collection.for_sale_used and \
                to_collection.for_sale_default is True:
                 if to_collection.for_sale_default != item.for_sale:
@@ -433,8 +433,8 @@ def move_item(request, item_id, collection_id):
                     messages.warning(
                       request,
                       mark_safe(_("Item status is set to for sale due to "
-                                  "default of new collection <b>%s</b>."
-                                  % esc(to_collection.name))))
+                                  "default of new collection <b>%s</b>.")
+                                % esc(to_collection.name)))
             return HttpResponseRedirect(
               urlresolvers.reverse('view_item',
                                    kwargs={'item_id': item_id,
@@ -455,8 +455,8 @@ def move_item(request, item_id, collection_id):
                     messages.warning(
                       request,
                       mark_safe(_("Item status is set to for sale due to "
-                                  "default of new collection <b>%s</b>."
-                                  % esc(to_collection.name))))
+                                  "default of new collection <b>%s</b>.")
+                                % esc(to_collection.name)))
 
         else:
             messages.error(request, _("Item unchanged"))
@@ -1073,16 +1073,16 @@ def subscribe_series(request, series_id):
     if subscription.exists():
         messages.error(
           request, mark_safe(_('%s is already subscribed for the '
-                             'collection %s.' % (esc(series),
-                                                 esc(collection)))))
+                             'collection %s.') % (esc(series),
+                                                  esc(collection))))
     elif series.is_current:
         Subscription.objects.create(series=series,
                                     collection=collection,
                                     last_pulled=datetime.today())
         messages.success(
           request, mark_safe(_('Series %s is now subscribed for the '
-                             'collection %s.' % (esc(series),
-                                                 esc(collection)))))
+                             'collection %s.') % (esc(series),
+                                                  esc(collection))))
     else:
         messages.error(request, _('Selected series is not ongoing.'))
 
@@ -1184,8 +1184,8 @@ def delete_reading_order(request, reading_order_id):
     # delete also deletes items due to delete cascade
     messages.success(
       request,
-      mark_safe(_('Reading Order <b>%s</b> deleted.'
-                  % esc(reading_order.name))))
+      mark_safe(_('Reading Order <b>%s</b> deleted.')
+                % esc(reading_order.name)))
     return HttpResponseRedirect(urlresolvers.reverse('reading_orders_list'))
 
 
@@ -1418,8 +1418,8 @@ def save_reading_order_item(request, item_id, reading_order_id):
                            'reading_order': reading_order})
         item = item_form.save(commit=False)
         item.save()
-        messages.success(request, _('Item %s saved.' %
-                                    esc(item.issue.full_name())))
+        messages.success(request, _('Item %s saved.') %
+                         esc(item.issue.full_name()))
 
         return HttpResponseRedirect(
             urlresolvers.reverse('view_reading_order',
@@ -1447,9 +1447,9 @@ def delete_reading_order_item(request, item_id, reading_order_id):
     item.delete()
     messages.success(
       request,
-      mark_safe(_("Item <b>%s</b> removed from Reading List %s" % (
+      mark_safe(_("Item <b>%s</b> removed from Reading List %s") % (
                   esc(item.issue.full_name()),
-                  esc(reading_order)))))
+                  esc(reading_order))))
     response = HttpResponse(urlresolvers.reverse('view_reading_order',
                             kwargs={'reading_order_id': reading_order.id}))
     response['HX-Refresh'] = 'true'
