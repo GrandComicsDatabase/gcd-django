@@ -296,6 +296,40 @@ def test_compare_shows_the_kept_issue_credits(bulk_change, approved_issues):
 
 
 @pytest.mark.django_db
+def test_copy_takes_the_kept_issue_credits(client, bulk_change,
+                                           approved_issues, approve_change,
+                                           reserving_indexer):
+    """
+    Copying the editing from an issue whose last approved revision is of
+    a bulk change copies the credits that the issue keeps, as for an
+    issue bulk change.
+    """
+    source, issue = approved_issues[:2]
+    editing = CreditType.objects.get_or_create(
+      id=CREDIT_TYPES['editing'],
+      defaults={'name': 'editing', 'sort_code': 6})[0]
+    IssueCredit.objects.create(issue=source, creator=_test_creator(),
+                               credit_type=editing)
+    approve_change(bulk_change([source], IssueRevision, price='0.25 USD'))
+    reserving_indexer.indexer.max_reservations = 10
+    reserving_indexer.indexer.save()
+    client.force_login(reserving_indexer)
+    client.post(reverse('reserve_revision',
+                        kwargs={'model_name': 'issue', 'id': issue.id}))
+    revision = IssueRevision.objects.get(issue=issue,
+                                         changeset__state=states.OPEN)
+
+    response = client.post(
+      reverse('compare_issues_copy', kwargs={
+        'issue_revision_id': revision.id, 'issue_id': source.id}),
+      {'field_to_copy': ['editing']})
+
+    assert response.status_code == 302
+    assert list(revision.issue_credit_revisions.filter(deleted=False)
+                .values_list('creator__name', flat=True)) == ['Test Creator']
+
+
+@pytest.mark.django_db
 def test_empty_bulk_change(any_indexer):
     """A bulk change without revisions has a name and an action."""
     changeset = Changeset.objects.create(
