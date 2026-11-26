@@ -1,8 +1,8 @@
-"""The language box of the feature relation form and its Feature B list.
+"""The language box of the feature relation form and its To feature list.
 
-Feature B of "Adding Relation with Feature" lists the features whose name
-holds the typed text, in all languages. The language box above it narrows
-the list to one language; left empty, the list stays as it was.
+To feature of "Adding Relation with Feature" lists the features whose
+name holds the typed text, in all languages. The language box above it
+narrows the list to one language; left empty, the list stays as it was.
 """
 import json
 
@@ -35,7 +35,7 @@ def features(db):
 
 
 def _list(client, forwarded):
-    """Return the ids that Feature B lists for the name, in all pages."""
+    """Return the ids that To feature lists for the name, in all pages."""
     found, page, more = [], 1, True
     while more:
         data = client.get(reverse('feature_autocomplete'),
@@ -49,7 +49,7 @@ def _list(client, forwarded):
 
 def test_chosen_language_lists_only_its_features(client, any_indexer,
                                                  features):
-    """With German chosen, Feature B lists only the German features."""
+    """With German chosen, To feature lists only the German features."""
     client.force_login(any_indexer)
     german = [feature.id for feature in features
               if feature.language.code == 'de']
@@ -68,7 +68,7 @@ def test_no_language_lists_all_languages(client, any_indexer, features):
 def test_language_box_offers_the_languages_of_features(features):
     """The box offers all languages first, then those that have features.
 
-    It sits above Feature B and is passed to its list.
+    It sits above To feature and is passed to its list.
     """
     form = FeatureRelationRevisionForm()
     field = form.fields['to_feature_language']

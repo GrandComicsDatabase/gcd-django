@@ -346,15 +346,15 @@ class FeatureRelationRevisionForm(forms.ModelForm):
                                          attrs={'style': 'min-width: 45em'})
     )
 
-    # only narrows the list of Feature B, it is not saved
+    # only narrows the list of To feature, it is not saved
     to_feature_language = forms.ModelChoiceField(
         queryset=Language.objects.filter(
           id__in=Feature.objects.filter(deleted=False).values('language')),
         to_field_name='code',
         required=False,
         empty_label='All languages',
-        label='Language of Feature B',
-        help_text='Feature B lists only the features of this language.'
+        label='Feature language',
+        help_text='To feature lists only the features of this language.'
     )
 
     to_feature = forms.ModelChoiceField(
