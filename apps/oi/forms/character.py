@@ -436,7 +436,7 @@ class CharacterRelationRevisionForm(forms.ModelForm):
         to_field_name='code',
         required=False,
         empty_label='All languages',
-        label='Language of Character B',
+        label='Language of B',
         help_text='Character B lists only the characters of this language.'
     )
 
