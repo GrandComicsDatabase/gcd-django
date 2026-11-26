@@ -456,6 +456,34 @@ def test_values_keep_spaces_and_case(started, approved_issues, monkeypatch):
 
 
 @pytest.mark.django_db
+def test_old_values_with_line_breaks(started, approved_issues):
+    """
+    A browser reads a line break in an attribute as LF and sends it as
+    CRLF, so the key of a value holds none: each value with a line break
+    is chosen as itself, and apart from one with a backslash.
+    """
+    values = ('A\nB', 'A\r\nB', 'A\\nB')
+    for issue, value in zip(approved_issues, values):
+        Issue.objects.filter(id=issue.id).update(price=value)
+    keys = dict(started(field='price').context['form']
+                .fields['old_value'].choices)
+
+    for issue, value in zip(approved_issues, values):
+        key = bulk.value_key(value)
+        sent = key.replace('\r\n', '\n').replace('\r', '\n') \
+                  .replace('\n', '\r\n')
+        response = started(field='price', shown='price',
+                           operation='replace_exact', old_value=sent,
+                           new_value='0.12 USD')
+
+        assert response.context['form'].cleaned_data['old_value'] == value
+        assert [row[0] for row
+                in response.context['bulk_preview']['rows']] == [issue]
+        assert key in keys
+        assert '\r' not in key and '\n' not in key
+
+
+@pytest.mark.django_db
 def test_transcribed_field_is_only_replaced(started):
     """A transcribed value is replaced one value at a time, never set."""
     rating = started(field='rating').context['form']
