@@ -43,6 +43,10 @@ class BulkOperationForm(forms.Form):
     form apply to each object when the change is applied.  shown holds
     the field whose values the page lists: the page binds the form only
     if it is still the chosen field.
+
+    Only Replace reads the old value: for another operation, a key that
+    is no longer among values, as after another edit since the page was
+    shown, is dropped.
     """
     field = forms.ChoiceField()
     shown = forms.CharField(widget=forms.HiddenInput)
@@ -68,6 +72,11 @@ class BulkOperationForm(forms.Form):
         if len(operations) > 1:
             self.fields['old_value'].help_text = \
                 'Used only with Replace the old value.'
+        if self.is_bound and self.data.get('old_value') and \
+           self.data['old_value'] not in self.values and \
+           self.data.get('operation') != 'replace_exact':
+            self.data = self.data.copy()
+            self.data['old_value'] = ''
 
         new_value = copy.deepcopy(self.edit_form_class.base_fields[name])
         new_value.label = 'New value'

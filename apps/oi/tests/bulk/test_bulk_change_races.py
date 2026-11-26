@@ -932,7 +932,7 @@ def _hold_indexer(user, held, release):
         with transaction.atomic():
             Indexer.objects.select_for_update().get(user=user)
             held.set()
-            release.wait(30)
+            release.wait(60)
     finally:
         connections.close_all()
 
