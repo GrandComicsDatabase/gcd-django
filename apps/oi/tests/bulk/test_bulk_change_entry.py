@@ -838,6 +838,22 @@ def test_values_by_count_with_hidden_spaces_shown(started,
       ('=0.10  USD', '"0.10\u00a0\u00a0USD" (2)'), ('=', '(empty) (1)')]
 
 
+def test_old_values_apart_in_characters_that_print_nothing():
+    """
+    Values that differ only in a character that prints nothing visible
+    but a space each get a label of their own: it shows as its escape,
+    and a backslash as two.
+    """
+    values = ('A\rB', 'A\nB', 'A\\nB', 'A\tB', 'A B', 'A\u00a0B', 'A  B')
+
+    choices = bulk.value_choices(Issue._meta.get_field('price'),
+                                 [(value, 1) for value in values])
+
+    assert [label for key, label in choices] == [
+      r'"A\rB" (1)', r'"A\nB" (1)', r'"A\\nB" (1)', r'"A\tB" (1)',
+      '"A B" (1)', r'"A\xa0B" (1)', '"A\u00a0\u00a0B" (1)']
+
+
 @pytest.mark.django_db
 def test_replace_leaves_other_values(started, approved_issues):
     """Replacing changes only the objects that hold the old value."""
