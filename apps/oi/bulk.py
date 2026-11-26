@@ -266,6 +266,12 @@ def exact_diff(rev_class, revision_ids):
     single, multi = _compared_fields(rev_class)
     source = rev_class._meta.get_field(rev_class.source_name).attname
     columns = [field.attname for field in single]
+    # The links of the revisions are read before their rows.  A removal
+    # deletes a revision and its links together: if it ends before the
+    # row is read, the row is missing and the revision has no changes; if
+    # it ends after, its links were read before it too.
+    linked = {field.name: _linked_ids(field, revision_ids)
+              for field in multi}
     rows = {row['id']: row for row in rev_class.objects
             .filter(id__in=revision_ids)
             .values(*dict.fromkeys(['id', 'previous_revision_id',
@@ -274,8 +280,8 @@ def exact_diff(rev_class, revision_ids):
     old_rows = {row['id']: row for row in rev_class.objects
                 .filter(id__in=set(previous.values()))
                 .values('id', *columns)}
-    linked = {field.name: _linked_ids(field, list(rows) + list(old_rows))
-              for field in multi}
+    for field in multi:
+        linked[field.name].update(_linked_ids(field, list(old_rows)))
 
     diff = {}
     for revision_id in revision_ids:

@@ -589,6 +589,33 @@ def test_rows_of_revisions_read_before_a_removal(client, change):
 
 
 @pytest.mark.django_db
+def test_links_read_before_the_row_of_a_removed_revision(
+      client, change, approved_issues, monkeypatch):
+    """
+    An object removed after the page has read the row of its revision
+    shows no false change of its links, such as its brand emblems, as
+    the links of the revision were read before its row.
+    """
+    revision = change.issuerevisions.get(issue=approved_issues[0])
+    assert revision.brand_emblem.exists()
+    previous_ids = bulk._previous_ids
+    removed = []
+
+    def remove_between_reads(*args):
+        """Remove the object once, after the row of its revision."""
+        if not removed:
+            removed.append(revision.id)
+            assert _remove(client, change, revision.id).status_code == 302
+        return previous_ids(*args)
+
+    monkeypatch.setattr(bulk, '_previous_ids', remove_between_reads)
+    diff = bulk.exact_diff(IssueRevision, [revision.id])
+
+    assert removed == [revision.id]
+    assert diff == {revision.id: {'price': ('0.10 USD', '0.12 USD')}}
+
+
+@pytest.mark.django_db
 def test_remove_needs_objects_of_the_change(client, change, bulk_change,
                                             approved_variant):
     """
