@@ -6,8 +6,9 @@ import django.urls as urlresolvers
 from django.db.models import Count, Case, When, F, Q
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape as esc
+from django.utils.html import conditional_escape as esc, format_html
 from django.utils.functional import cached_property
+from django.utils.translation import gettext as _, gettext_lazy
 import django_tables2 as tables
 
 from taggit.managers import TaggableManager
@@ -381,7 +382,7 @@ class Series(GcdData):
                                     self._date_uncertain(
                                       self.year_began_uncertain))
             if self.is_current:
-                date += 'present'
+                date += _('present')
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
@@ -445,24 +446,26 @@ class Series(GcdData):
 
     def cover_status_info(self):
         if not self.issue_count or not self.is_comics_publication:
-            return "No Covers"
+            return _('No Covers')
         else:
             gallery_url = urlresolvers.reverse("series_covers",
                                                kwargs={'series_id': self.id})
             table_url = urlresolvers.reverse("series_scan_table",
                                              kwargs={'series_id': self.id})
             if not self.scan_needed_count:
-                return mark_safe('<a href="%s">Gallery (%d)</a>' % (
-                  gallery_url, self.scan_count))
+                return format_html(
+                  '<a href="{}">{}</a>', gallery_url,
+                  _('Gallery (%(count)d)') % {'count': self.scan_count})
             elif self.has_gallery:
-                return mark_safe(
-                  '<a href="%s">Have %d</a> (<a href="%s">Need %d</a>)'
-                  % (gallery_url,
-                     self.scan_count,
-                     table_url,
-                     self.scan_needed_count))
+                return format_html(
+                  '<a href="{}">{}</a> (<a href="{}">{}</a>)',
+                  gallery_url,
+                  _('Have %(count)d') % {'count': self.scan_count},
+                  table_url,
+                  _('Need %(count)d') % {'count': self.scan_needed_count})
             else:
-                return mark_safe('<a href="%s">Add</a>' % (table_url))
+                return format_html('<a href="{}">{}</a>', table_url,
+                                   _('Add'))
 
     def object_markdown_name(self):
         return self.full_name()
@@ -487,19 +490,21 @@ class PublishedColumn(tables.Column):
 
 
 class SeriesTable(tables.Table):
-    name = tables.Column(verbose_name='Series')
-    year_began = tables.Column(accessor='year_began', verbose_name='Year')
-    issue_count = tables.Column(verbose_name='Issues',
+    name = tables.Column(verbose_name=gettext_lazy('Series'))
+    year_began = tables.Column(accessor='year_began',
+                               verbose_name=gettext_lazy('Year'))
+    issue_count = tables.Column(verbose_name=gettext_lazy('Issues'),
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
                                               TW_COLUMN_ALIGN_RIGHT}})
     covers = CoversColumn(accessor='scan_count',
+                          verbose_name=gettext_lazy('Covers'),
                           initial_sort_descending=True,
                           attrs={'td': {'class':
                                         TW_COLUMN_ALIGN_RIGHT}})
     published = PublishedColumn(accessor='year_began',
                                 orderable=False,
-                                verbose_name='Published',
+                                verbose_name=gettext_lazy('Published'),
                                 attrs={'td': {'class':
                                               TW_COLUMN_ALIGN_RIGHT}})
 
@@ -533,8 +538,9 @@ class SeriesTable(tables.Table):
         return (QuerySet, True)
 
     def render_issue_count(self, record):
-        return '%d issues (%d indexed)' % (record.issue_count,
-                                           record.issue_indexed_count)
+        return _('%(issues)d issues (%(indexed)d indexed)') % {
+          'issues': record.issue_count,
+          'indexed': record.issue_indexed_count}
 
     def render_name(self, record):
         name_link = '<a href="%s">%s</a> %s' % (record.get_absolute_url(),
@@ -548,7 +554,7 @@ class SeriesTable(tables.Table):
 
 class SeriesPublisherTable(SeriesTable):
     publisher = tables.Column(accessor='publisher',
-                              verbose_name='Publisher')
+                              verbose_name=gettext_lazy('Publisher'))
 
     class Meta:
         model = Series
@@ -571,11 +577,12 @@ class SeriesPublisherTable(SeriesTable):
 
 class CharacterSeriesTable(SeriesPublisherTable):
     appearances_count = tables.Column(accessor='appearances_count',
-                                      verbose_name='Issues',
+                                      verbose_name=gettext_lazy('Issues'),
                                       initial_sort_descending=True)
     covers = None
     published = None
-    first_appearance = tables.Column(verbose_name='First Appearance')
+    first_appearance = tables.Column(
+      verbose_name=gettext_lazy('First Appearance'))
     issue_count = None
 
     def __init__(self, *args, **kwargs):
@@ -632,13 +639,14 @@ class GroupSeriesTable(CharacterSeriesTable):
 
 class CreatorSeriesTable(SeriesPublisherTable):
     credits_count = tables.Column(accessor='issue_credits_count',
-                                  verbose_name='Issues',
+                                  verbose_name=gettext_lazy('Issues'),
                                   initial_sort_descending=True)
     covers = None
     published = None
-    first_credit = tables.Column(verbose_name='First Credit')
+    first_credit = tables.Column(verbose_name=gettext_lazy('First Credit'))
     issue_count = None
-    role = tables.Column(accessor='script', orderable=False)
+    role = tables.Column(accessor='script', orderable=False,
+                         verbose_name=gettext_lazy('Role'))
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')

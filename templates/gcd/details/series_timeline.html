@@ -10,7 +10,9 @@
       href="{% static 'css/output.css' %}"/>
 {% endblock %}
 
-{% block title %} GCD :: Series :: {{ series.name }} :: Timeline {% endblock %}
+{% block title %}
+  GCD :: {% trans "Series" %} :: {{ series.name }} :: {% trans "Timeline" %}
+{% endblock %}
 
 {% block nav_bar %}
   {{ block.super }}
@@ -23,72 +25,104 @@
 <div>
 
   <ul>
-    <li><span class="font-bold">Publisher:</span> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a></li>
-  </ul>  
-  <a href="{% url "series_details" series_id=series.id %}">See series details by issue</a> (displays one row per issue with no gaps, by the regular issue sort order)
+  {% with publisher=series.publisher %}
+    <li><span class="font-bold">{% trans "Publisher:" %}</span>
+      <a href="{{ publisher.get_absolute_url }}">{{ publisher }}</a></li>
+  {% endwith %}
+  </ul>
+  {% url "series_details" series_id=series.id as details_url %}
+  <a href="{{ details_url }}">{% trans "See series details by issue" %}</a>
+  {% blocktrans trimmed %}
+    (displays one row per issue with no gaps, by the regular issue sort
+    order)
+  {% endblocktrans %}
 
 {% if rows %}
 <p>
+{% blocktrans trimmed %}
 This page attempts to show how the issues in this series were published over time
 by laying them out in a monthly timeline with alternately colored rows roughly
 corresponding to months.  The coloring is not meaningful for bi-monthly,
 quarterly or annual books.  Weekly or other more-frequent-than-monthly issues
 are grouped into the same color row by month.
+{% endblocktrans %}
 </p>
 <br>
 <p>
+{% blocktrans trimmed %}
 The timeline feature depends on the key date field to order issues into a monthly timeline.
 Please note that if the key dates are not filled out to correspond to the
 publication months of the issues, then the timeline will not be accurate.
+{% endblocktrans %}
 </p>
 <br>
   {% if no_date_rows %}
 <p>
-Not all issues in this series have {% if bad_dates %}usable{% endif %}
+{% if bad_dates %}
+{% blocktrans trimmed %}
+Not all issues in this series have usable
 key dates, so not all can be sorted into a timeline.  The following issues
 can be sorted:
+{% endblocktrans %}
+{% else %}
+{% blocktrans trimmed %}
+Not all issues in this series have
+key dates, so not all can be sorted into a timeline.  The following issues
+can be sorted:
+{% endblocktrans %}
+{% endif %}
 </p>
   {% endif %}
 {% else %}
 <p>
-No issues in this series have {% if bad_dates %}usable{% endif %} key dates,
+{% if bad_dates %}
+{% blocktrans trimmed %}
+No issues in this series have usable key dates,
 so none can be sorted into a timeline.
 The following table is the same as the regular series detail table:
+{% endblocktrans %}
+{% else %}
+{% blocktrans trimmed %}
+No issues in this series have key dates,
+so none can be sorted into a timeline.
+The following table is the same as the regular series detail table:
+{% endblocktrans %}
+{% endif %}
 </p>
 {% endif %}
 
 <table class="border">
   <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
     <tr>
-      <th> Key Date </th>
-      <th> Pub. Date </th>
+      <th> {% trans "Key Date" %} </th>
+      <th> {% trans "Pub. Date" %} </th>
 {% if on_sale_date_present %}
-      <th> On-sale date </th>
+      <th> {% trans "On-sale date" %} </th>
 {% endif %}
 {% if volume_present %}
-      <th> Volume </th>
+      <th> {% trans "Volume" %} </th>
 {% endif %}
-      <th> Number </th>
+      <th> {% trans "Number" %} </th>
 {% if title_present %}
-      <th> Title </th>
+      <th> {% trans "Title" %} </th>
 {% endif %}
-      <th> Indicia Publisher </th>
+      <th> {% trans "Indicia Publisher" %} </th>
 {% if brand_present %}
-      <th> Publisher's Brand </th>
+      <th> {% trans "Publisher's Brand" %} </th>
 {% endif %}
-      <th> Pages </th>
-      <th> Price </th>
+      <th> {% trans "Pages" %} </th>
+      <th> {% trans "Price" %} </th>
 {% if frequency_present %}
-      <th> Frequency </th>
+      <th> {% trans "Frequency" %} </th>
 {% endif %}
 {% if isbn_present %}
       <th> ISBN </th>
 {% endif %}
 {% if barcode_present %}
-      <th> Barcode </th>
+      <th> {% trans "Barcode" %} </th>
 {% endif %}
 {% if rating_present %}
-      <th> Publisher's Age Guidelines </th>
+      <th> {% trans "Publisher's Age Guidelines" %} </th>
 {% endif %}
     </tr>
   </thead>
@@ -146,38 +180,47 @@ divisible filter.
   {% if rows and no_date_rows %}
 </table>
 <p>
-These issues have no {% if bad_dates %}usable{% endif %} key date and
+{% if bad_dates %}
+{% blocktrans trimmed %}
+These issues have no usable key date and
 cannot be placed in a timeline:
+{% endblocktrans %}
+{% else %}
+{% blocktrans trimmed %}
+These issues have no key date and
+cannot be placed in a timeline:
+{% endblocktrans %}
+{% endif %}
 </p>
 <table class="listing">
   <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
     <tr class="[&_th]:px-1">
-      <th> Key Date </th>
-      <th> Pub. Date </th>
+      <th> {% trans "Key Date" %} </th>
+      <th> {% trans "Pub. Date" %} </th>
     {% if on_sale_date_present %}
-      <th> On-sale date </th>
+      <th> {% trans "On-sale date" %} </th>
     {% endif %}
     {% if volume_present %}
-      <th> Volume </th>
+      <th> {% trans "Volume" %} </th>
     {% endif %}
-      <th> Number </th>
-      <th> Indicia Publisher </th>
+      <th> {% trans "Number" %} </th>
+      <th> {% trans "Indicia Publisher" %} </th>
     {% if brand_present %}
-      <th> Publisher's Brand </th>
+      <th> {% trans "Publisher's Brand" %} </th>
     {% endif %}
-      <th> Pages </th>
-      <th> Price </th>
+      <th> {% trans "Pages" %} </th>
+      <th> {% trans "Price" %} </th>
     {% if frequency_present %}
-      <th> Frequency </th>
+      <th> {% trans "Frequency" %} </th>
     {% endif %}
     {% if isbn_present %}
       <th> ISBN </th>
     {% endif %}
     {% if barcode_present %}
-      <th> Barcode </th>
+      <th> {% trans "Barcode" %} </th>
     {% endif %}
     {% if rating_present %}
-      <th> Publisher's Age Guidelines </th>
+      <th> {% trans "Publisher's Age Guidelines" %} </th>
     {% endif %}
     </tr>
   </thead>

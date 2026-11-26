@@ -1,6 +1,7 @@
 {% extends "gcd/tw_base_view.html" %}
 
 {% load static %}
+{% load i18n %}
 {% load credits %}
 {% load display %}
 {% load django_tables2 %}
@@ -10,7 +11,9 @@
       href="{% static 'css/output.css' %}"/>
 {% endblock %}
 
-{% block title %} GCD :: Series :: {{ series.name }} :: Details {% endblock %}
+{% block title %}
+  GCD :: {% trans "Series" %} :: {{ series.name }} :: {% trans "Details" %}
+{% endblock %}
 
 {% block nav_bar %}
   {{ block.super }}
@@ -27,16 +30,26 @@
 <div>
 
   <ul>
-    <li><span class="font-bold">Publisher:</span> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a></li>
+  {% with publisher=series.publisher %}
+    <li><span class="font-bold">{% trans "Publisher:" %}</span>
+      <a href="{{ publisher.get_absolute_url }}">{{ publisher }}</a></li>
+  {% endwith %}
   </ul>
 
- Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} issue{{ page.paginator.count|pluralize:'s' }}.
-  <a href="{% url "series_timeline" series_id=series.id %}">See series monthly timeline</a>
-  (depends on key dates being set correctly).
+  {% with start=page.start_index end=page.end_index %}
+  {% blocktrans trimmed count counter=page.paginator.count %}
+    Displaying {{ start }} to {{ end }} of {{ counter }} issue.
+  {% plural %}
+    Displaying {{ start }} to {{ end }} of {{ counter }} issues.
+  {% endblocktrans %}
+  {% endwith %}
+  {% url "series_timeline" series_id=series.id as timeline_url %}
+  <a href="{{ timeline_url }}">{% trans "See series monthly timeline" %}</a>
+  {% trans "(depends on key dates being set correctly)." %}
   {% if page.paginator.count %}
   {% render_table table %}
   {% else %}
-  <p>No issues found.</p>
+  <p>{% trans "No issues found." %}</p>
   {% endif %}
 
 </div>
