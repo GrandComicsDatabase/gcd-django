@@ -191,8 +191,11 @@ def test_statistics_name_apart_from_a_plain_entry(catalogs, client,
     CountStats.objects.create(name='covers', count=2)
 
     page = client.get('/?lang=it').content.decode()
+    # A variable, not a literal: makemessages would take a literal into
+    # the message files of the site.
+    word = 'cover'
     with translation.override('it'):
-        story_type = translation.gettext('cover')
+        story_type = translation.gettext(word)
 
     assert '2 copertine<br>' in page
     assert story_type == 'Copertina (tipo)'
