@@ -93,6 +93,19 @@ def publisher_years_note(revision, field):
     return ''
 
 
+def empty_issue_field_note(revision, field):
+    '''
+    Note for an empty price, page count or publication date of an issue,
+    fields the wiki asks to check before an index is approved. Only the
+    issue as the change leaves it gets the note, not its previous
+    revision, and a page count marked as uncertain gets none.
+    '''
+    if revision.source_name == 'issue' and hasattr(revision, 'changed') \
+       and not (field == 'page_count' and revision.page_count_uncertain):
+        return '(note: empty)'
+    return ''
+
+
 # check to return True for yellow css compare highlighting
 @register.filter
 def check_changed(changed, field):
@@ -287,7 +300,11 @@ def field_value(revision, field):
     elif field in ['no_editing', 'no_script', 'no_pencils', 'no_inks',
                    'no_colors', 'no_letters']:
         return yesno(value, 'X, ')
+    elif field in ['price', 'publication_date'] and not value:
+        return empty_issue_field_note(revision, field)
     elif field in ['page_count']:
+        page_count = format_page_count(value) or \
+                     empty_issue_field_note(revision, field)
         if revision.source_name == 'issue' and \
            revision.changeset.storyrevisions.count():
             # only calculate total sum for issue not sequences
@@ -308,8 +325,8 @@ def field_value(revision, field):
             sum_story_pages = format_page_count(total_pages)
 
             return '%s (note: total sum of story page counts is %s)' % \
-                   (format_page_count(value), sum_story_pages)
-        return format_page_count(value)
+                   (page_count, sum_story_pages)
+        return page_count
     elif field == 'isbn':
         if value:
             if validated_isbn(value):
@@ -463,7 +480,8 @@ def diff_list(prev_rev, revision, field):
               added/deleted spans marked safe for template rendering.
             - For plain text fields ('notes', 'synopsis', 'bio', etc.):Returns
               the raw diff list of (op, text) tuples from diff_match_patch.
-            - For 'genre': Returns a diff list using field_value() instead.
+            - For 'genre' and 'price': Returns a diff list using
+              field_value() instead, so their notes are shown.
             - For unrecognized fields: Returns None.
     """
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing',
@@ -508,13 +526,13 @@ def diff_list(prev_rev, revision, field):
                  'synopsis', 'title', 'first_line', 'keywords', 'description',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name', 'sort_name',
-                 'price', 'indicia_frequency', 'variant_name',
+                 'indicia_frequency', 'variant_name',
                  'source_description', 'gcd_official_name', 'bio']:
         diff = diff_match_patch().diff_main(getattr(prev_rev, field),
                                             getattr(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
         return diff
-    if field == 'genre':
+    if field in ['genre', 'price']:
         diff = diff_match_patch().diff_main(field_value(prev_rev, field),
                                             field_value(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)

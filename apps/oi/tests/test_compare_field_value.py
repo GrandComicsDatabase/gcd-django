@@ -1,12 +1,13 @@
 import pytest
 
+from django.contrib.auth.models import Permission
 from django.urls import reverse
 
 from apps.gcd.models import IndiciaPublisher, Publisher
 from apps.oi import states
 from apps.oi.models import (
     BrandGroupRevision, Changeset, CTYPES, IndiciaPublisherRevision,
-    IssueRevision, SeriesRevision)
+    IssueRevision, SeriesRevision, StoryRevision)
 from apps.oi.templatetags.compare import field_value
 
 
@@ -194,3 +195,126 @@ def test_compare_page_notes_years_outside_publisher_years(
       '2000 (note: after the last year 1995 of the publisher)') == 2
     assert content.count(
       '1970 (note: before the first year 1975 of the publisher)') == 1
+
+
+EMPTY = '(note: empty)'
+
+
+@pytest.mark.parametrize('field, value, expected', [
+    ('price', '', EMPTY), ('price', '0.10 USD', '0.10 USD'),
+    ('publication_date', '', EMPTY),
+    ('publication_date', 'May 1947', 'May 1947')])
+def test_note_on_empty_issue_field(field, value, expected):
+    """An empty price or publication date of an issue gets a note."""
+    revision = IssueRevision(**{field: value})
+    revision.changed = {}
+    assert field_value(revision, field) == expected
+
+
+@pytest.mark.parametrize('field', ['price', 'publication_date'])
+def test_no_note_on_previous_revision(field):
+    """
+    The previous revision, without the changed fields of a compared one,
+    shows the state before the change without a note.
+    """
+    assert field_value(IssueRevision(), field) == ''
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('page_count, uncertain, expected', [
+    (None, False, EMPTY), (None, True, ''), (64, False, '64')])
+def test_note_on_empty_page_count(any_indexer, page_count, uncertain,
+                                  expected):
+    """An empty page count gets a note unless it is uncertain."""
+    changeset = Changeset.objects.create(
+      indexer=any_indexer, state=states.OPEN, change_type=CTYPES['issue'])
+    revision = IssueRevision(changeset=changeset, page_count=page_count,
+                             page_count_uncertain=uncertain)
+    revision.changed = {}
+    assert field_value(revision, 'page_count') == expected
+
+
+def test_no_note_on_empty_page_count_of_sequence():
+    """The note is for issues, not for their sequences."""
+    revision = StoryRevision(page_count=None)
+    revision.changed = {}
+    assert field_value(revision, 'page_count') == ''
+
+
+def _compare_page(client, indexer, change_type, issues, **values):
+    """
+    The compare page of an open change of these issues with these values.
+    """
+    changeset = Changeset.objects.create(
+      indexer=indexer, state=states.OPEN, change_type=change_type)
+    for issue in issues:
+        revision = IssueRevision.clone(data_object=issue, changeset=changeset)
+        for field, value in values.items():
+            setattr(revision, field, value)
+        revision.save()
+    client.force_login(indexer)
+    response = client.get(reverse('compare', kwargs={'id': changeset.id}))
+    assert response.status_code == 200
+    return response.content.decode()
+
+
+@pytest.mark.django_db
+def test_compare_page_notes_fields_the_change_empties(
+        client, any_indexer, any_added_issue):
+    """A field emptied by the change gets the note, the price too."""
+    content = _compare_page(client, any_indexer, CTYPES['issue'],
+                            [any_added_issue], price='', page_count=None,
+                            publication_date='')
+
+    # the changed price is shown as a diff, the note as added text
+    assert "<span class='added'>%s</span>" % EMPTY in content
+    assert content.count(EMPTY) == 3
+
+
+@pytest.mark.django_db
+def test_compare_page_notes_empty_fields_the_change_keeps(
+        client, any_indexer, any_added_variant):
+    """
+    A field the change leaves empty gets the note in the column of the
+    change only. The variant has no price, page count and publication date.
+    """
+    content = _compare_page(client, any_indexer, CTYPES['issue'],
+                            [any_added_variant], notes='New notes')
+
+    assert content.count(EMPTY) == 3
+
+
+@pytest.mark.django_db
+def test_bulk_change_notes_empty_price_once(
+        client, any_indexer, any_added_issue, any_added_variant):
+    """
+    A bulk change shows the fields of one of its issues, so a price it
+    empties gets one note, not one per issue.
+    """
+    content = _compare_page(client, any_indexer, CTYPES['issue_bulk'],
+                            [any_added_issue, any_added_variant], price='',
+                            page_count=64, publication_date='January 1947')
+
+    assert content.count(EMPTY) == 1
+
+
+@pytest.mark.django_db
+def test_copy_page_notes_empty_fields_of_edited_issue(
+        client, any_indexer, any_added_issue, any_added_variant):
+    """
+    The page that copies values from another issue notes the empty fields
+    of the issue being edited, not of the issue the values come from.
+    """
+    any_indexer.user_permissions.add(Permission.objects.get(
+      codename='can_reserve', content_type__app_label='indexer'))
+    changeset = Changeset.objects.create(
+      indexer=any_indexer, state=states.OPEN, change_type=CTYPES['issue'])
+    revision = IssueRevision.clone(data_object=any_added_variant,
+                                   changeset=changeset)
+    client.force_login(any_indexer)
+
+    response = client.get(reverse('compare_issues_copy', kwargs={
+      'issue_revision_id': revision.id, 'issue_id': any_added_issue.id}))
+
+    assert response.status_code == 200
+    assert response.content.decode().count(EMPTY) == 3
