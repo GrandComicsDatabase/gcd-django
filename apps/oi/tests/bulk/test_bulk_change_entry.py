@@ -885,15 +885,22 @@ def test_replace_leaves_other_values(started, approved_issues):
 
 
 @pytest.mark.django_db
-def test_preview_follows_the_limit(started, settings):
-    """The preview counts all changes and shows BULK_CHANGE_MAX of them."""
-    settings.BULK_CHANGE_MAX = 2
+def test_preview_shows_every_change(started, settings, reserving_indexer):
+    """
+    The preview shows every change that Apply would make, also beyond
+    BULK_CHANGE_MAX for a new indexer, whose limit is a setting of its
+    own.
+    """
+    settings.BULK_CHANGE_MAX = 1
+    settings.BULK_CHANGE_MAX_NEW = 3
+    reserving_indexer.indexer.is_new = True
+    reserving_indexer.indexer.save()
 
     preview = _preview(started, 'price', old_value='=0.10 USD',
                        operation='replace_exact', new_value='0.12 USD')
 
     assert preview['changed'] == 3
-    assert len(preview['rows']) == 2
+    assert len(preview['rows']) == 3
 
 
 @pytest.mark.django_db

@@ -830,10 +830,9 @@ def preview(model, ids, name, operation, old, new):
     change are split four ways: 'deleted' since the list was chosen,
     'turned_off' where a flag of the parent turns the field off,
     'reserved' where another change reserves them, and the others,
-    counted in 'changed'.  'rows' shows the first BULK_CHANGE_MAX of
-    these, so all of them for a selection within the limit, each as
-    (object, old HTML, new HTML).  Each thousand objects comes in the
-    order of the model.
+    counted in 'changed'.  'rows' shows each of these, the objects that
+    Apply would change, as (object, old HTML, new HTML).  Each thousand
+    objects comes in the order of the model.
     """
     field = model._meta.get_field(name)
     parent = TURNED_OFF_BY.get(model, (None,))[0]
@@ -861,11 +860,10 @@ def preview(model, ids, name, operation, old, new):
                  .values_list('object_id', flat=True))
     reserved = [change[0] for change in changes if change[0].id in locked]
     changes = [change for change in changes if change[0].id not in locked]
-    shown = changes[:settings.BULK_CHANGE_MAX]
-    names = _object_names(field, [value for change in shown
+    names = _object_names(field, [value for change in changes
                                   for value in change[1:]])
     rows = [(data_object,) + _shown_change(field, current, value, names)
-            for data_object, current, value in shown]
+            for data_object, current, value in changes]
     return {'changed': len(changes), 'rows': rows, 'reserved': reserved,
             'turned_off': turned_off, 'deleted': deleted}
 
