@@ -882,7 +882,7 @@ def objects_to_compare(revision):
             shown = format_html(' [{}]', note)
         elif image:
             shown = format_html(' <img class="inline" src="{}" alt="{}">',
-                                image.thumbnail.url, name)
+                                image.thumbnail_url, name)
         else:
             shown = ''
         items.append((absolute_url(data_object, descriptor=esc(name)), shown))

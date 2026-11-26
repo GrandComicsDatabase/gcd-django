@@ -97,7 +97,7 @@ def test_image_signature_compare_shows_the_images(client, any_indexer,
     page = _compare_page(client, any_indexer, revision)
 
     assert 'Other signatures of this creator' in page
-    assert image.thumbnail.url in page
+    assert image.thumbnail_url in page
 
 
 def test_other_signatures_without_a_query_per_signature(
@@ -114,7 +114,7 @@ def test_other_signatures_without_a_query_per_signature(
         html = template.render(Context({'revision': revision}))
 
     for image in images:
-        assert image.thumbnail.url in html
+        assert image.thumbnail_url in html
     assert 'Plain Name</a> [generic]' in html
     assert 'Edited Name' not in html
 
