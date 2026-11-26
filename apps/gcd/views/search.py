@@ -138,15 +138,19 @@ def generic_by_name(request, name, q_obj, sort,
             else:
                 order_by = 'name'
 
+            # the search loads the countries and parents that the rows show
             if class_ is Publisher:
                 table_format = PublisherSearchTable
+                things = things.select_related('country')
             elif class_ is Brand:
                 table_format = BrandEmblemSearchTable
                 context['selected'] = 'brand'
             elif class_ is BrandGroup:
                 table_format = BrandGroupSearchTable
+                things = things.select_related('parent__country')
             elif class_ is IndiciaPublisher:
                 table_format = IndiciaPublisherSearchTable
+                things = things.select_related('country', 'parent__country')
             elif class_ is Series:
                 table_format = SeriesPublisherTable
                 if things:
@@ -155,6 +159,7 @@ def generic_by_name(request, name, q_obj, sort,
                     context['filter_form'] = filter.form
             elif class_ is Printer:
                 table_format = PrinterSearchTable
+                things = things.select_related('country')
 
             if class_ in [Publisher, IndiciaPublisher, Printer]:
                 if things:
