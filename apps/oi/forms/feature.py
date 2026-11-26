@@ -266,7 +266,7 @@ class FeatureLogoRevisionForm(forms.ModelForm):
         to_field_name='code',
         required=False,
         empty_label='All languages',
-        label='Language of Feature name',
+        label='Feature language',
         help_text='Feature name lists only the names of the features of this '
                   'language.'
     )
