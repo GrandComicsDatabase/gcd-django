@@ -1076,6 +1076,11 @@ def _display_image_upload_form(request, form, display_obj, model_name,
                            'creator' % kwargs['upload_type']
         kwargs['guidelines'] = ['Please upload a representative example for '
                                 'the work of the creator']
+    if image_type == 'FeatureLogo':
+        kwargs['header'] = 'Upload a %s scan of the feature logo' \
+                           % kwargs['upload_type']
+        kwargs['guidelines'] = ['Please only upload an image of the feature '
+                                'logo.']
     kwargs['display_obj'] = display_obj
     kwargs['model_name'] = model_name
     kwargs['image_type'] = image_type
