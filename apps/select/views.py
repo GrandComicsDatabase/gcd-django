@@ -1148,12 +1148,16 @@ class CharacterAutocomplete(LoginRequiredMixin,
 
         language = self.forwarded.get('language_code', None)
         relation_type = self.forwarded.get('relation_type', None)
+        chosen_language = self.forwarded.get('language', None)
 
         if language and relation_type:
             if relation_type not in ['1', '-1']:
                 qs = qs.filter(language__code__in=[language, 'zxx'])
             elif relation_type in ['1', '-1']:
                 qs = qs.exclude(language__code=language)
+
+        if chosen_language:
+            qs = qs.filter(language__code=chosen_language)
 
         qs = _filter_and_sort(qs, self.q, chrono_sort='year_first_published')
 
