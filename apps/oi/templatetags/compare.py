@@ -181,7 +181,7 @@ def field_value(revision, field):
                 return absolute_url(value)
             else:
                 return mark_safe('<img class="inline" src="' +
-                                 value.emblem.icon.url + '"> '
+                                 value.emblem.icon_url + '"> '
                                  + absolute_url(value))
         return absolute_url(value)
     elif field == 'brand_emblem':
@@ -194,7 +194,7 @@ def field_value(revision, field):
                 brand_emblems += absolute_url(brand_emblem) + '; '
             else:
                 brand_emblems += mark_safe('<img class="inline" src="' +
-                                           brand_emblem.emblem.icon.url + '"> '
+                                           brand_emblem.emblem.icon_url + '"> '
                                            + absolute_url(brand_emblem)) + '; '
         if brand_emblems:
             brand_emblems = brand_emblems[:-2]
