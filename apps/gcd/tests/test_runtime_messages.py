@@ -103,9 +103,10 @@ def compile_catalog(language, text, settings, folder):
 def fill_plural(text, singular, forms):
     """TEXT with the plural entry of SINGULAR filled with FORMS.
 
-    The entry has one msgstr for each plural form of the language; the
-    last of FORMS fills the forms beyond them. TEXT without that entry
-    comes back as it is.
+    The entry gets one msgstr for each plural form that the header of
+    TEXT names (makemessages writes two in a new file, whatever the
+    language); the last of FORMS fills the forms beyond them. TEXT
+    without that entry comes back as it is.
     """
     head = 'msgid "%s"\nmsgid_plural ' % singular
     start = text.find(head)
@@ -114,8 +115,9 @@ def fill_plural(text, singular, forms):
     end = text.find('\n\n', start)
     end = len(text) if end < 0 else end
     lines = text[start:end].split('\n')
+    nplurals = int(re.search(r'nplurals=(\d+)', text).group(1))
     lines[2:] = ['msgstr[%d] "%s"' % (n, forms[min(n, len(forms) - 1)])
-                 for n in range(len(lines) - 2)]
+                 for n in range(nplurals)]
     return text[:start] + '\n'.join(lines) + text[end:]
 
 
