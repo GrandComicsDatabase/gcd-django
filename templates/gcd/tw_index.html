@@ -32,7 +32,8 @@
 </nav>
 <ul class="sm:hidden ps-1 columns-2 [&>li]:text-center">
   {% if language and language.code != 'en' %}
-  <li><a class="link-no-visited" href="{% url 'home' %}">English start page</a></li>
+  <li><a class="link-no-visited"
+      href="{% url 'home' %}?lang=en">English start page</a></li>
   {% endif %}
   {% if language.code != 'de' %}
   <li><a class="link-no-visited" href="{% url 'home' %}?lang=de">Deutsche Startseite</a></li>
@@ -64,7 +65,8 @@
       {% endif %}
         <ul class="ps-1">
           {% if language and language.code != 'en' %}
-          <li><a class="link-no-visited" href="{% url 'home' %}">English start page</a></li>
+          <li><a class="link-no-visited"
+              href="{% url 'home' %}?lang=en">English start page</a></li>
           {% endif %}
           {% if language.code != 'de' %}
           <li><a class="link-no-visited" href="{% url 'home' %}?lang=de">Deutsche Startseite</a></li>
