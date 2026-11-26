@@ -113,6 +113,6 @@ def series_with_other_country(request):
     }
     table = SeriesWithOtherCountryTable(series,
                                         template_name=TW_SORT_TABLE_TEMPLATE,
-                                        order_by=('name'))
+                                        order_by='name')
     return generic_sortable_list(request, series, table,
                                  'gcd/search/tw_list_sortable.html', context)
