@@ -1941,6 +1941,16 @@ class Revision(models.Model):
         """
         return {}
 
+    def edit_scans(self):
+        """
+        Return the scans that the edit page shows above the form, as pairs
+        of a label and an image.
+
+        None by default; a revision whose data is read from a scan
+        overrides it.
+        """
+        return []
+
     @classmethod
     def extra_forms_errors(cls, request, form, extra_forms):
         """
@@ -4622,6 +4632,16 @@ class IssueRevision(Revision):
                 'code_number_formset': code_number_formset,
                 'external_link_formset': external_link_formset}
 
+    def edit_scans(self):
+        """
+        Show the indicia scan of the issue above the form of its data.
+        """
+        if self.issue:
+            image = self.issue.indicia_image
+            if image:
+                return [('Indicia Scan', image)]
+        return []
+
     def process_extra_forms(self, extra_forms):
         credits_formset = extra_forms['credits_formset']
         _process_formset(self, credits_formset, revision_type='issue_revision')
@@ -6473,6 +6493,17 @@ class StoryRevision(Revision):
         return {'credits_formset': credits_formset,
                 'characters_formset': characters_formset,
                 'groups_formset': groups_formset}
+
+    def edit_scans(self):
+        """
+        Show the statement of ownership scan of the issue above the form of
+        a statement of ownership sequence.
+        """
+        if self.type_id == STORY_TYPES['soo'] and self.issue:
+            image = self.issue.soo_image
+            if image:
+                return [('Statement of Ownership Scan', image)]
+        return []
 
     @classmethod
     def extra_forms_errors(cls, request, form, extra_forms):
