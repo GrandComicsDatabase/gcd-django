@@ -137,6 +137,32 @@ def exact_diff(rev_class, revision_ids):
     return diff
 
 
+def _seen_flags(revision):
+    """
+    Return the names of the flags, such as _seen_volume, that the IMP
+    rules of revision have set since its _start_imp_sum.
+    """
+    return {name for name, value in vars(revision).items()
+            if name.startswith('_seen_') and value is True}
+
+
+def _logical_points(revision, names):
+    """
+    Return {logical field: points} for the fields names that revision
+    changed, scored in model order as a normal edit scores them.  The
+    logical field of a name is the flag that its rule sets, such as
+    _seen_volume for volume and no_volume, else the name itself.
+    """
+    revision._start_imp_sum()
+    points = {}
+    for name in names:
+        seen = _seen_flags(revision)
+        earned = revision._imps_for(name)
+        key = ' '.join(sorted(_seen_flags(revision) - seen)) or name
+        points[key] = points.get(key, 0) + earned
+    return points
+
+
 def changeset_imps(changeset):
     """
     Return the Index Measurement Points of a bulk change.
@@ -144,13 +170,13 @@ def changeset_imps(changeset):
     Each logical field changed in the change counts once, with the rules
     of a normal edit (_start_imp_sum and _imps_for of the revision class),
     which join a value and its flags into one field.  The rules run on
-    each changed revision for all the changed fields, so that a value
-    and its flags count once, and a field earns the most points that a
-    revision which changed it gets: a rule that reads the values of a
-    revision, such as the page count that an uncertain flag needs,
-    counts if any revision that changed the field meets it.  Only the
-    changed objects count, not the revisions that anchor them, such as
-    the issues of changed sequences.
+    each changed revision for the fields that it changed only, so that
+    a field it left alone takes nothing from those it changed, and a
+    logical field earns the most points that a revision which changed
+    it gets: a rule that reads the values of a revision, such as the
+    page count that an uncertain flag needs, counts if any revision that
+    changed the field meets it.  Only the changed objects count, not the
+    revisions that anchor them, such as the issues of changed sequences.
     """
     name, revisions = changeset.bulk_target()
     if name is None:
@@ -159,19 +185,13 @@ def changeset_imps(changeset):
     diff = exact_diff(revisions.model, revision_ids)
     changed_ids = [revision_id for revision_id in revision_ids
                    if diff[revision_id]]
-    changed_fields = set()
-    for revision_id in changed_ids:
-        changed_fields.update(diff[revision_id])
     single, multi = _compared_fields(revisions.model)
-    names = [field.name for field in single + multi
-             if field.name in changed_fields]
-    points = dict.fromkeys(names, 0)
+    points = defaultdict(int)
     for revision in revisions.filter(id__in=changed_ids):
-        revision._start_imp_sum()
-        for changed in names:
-            earned = revision._imps_for(changed)
-            if changed in diff[revision.id]:
-                points[changed] = max(points[changed], earned)
+        names = [field.name for field in single + multi
+                 if field.name in diff[revision.id]]
+        for key, earned in _logical_points(revision, names).items():
+            points[key] = max(points[key], earned)
     return sum(points.values())
 
 
