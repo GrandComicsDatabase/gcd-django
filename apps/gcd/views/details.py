@@ -365,9 +365,26 @@ def show_creator(request, creator, preview=False):
     return render(request, 'gcd/details/tw_creator.html', vars)
 
 
+def _creator_names_to_check(creator):
+    """
+    Return the ids of the names of `creator` whose credits without
+    "credited" get the note "Non-official name selected without
+    credited-flag" on the compare page: the other names, not deleted,
+    not house, studio, ghost or joint names, in the script of the
+    official name.
+    """
+    no_note = [NAME_TYPES[name_type]
+               for name_type in ('house', 'studio', 'ghost', 'joint')]
+    script = creator.official_creator_detail.in_script_id
+    return list(creator.active_names()
+                .filter(is_official_name=False, in_script_id=script)
+                .exclude(type_id__in=no_note)
+                .values_list('id', flat=True))
+
+
 def creator_sequences(request, creator_id, series_id=None,
                       country=None, language=None,
-                      creator_name=False, signature=False):
+                      creator_name=False, signature=False, to_check=False):
     if creator_name:
         creator = get_gcd_object(CreatorNameDetail, creator_id)
         creator_names = CreatorNameDetail.objects.filter(id=creator_id)
@@ -375,12 +392,18 @@ def creator_sequences(request, creator_id, series_id=None,
         signature = get_gcd_object(CreatorSignature, creator_id)
         creator = signature.creator
         creator_names = creator.creator_names.filter(deleted=False)
+    elif to_check:
+        creator = get_gcd_object(Creator, creator_id)
+        creator_names = _creator_names_to_check(creator)
     else:
         creator = get_gcd_object(Creator, creator_id)
         creator_names = _get_creator_names_for_checklist(creator)
 
-    stories = Story.objects.filter(credits__creator__in=creator_names,
-                                   credits__deleted=False).distinct()\
+    # one filter(), so that all the conditions hold for the same credit
+    credits = Q(credits__creator__in=creator_names, credits__deleted=False)
+    if to_check:
+        credits &= Q(credits__is_credited=False)
+    stories = Story.objects.filter(credits).distinct()\
                            .select_related('issue__series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
@@ -401,6 +424,8 @@ def creator_sequences(request, creator_id, series_id=None,
                                  credits__deleted=False)
         heading = 'for signature %s of creator %s' % (signature,
                                                       creator)
+    elif to_check:
+        heading = 'with other names to check for creator %s' % creator
     else:
         heading = 'for creator %s' % (creator)
 

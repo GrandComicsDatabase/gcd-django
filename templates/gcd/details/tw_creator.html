@@ -46,6 +46,10 @@
             <li><a href='{% url "creator_characters" creator_id=creator.id %}'>Character List</a></li>
             <li><a href='{% url "creator_features" creator_id=creator.id %}'>Feature List</a></li>
             <li><a href='{% url "creator_sequences" creator_id=creator.id %}'>Sequence List</a></li>
+            {% if other_names %}
+            {% url "creator_sequences_to_check" creator.id as to_check %}
+            <li><a href='{{ to_check }}'>Credits to Check</a></li>
+            {% endif %}
             <li><a href='{% url "creator_creators" creator_id=creator.id %}'>Co-Creator List</a></li>
 
           </ul>
