@@ -15,6 +15,7 @@ from django.urls import reverse
 from apps.gcd.models import Creator, CreatorSignature, Image, ImageType
 from apps.oi import states
 from apps.oi.models import Changeset
+from apps.stddata.models import Date
 
 
 @pytest.fixture
@@ -92,8 +93,9 @@ def test_signature_page_gives_the_image_its_version(client, media_root):
     signature_type, _ = ImageType.objects.get_or_create(
       id=7, defaults={'name': 'CreatorSignature',
                       'description': 'signature scan'})
-    creator = Creator.objects.create(gcd_official_name='Test Creator',
-                                     sort_name='Creator, Test')
+    creator = Creator.objects.create(
+      gcd_official_name='Test Creator', sort_name='Creator, Test',
+      birth_date=Date.objects.create(year='1950'))
     creator_signature = CreatorSignature.objects.create(
       name='Test Creator', creator=creator, notes='')
     image = Image.objects.create(
