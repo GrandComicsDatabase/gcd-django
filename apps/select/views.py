@@ -1063,9 +1063,13 @@ class FeatureNameAutocomplete(LoginRequiredMixin,
 
         language = self.forwarded.get('language_code', None)
         type = self.forwarded.get('type', None)
+        chosen_language = self.forwarded.get('language', None)
 
         if language and language not in ['zxx', 'und']:
             qs = qs.filter(feature__language__code__in=[language, 'zxx'])
+
+        if chosen_language:
+            qs = qs.filter(feature__language__code=chosen_language)
 
         if type:
             type = int(type)
