@@ -2323,12 +2323,20 @@ def series_details(request, series_id, by_date=False):
     with special handling for issues whose date cannot be resolved.
     """
     series = get_gcd_object(Series, series_id)
+    brand_present = (series.active_issues().filter(no_brand=False)
+                           .exclude(brand_emblem__isnull=True).exists())
+    # Each row shows the indicia publisher of its issue and, when the brand
+    # column is shown, its emblems: load them once for all the rows. A join
+    # would change the order of the rows that a sort leaves equal.
+    issues = series.active_issues().prefetch_related('indicia_publisher')
+    if brand_present:
+        issues = issues.prefetch_related('brand_emblem')
     issues_by_date = []
     issues_left_over = []
     bad_key_dates = []
     if by_date:
         no_key_date_q = Q(key_date__isnull=True) | Q(key_date='')
-        with_key_dates = series.active_issues().exclude(no_key_date_q)
+        with_key_dates = issues.exclude(no_key_date_q)
 
         prev_year = None
         prev_month = None
@@ -2366,14 +2374,12 @@ def series_details(request, series_id, by_date=False):
             prev_year = grid_date.year
             prev_month = grid_date.month
 
-        issues_left_over = series.active_issues().filter(
+        issues_left_over = issues.filter(
           no_key_date_q | Q(id__in=bad_key_dates))
 
     volume_present = (series.has_volume and
                       series.active_issues().filter(no_volume=False)
                                             .exclude(volume='').exists())
-    brand_present = (series.active_issues().filter(no_brand=False)
-                           .exclude(brand_emblem__isnull=True).exists())
     frequency_present = (series.has_indicia_frequency and
                          series.active_issues()
                                .filter(no_indicia_frequency=False)
@@ -2417,7 +2423,6 @@ def series_details(request, series_id, by_date=False):
             'by_date': by_date,
         }
         template = 'gcd/details/series_details_sortable.html'
-        issues = series.active_issues()
         table = SeriesDetailsIssueTable(issues,
                                         template_name=TW_SORT_TABLE_TEMPLATE,
                                         order_by=('key_date'),
