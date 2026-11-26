@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-31 14:32+0000\n"
+"POT-Creation-Date: 2026-11-26 09:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,29 +17,29 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: apps/gcd/models/story.py:1194 apps/gcd/templatetags/credits.py:611
+#: apps/gcd/models/story.py:1263 apps/gcd/templatetags/credits.py:610
 msgid "page"
 msgid_plural "pages"
 msgstr[0] ""
 msgstr[1] ""
 
-#: apps/gcd/templatetags/credits.py:286
+#: apps/gcd/templatetags/credits.py:280
 msgid "Job Number"
 msgstr ""
 
-#: apps/gcd/templatetags/credits.py:290
+#: apps/gcd/templatetags/credits.py:284
 msgid "First Line of Dialogue or Text"
 msgstr ""
 
-#: apps/gcd/templatetags/credits.py:298
+#: apps/gcd/templatetags/credits.py:292
 msgid "Reprinted"
 msgstr ""
 
-#: apps/gcd/templatetags/credits.py:884
+#: apps/gcd/templatetags/credits.py:883
 msgid "Reprints"
 msgstr ""
 
-#: apps/gcd/templatetags/credits.py:910
+#: apps/gcd/templatetags/credits.py:909
 msgid "Parts of this issue are reprinted"
 msgstr ""
 
@@ -53,7 +53,7 @@ msgid "Your password has been set.  You may go ahead and log in now."
 msgstr ""
 
 #: apps/indexer/templates/indexer/password_reset_complete.html:13
-#: templates/mycomics/tw_user_base.html:62 templates/mycomics/user_base.html:62
+#: templates/mycomics/user_base.html:62
 msgid "Log In"
 msgstr ""
 
@@ -218,7 +218,7 @@ msgid "Date was entered in wrong format."
 msgstr ""
 
 #: apps/mycomics/views.py:612 apps/mycomics/views.py:690
-#: apps/mycomics/views.py:1411
+#: apps/mycomics/views.py:1415
 msgid "Some data was entered incorrectly."
 msgstr ""
 
@@ -248,35 +248,65 @@ msgstr ""
 msgid "Reading order saved."
 msgstr ""
 
-#: apps/mycomics/views.py:1183
+#: apps/mycomics/views.py:1187
 #, python-format
 msgid "Reading Order <b>%s</b> deleted."
 msgstr ""
 
-#: apps/mycomics/views.py:1417
+#: apps/mycomics/views.py:1421
 #, python-format
 msgid "Item %s saved."
 msgstr ""
 
-#: apps/mycomics/views.py:1446
+#: apps/mycomics/views.py:1450
 #, python-format
 msgid "Item <b>%s</b> removed from Reading List %s"
 msgstr ""
 
-#: apps/mycomics/views.py:1466
+#: apps/mycomics/views.py:1470
 msgid "Settings saved."
 msgstr ""
 
-#: apps/mycomics/views.py:1497
+#: apps/mycomics/views.py:1501
 msgid "Location saved."
 msgstr ""
 
-#: apps/mycomics/views.py:1500
+#: apps/mycomics/views.py:1504
 msgid "Entered data was incorrect."
 msgstr ""
 
-#: apps/mycomics/views.py:1519
+#: apps/mycomics/views.py:1523
 msgid "Location deleted."
+msgstr ""
+
+#: apps/oi/views.py:230
+msgid "Submit Changes For Approval"
+msgstr ""
+
+#: apps/oi/views.py:231
+msgid "Approve"
+msgstr ""
+
+#: apps/oi/views.py:232
+msgid "Send Back To Indexer"
+msgstr ""
+
+#: apps/oi/views.py:758
+msgid "This change still contains invalid issue or sequence data."
+msgstr ""
+
+#: apps/oi/views.py:793
+#, python-brace-format
+msgid ""
+"Correct and save the revisions, then select <strong>{submit}</strong>. "
+"Affected revisions:"
+msgstr ""
+
+#: apps/oi/views.py:1687
+#, python-brace-format
+msgid ""
+"Enter an explanation in the comment field before selecting "
+"<strong>{send_back}</strong>."
 msgstr ""
 
 #: apps/stddata/forms.py:35
@@ -512,7 +542,7 @@ msgstr ""
 msgid "donate"
 msgstr ""
 
-#: templates/gcd/bits/legalese.html:14
+#: templates/gcd/bits/legalese.html:15
 #, python-format
 msgid ""
 "\n"
@@ -523,22 +553,22 @@ msgid ""
 "    "
 msgstr ""
 
-#: templates/gcd/bits/legalese.html:23
+#: templates/gcd/bits/legalese.html:25
 msgid "Cover thumbnails are used for identification purposes only."
 msgstr ""
 
-#: templates/gcd/bits/legalese.html:24
+#: templates/gcd/bits/legalese.html:26
 msgid ""
 "All rights to cover images reserved by the respective copyright holders."
 msgstr ""
 
-#: templates/gcd/bits/legalese.html:30
+#: templates/gcd/bits/legalese.html:32
 #, python-format
 msgid ""
 "\n"
-"All portions of <a href=\"http://www.comics.org/\" "
-"rel=\"cc:attributionURL\">the %(site_name)s</a>&trade;, except where noted "
-"otherwise, are\n"
+"All portions of <a href=\"http://www.comics.org/\" rel=\"cc:"
+"attributionURL\">the %(site_name)s</a>&trade;, except where noted otherwise, "
+"are\n"
 "copyrighted by the GCD and are licensed under a <a rel=\"license\" "
 "href=\"https://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
 "Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. This "
@@ -547,12 +577,12 @@ msgid ""
 "    "
 msgstr ""
 
-#: templates/gcd/bits/legalese.html:38
+#: templates/gcd/bits/legalese.html:40
 #, python-format
 msgid "The GCD <a href=\"%(privacy_url)s\">Privacy Policy</a>."
 msgstr ""
 
-#: templates/gcd/bits/legalese.html:41
+#: templates/gcd/bits/legalese.html:43
 msgid ""
 "The <a href=\"https://github.com/GrandComicsDatabase/gcd-django\">GCD Web "
 "Site code</a> is licensed under the <a href=\"http://www.gnu.org/licenses/"
@@ -599,11 +629,11 @@ msgid ""
 "  "
 msgstr ""
 
-#: templates/gcd/bits/tw_front_page_content.html:66 templates/gcd/index.html:59
+#: templates/gcd/bits/tw_front_page_content.html:67 templates/gcd/index.html:59
 msgid "Disclaimer"
 msgstr ""
 
-#: templates/gcd/bits/tw_front_page_content.html:69 templates/gcd/index.html:63
+#: templates/gcd/bits/tw_front_page_content.html:70 templates/gcd/index.html:63
 msgid ""
 "The Grand Comics Database Project (GCD) is a volunteer project with the goal "
 "of documenting and indexing all comics for the free use of scholars, "
@@ -613,7 +643,7 @@ msgstr ""
 "zich tot doel stelt alle strips te documenteren voor wetenschap, "
 "geschiedkundigen, onderzoekers en liefhebbers."
 
-#: templates/gcd/bits/tw_front_page_content.html:72 templates/gcd/index.html:66
+#: templates/gcd/bits/tw_front_page_content.html:73 templates/gcd/index.html:66
 msgid ""
 "The GCD acknowledges that the all-encompassing research nature of the "
 "project may result in the posting of cover scans for comics with images that "
@@ -623,54 +653,27 @@ msgstr ""
 "is dat er afbeeldingen getoond worden die sommigen aanstootgevend zullen "
 "vinden."
 
-#: templates/gcd/bits/tw_front_page_content.html:75 templates/gcd/index.html:69
+#: templates/gcd/bits/tw_front_page_content.html:76 templates/gcd/index.html:69
 msgid "Viewer discretion is advised."
 msgstr "Daarom raden we de website met discretie te gebruiken."
 
-#: templates/gcd/bits/tw_front_page_content.html:78 templates/gcd/index.html:72
+#: templates/gcd/bits/tw_front_page_content.html:79 templates/gcd/index.html:72
 msgid "The Grand Comics Database Team"
 msgstr "Het Grand Comics Database Team"
 
-#: templates/gcd/details/brand.html:97
-msgid "Replace Publisher's Brand Image"
-msgstr ""
-
-#: templates/gcd/details/brand.html:101
-msgid "Delete Publisher's Brand Image"
-msgstr ""
-
-#: templates/gcd/details/brand.html:109
-msgid "Add Publisher's Brand Image"
-msgstr ""
-
-#: templates/gcd/details/feature_logo.html:63
 #: templates/gcd/details/tw_feature_logo.html:68
 msgid "Replace Feature Logo Scan"
 msgstr ""
 
-#: templates/gcd/details/feature_logo.html:67
 #: templates/gcd/details/tw_feature_logo.html:72
 msgid "Delete Feature Logo Scan"
 msgstr ""
 
-#: templates/gcd/details/feature_logo.html:75
 #: templates/gcd/details/tw_feature_logo.html:80
 msgid "Add Feature Logo Scan"
 msgstr ""
 
-#: templates/gcd/details/issue.html:204
-msgid "Edit with another issue"
-msgstr ""
-
-#: templates/gcd/details/single_story.html:34
-#, python-format
-msgid ""
-"\n"
-"            page%(suffix)s\n"
-"          "
-msgstr ""
-
-#: templates/gcd/details/tw_issue.html:374
+#: templates/gcd/details/tw_issue.html:363
 msgid "Edit With Another Issue"
 msgstr ""
 
@@ -706,27 +709,27 @@ msgstr ""
 msgid "International statistics"
 msgstr "Internationale statistieken"
 
-#: templates/gcd/index.html:140 templates/gcd/tw_index.html:120
+#: templates/gcd/index.html:140 templates/gcd/tw_index.html:126
 msgid "by Language"
 msgstr "per taal"
 
-#: templates/gcd/index.html:141 templates/gcd/tw_index.html:121
+#: templates/gcd/index.html:141 templates/gcd/tw_index.html:127
 msgid "by Country"
 msgstr "per land"
 
-#: templates/gcd/index.html:167 templates/gcd/tw_index.html:82
+#: templates/gcd/index.html:167 templates/gcd/tw_index.html:88
 msgid "Last Updated Language Issues"
 msgstr "Nieuwste Nederlandse bijdrages"
 
-#: templates/gcd/index.html:177 templates/gcd/tw_index.html:90
+#: templates/gcd/index.html:177 templates/gcd/tw_index.html:96
 msgid "Statistics for Language Comics"
 msgstr "Statistieken voor Nederlandse strips"
 
-#: templates/gcd/index.html:188 templates/gcd/tw_index.html:101
+#: templates/gcd/index.html:188 templates/gcd/tw_index.html:107
 msgid "Last Updated Issues"
 msgstr "Laatste bijgewerkte delen"
 
-#: templates/gcd/index.html:198 templates/gcd/tw_index.html:109
+#: templates/gcd/index.html:198 templates/gcd/tw_index.html:115
 msgid "Statistics"
 msgstr "Statistieken"
 
@@ -775,7 +778,7 @@ msgstr ""
 msgid "On-sale Monthly"
 msgstr ""
 
-#: templates/gcd/tw_index.html:117
+#: templates/gcd/tw_index.html:123
 #, fuzzy
 #| msgid "International statistics"
 msgid "International Statistics"
@@ -909,7 +912,7 @@ msgstr ""
 #: templates/mycomics/collection.html:76
 #: templates/mycomics/collection_series.html:33
 #: templates/mycomics/collection_subscriptions.html:67
-#: templates/mycomics/tw_user_base.html:35 templates/mycomics/user_base.html:35
+#: templates/mycomics/user_base.html:35
 msgid "Collections"
 msgstr ""
 
@@ -1105,8 +1108,7 @@ msgstr ""
 msgid "Add New"
 msgstr ""
 
-#: templates/mycomics/index.html:30 templates/mycomics/tw_user_base.html:37
-#: templates/mycomics/user_base.html:37
+#: templates/mycomics/index.html:30 templates/mycomics/user_base.html:37
 msgid "Help"
 msgstr ""
 
@@ -1203,20 +1205,23 @@ msgstr ""
 msgid "Copy Reading List"
 msgstr ""
 
-#: templates/mycomics/tw_user_base.html:9 templates/mycomics/user_base.html:9
+#: templates/mycomics/user_base.html:9
 msgid "News for "
 msgstr ""
 
-#: templates/mycomics/tw_user_base.html:36
-msgid "Reading Orders"
-msgstr ""
-
-#: templates/mycomics/tw_user_base.html:38 templates/mycomics/user_base.html:38
+#: templates/mycomics/user_base.html:38
 msgid "News"
 msgstr ""
 
-#: templates/mycomics/tw_user_base.html:56 templates/mycomics/user_base.html:56
+#: templates/mycomics/user_base.html:56
 msgid "Log Out"
+msgstr ""
+
+#: templates/oi/base_view.html:8
+msgid ""
+"Cloudflare verification is required. <a href=\"/\" target=\"_blank\" "
+"rel=\"noopener\"> Verify in a new tab </a>, close that tab, then retry this "
+"field. Your unsaved changes will remain here."
 msgstr ""
 
 #~ msgid "brands"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-31 15:46+0000\n"
+"POT-Creation-Date: 2026-11-26 09:03+0000\n"
 "PO-Revision-Date: 2026-09-22 23:10+0000\n"
 "Last-Translator: b'Simone Nardi'\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,29 +17,29 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: apps/gcd/models/story.py:1194 apps/gcd/templatetags/credits.py:611
+#: apps/gcd/models/story.py:1263 apps/gcd/templatetags/credits.py:610
 msgid "page"
 msgid_plural "pages"
 msgstr[0] "pagina"
 msgstr[1] "pagine"
 
-#: apps/gcd/templatetags/credits.py:286
+#: apps/gcd/templatetags/credits.py:280
 msgid "Job Number"
 msgstr "Codice di lavorazione"
 
-#: apps/gcd/templatetags/credits.py:290
+#: apps/gcd/templatetags/credits.py:284
 msgid "First Line of Dialogue or Text"
 msgstr "Prima riga del dialogo o testo"
 
-#: apps/gcd/templatetags/credits.py:298
+#: apps/gcd/templatetags/credits.py:292
 msgid "Reprinted"
 msgstr "Ristampato"
 
-#: apps/gcd/templatetags/credits.py:884
+#: apps/gcd/templatetags/credits.py:883
 msgid "Reprints"
 msgstr "Ristampe"
 
-#: apps/gcd/templatetags/credits.py:910
+#: apps/gcd/templatetags/credits.py:909
 msgid "Parts of this issue are reprinted"
 msgstr "Alcune parti di questo numero sono ristampate"
 
@@ -53,7 +53,7 @@ msgid "Your password has been set.  You may go ahead and log in now."
 msgstr "La password è stata impostata. Ora puoi accedere."
 
 #: apps/indexer/templates/indexer/password_reset_complete.html:13
-#: templates/mycomics/tw_user_base.html:62 templates/mycomics/user_base.html:62
+#: templates/mycomics/user_base.html:62
 msgid "Log In"
 msgstr "Accedi"
 
@@ -71,7 +71,9 @@ msgstr "Inserisci la nuova password"
 msgid ""
 "Please enter your new password twice so we can verify you typed it in "
 "correctly."
-msgstr "Inserisci due volte la nuova password in modo da poter verificare che sia stata digitata correttamente."
+msgstr ""
+"Inserisci due volte la nuova password in modo da poter verificare che sia "
+"stata digitata correttamente."
 
 #: apps/indexer/templates/indexer/password_reset_confirm.html:18
 msgid "New password:"
@@ -93,7 +95,9 @@ msgstr "Reimpostazione password non riuscita"
 msgid ""
 "The password reset link was invalid, possibly because it has already been "
 "used.  Please request a new password reset."
-msgstr "Il link per la reimpostazione della password non era valido, forse perché già utilizzato. Richiedi una nuova reimpostazione della password."
+msgstr ""
+"Il link per la reimpostazione della password non era valido, forse perché "
+"già utilizzato. Richiedi una nuova reimpostazione della password."
 
 #: apps/indexer/templates/indexer/password_reset_done.html:5
 msgid "Password reset successful"
@@ -107,11 +111,15 @@ msgstr "Richiesta di reimpostazione password inviata"
 msgid ""
 "We've e-mailed you instructions for setting your password to the e-mail "
 "address you submitted. You should receive it shortly."
-msgstr "Ti abbiamo inviato via e-mail le istruzioni per impostare la password all'indirizzo fornito. Dovresti riceverla a breve."
+msgstr ""
+"Ti abbiamo inviato via e-mail le istruzioni per impostare la password "
+"all'indirizzo fornito. Dovresti riceverla a breve."
 
 #: apps/indexer/templates/indexer/password_reset_email.html:3
 msgid "You're receiving this e-mail because you requested a password reset"
-msgstr "Hai ricevuto questa e-mail perché hai richiesto la reimpostazione della password"
+msgstr ""
+"Hai ricevuto questa e-mail perché hai richiesto la reimpostazione della "
+"password"
 
 #: apps/indexer/templates/indexer/password_reset_email.html:4
 #, python-format
@@ -135,7 +143,9 @@ msgstr "Il team di %(site_name)s"
 msgid ""
 "Forgotten your password? Enter your e-mail address below, and we'll e-mail "
 "instructions for setting a new one."
-msgstr "Hai dimenticato la password? Inserisci qui sotto il tuo indirizzo e-mail e ti invieremo le istruzioni per impostarne una nuova."
+msgstr ""
+"Hai dimenticato la password? Inserisci qui sotto il tuo indirizzo e-mail e "
+"ti invieremo le istruzioni per impostarne una nuova."
 
 #: apps/indexer/templates/indexer/password_reset_form.html:16
 msgid "E-mail address:"
@@ -181,13 +191,17 @@ msgstr "Elemento spostato tra le collezioni"
 msgid ""
 "Item status for own/want differed from default of new collection <b>%s</b> "
 "and was changed."
-msgstr "Lo stato posseduto/desiderato dell'elemento differiva da quello predefinito della nuova collezione <b>%s</b> ed è stato modificato."
+msgstr ""
+"Lo stato posseduto/desiderato dell'elemento differiva da quello predefinito "
+"della nuova collezione <b>%s</b> ed è stato modificato."
 
 #: apps/mycomics/views.py:435 apps/mycomics/views.py:457
 #, python-format
 msgid ""
 "Item status is set to for sale due to default of new collection <b>%s</b>."
-msgstr "Lo stato dell'elemento è stato impostato su «in vendita» in base al valore predefinito della nuova collezione <b>%s</b>."
+msgstr ""
+"Lo stato dell'elemento è stato impostato su «in vendita» in base al valore "
+"predefinito della nuova collezione <b>%s</b>."
 
 #: apps/mycomics/views.py:444
 msgid "Item copied between collections"
@@ -195,7 +209,9 @@ msgstr "Elemento copiato tra le collezioni"
 
 #: apps/mycomics/views.py:448
 msgid "Own/want default for new collection differs from item status."
-msgstr "Lo stato predefinito posseduto/desiderato della nuova collezione differisce dallo stato dell'elemento."
+msgstr ""
+"Lo stato predefinito posseduto/desiderato della nuova collezione differisce "
+"dallo stato dell'elemento."
 
 #: apps/mycomics/views.py:462 apps/mycomics/views.py:464
 msgid "Item unchanged"
@@ -218,7 +234,7 @@ msgid "Date was entered in wrong format."
 msgstr "La data è stata inserita in un formato errato."
 
 #: apps/mycomics/views.py:612 apps/mycomics/views.py:690
-#: apps/mycomics/views.py:1411
+#: apps/mycomics/views.py:1415
 msgid "Some data was entered incorrectly."
 msgstr "Alcuni dati sono stati inseriti in modo errato."
 
@@ -228,7 +244,8 @@ msgstr "Elementi salvati."
 
 #: apps/mycomics/views.py:869
 msgid "More than 500 lines. Please split the import file into smaller chunks."
-msgstr "Più di 500 righe. Suddividi il file di importazione in parti più piccole."
+msgstr ""
+"Più di 500 righe. Suddividi il file di importazione in parti più piccole."
 
 #: apps/mycomics/views.py:1075
 #, python-format
@@ -248,36 +265,66 @@ msgstr "La serie selezionata non è in corso."
 msgid "Reading order saved."
 msgstr "Lista di lettura salvata."
 
-#: apps/mycomics/views.py:1183
+#: apps/mycomics/views.py:1187
 #, python-format
 msgid "Reading Order <b>%s</b> deleted."
 msgstr "Lista di lettura <b>%s</b> eliminata."
 
-#: apps/mycomics/views.py:1417
+#: apps/mycomics/views.py:1421
 #, python-format
 msgid "Item %s saved."
 msgstr "Elemento %s salvato."
 
-#: apps/mycomics/views.py:1446
+#: apps/mycomics/views.py:1450
 #, python-format
 msgid "Item <b>%s</b> removed from Reading List %s"
 msgstr "Elemento <b>%s</b> rimosso dalla lista di lettura %s"
 
-#: apps/mycomics/views.py:1466
+#: apps/mycomics/views.py:1470
 msgid "Settings saved."
 msgstr "Impostazioni salvate."
 
-#: apps/mycomics/views.py:1497
+#: apps/mycomics/views.py:1501
 msgid "Location saved."
 msgstr "Posizione salvata."
 
-#: apps/mycomics/views.py:1500
+#: apps/mycomics/views.py:1504
 msgid "Entered data was incorrect."
 msgstr "I dati inseriti non erano corretti."
 
-#: apps/mycomics/views.py:1519
+#: apps/mycomics/views.py:1523
 msgid "Location deleted."
 msgstr "Posizione eliminata."
+
+#: apps/oi/views.py:230
+msgid "Submit Changes For Approval"
+msgstr ""
+
+#: apps/oi/views.py:231
+msgid "Approve"
+msgstr ""
+
+#: apps/oi/views.py:232
+msgid "Send Back To Indexer"
+msgstr ""
+
+#: apps/oi/views.py:758
+msgid "This change still contains invalid issue or sequence data."
+msgstr ""
+
+#: apps/oi/views.py:793
+#, python-brace-format
+msgid ""
+"Correct and save the revisions, then select <strong>{submit}</strong>. "
+"Affected revisions:"
+msgstr ""
+
+#: apps/oi/views.py:1687
+#, python-brace-format
+msgid ""
+"Enter an explanation in the comment field before selecting "
+"<strong>{send_back}</strong>."
+msgstr ""
 
 #: apps/stddata/forms.py:35
 msgid "Date given in a wrong format"
@@ -510,7 +557,7 @@ msgstr "Contattaci"
 msgid "donate"
 msgstr "dona"
 
-#: templates/gcd/bits/legalese.html:14
+#: templates/gcd/bits/legalese.html:15
 #, python-format
 msgid ""
 "\n"
@@ -527,26 +574,26 @@ msgstr ""
 "target=\"_blank\">faccelo sapere</a>.\n"
 "    "
 
-#: templates/gcd/bits/legalese.html:23
+#: templates/gcd/bits/legalese.html:25
 msgid "Cover thumbnails are used for identification purposes only."
 msgstr ""
 "Le anteprime delle immagini di copertina sono utilizzate unicamente a scopo "
 "di identificazione."
 
-#: templates/gcd/bits/legalese.html:24
+#: templates/gcd/bits/legalese.html:26
 msgid ""
 "All rights to cover images reserved by the respective copyright holders."
 msgstr ""
 "Tutti i diritti sulle immagini di copertina sono riservati dai rispettivi "
 "titolari del copyright."
 
-#: templates/gcd/bits/legalese.html:30
+#: templates/gcd/bits/legalese.html:32
 #, python-format
 msgid ""
 "\n"
-"All portions of <a href=\"http://www.comics.org/\" "
-"rel=\"cc:attributionURL\">the %(site_name)s</a>&trade;, except where noted "
-"otherwise, are\n"
+"All portions of <a href=\"http://www.comics.org/\" rel=\"cc:"
+"attributionURL\">the %(site_name)s</a>&trade;, except where noted otherwise, "
+"are\n"
 "copyrighted by the GCD and are licensed under a <a rel=\"license\" "
 "href=\"https://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
 "Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. This "
@@ -555,22 +602,21 @@ msgid ""
 "    "
 msgstr ""
 "\n"
-"Tutte le parti del <a href=\"http://www.comics.org/\" "
-"rel=\"cc:attributionURL\">%(site_name)s</a>&trade;, salvo dove diversamente "
-"specificato, sono protette da copyright di GCD e sono concesse in licenza "
-"<a rel=\"license\" "
-"href=\"https://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
-"Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)</a>. Questo include "
-"ma non è necessariamente limitato al nostro schema del database e al formato "
-"di distribuzione dei dati.\n"
+"Tutte le parti del <a href=\"http://www.comics.org/\" rel=\"cc:"
+"attributionURL\">%(site_name)s</a>&trade;, salvo dove diversamente "
+"specificato, sono protette da copyright di GCD e sono concesse in licenza <a "
+"rel=\"license\" href=\"https://creativecommons.org/licenses/by-sa/4.0/"
+"\">Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)</"
+"a>. Questo include ma non è necessariamente limitato al nostro schema del "
+"database e al formato di distribuzione dei dati.\n"
 "    "
 
-#: templates/gcd/bits/legalese.html:38
+#: templates/gcd/bits/legalese.html:40
 #, python-format
 msgid "The GCD <a href=\"%(privacy_url)s\">Privacy Policy</a>."
 msgstr "Informativa sulla <a href=\"%(privacy_url)s\">privacy</a> di GCD. "
 
-#: templates/gcd/bits/legalese.html:41
+#: templates/gcd/bits/legalese.html:43
 msgid ""
 "The <a href=\"https://github.com/GrandComicsDatabase/gcd-django\">GCD Web "
 "Site code</a> is licensed under the <a href=\"http://www.gnu.org/licenses/"
@@ -623,23 +669,23 @@ msgid ""
 "  "
 msgstr ""
 "\n"
-"Il <b>Grand Comics Database (GCD)</b> è un'organizzazione senza scopo di lucro "
-"che opera su Internet grazie a volontari di tutto il mondo, impegnati nella "
-"creazione di un database aperto dedicato a tutti i fumetti pubblicati su carta "
-"nel mondo.</p>\n"
+"Il <b>Grand Comics Database (GCD)</b> è un'organizzazione senza scopo di "
+"lucro che opera su Internet grazie a volontari di tutto il mondo, impegnati "
+"nella creazione di un database aperto dedicato a tutti i fumetti pubblicati "
+"su carta nel mondo.</p>\n"
 "  <p>Prova la <a class=\"link-no-visited font-bold\" "
 "href=\"%(search_url)s\">nostra ricerca</a>, usa <a class=\"link-no-visited "
-"font-bold\" href=\"https://my.comics.org/\">my.comics.org</a> "
-"per tenere traccia della tua collezione di fumetti e gestirla, oppure scopri "
-"come puoi <a class=\"link-no-visited font-bold\" "
+"font-bold\" href=\"https://my.comics.org/\">my.comics.org</a> per tenere "
+"traccia della tua collezione di fumetti e gestirla, oppure scopri come puoi "
+"<a class=\"link-no-visited font-bold\" "
 "href=\"#how_to_contribute\">contribuire</a>.\n"
 "  "
 
-#: templates/gcd/bits/tw_front_page_content.html:66 templates/gcd/index.html:59
+#: templates/gcd/bits/tw_front_page_content.html:67 templates/gcd/index.html:59
 msgid "Disclaimer"
 msgstr "Avvertenze"
 
-#: templates/gcd/bits/tw_front_page_content.html:69 templates/gcd/index.html:63
+#: templates/gcd/bits/tw_front_page_content.html:70 templates/gcd/index.html:63
 msgid ""
 "The Grand Comics Database Project (GCD) is a volunteer project with the goal "
 "of documenting and indexing all comics for the free use of scholars, "
@@ -650,7 +696,7 @@ msgstr ""
 "fumetti per la libera consultazione di studiosi, storici, ricercatori e "
 "appassionati. "
 
-#: templates/gcd/bits/tw_front_page_content.html:72 templates/gcd/index.html:66
+#: templates/gcd/bits/tw_front_page_content.html:73 templates/gcd/index.html:66
 msgid ""
 "The GCD acknowledges that the all-encompassing research nature of the "
 "project may result in the posting of cover scans for comics with images that "
@@ -660,57 +706,27 @@ msgstr ""
 "può portare alla pubblicazione di scansioni di copertina che alcuni "
 "potrebbero trovare offensive."
 
-#: templates/gcd/bits/tw_front_page_content.html:75 templates/gcd/index.html:69
+#: templates/gcd/bits/tw_front_page_content.html:76 templates/gcd/index.html:69
 msgid "Viewer discretion is advised."
 msgstr "Si raccomanda cautela nella consultazione dei contenuti."
 
-#: templates/gcd/bits/tw_front_page_content.html:78 templates/gcd/index.html:72
+#: templates/gcd/bits/tw_front_page_content.html:79 templates/gcd/index.html:72
 msgid "The Grand Comics Database Team"
 msgstr "Il team del Grand Comics Database"
 
-#: templates/gcd/details/brand.html:97
-msgid "Replace Publisher's Brand Image"
-msgstr "Sostituisci immagine marchio dell'editore"
-
-#: templates/gcd/details/brand.html:101
-msgid "Delete Publisher's Brand Image"
-msgstr "Elimina immagine marchio dell'editore"
-
-#: templates/gcd/details/brand.html:109
-msgid "Add Publisher's Brand Image"
-msgstr "Aggiungi immagine marchio dell'editore"
-
-#: templates/gcd/details/feature_logo.html:63
 #: templates/gcd/details/tw_feature_logo.html:68
 msgid "Replace Feature Logo Scan"
 msgstr "Sostituisci scansione del logo della testata"
 
-#: templates/gcd/details/feature_logo.html:67
 #: templates/gcd/details/tw_feature_logo.html:72
 msgid "Delete Feature Logo Scan"
 msgstr "Elimina scansione del logo della testata"
 
-#: templates/gcd/details/feature_logo.html:75
 #: templates/gcd/details/tw_feature_logo.html:80
 msgid "Add Feature Logo Scan"
 msgstr "Aggiungi scansione del logo della testata"
 
-#: templates/gcd/details/issue.html:204
-msgid "Edit with another issue"
-msgstr "Modifica con un altro numero"
-
-#: templates/gcd/details/single_story.html:34
-#, python-format
-msgid ""
-"\n"
-"            page%(suffix)s\n"
-"          "
-msgstr ""
-"\n"
-"            pagina%(suffix)s\n"
-"          "
-
-#: templates/gcd/details/tw_issue.html:374
+#: templates/gcd/details/tw_issue.html:363
 msgid "Edit With Another Issue"
 msgstr "Modifica con un altro numero"
 
@@ -749,27 +765,27 @@ msgstr "In vendita questo mese"
 msgid "International statistics"
 msgstr "Statistiche internazionali"
 
-#: templates/gcd/index.html:140 templates/gcd/tw_index.html:120
+#: templates/gcd/index.html:140 templates/gcd/tw_index.html:126
 msgid "by Language"
 msgstr "per lingua"
 
-#: templates/gcd/index.html:141 templates/gcd/tw_index.html:121
+#: templates/gcd/index.html:141 templates/gcd/tw_index.html:127
 msgid "by Country"
 msgstr "per nazione"
 
-#: templates/gcd/index.html:167 templates/gcd/tw_index.html:82
+#: templates/gcd/index.html:167 templates/gcd/tw_index.html:88
 msgid "Last Updated Language Issues"
 msgstr "Ultimi numeri aggiornati in italiano"
 
-#: templates/gcd/index.html:177 templates/gcd/tw_index.html:90
+#: templates/gcd/index.html:177 templates/gcd/tw_index.html:96
 msgid "Statistics for Language Comics"
 msgstr "Statistiche sui fumetti in italiano"
 
-#: templates/gcd/index.html:188 templates/gcd/tw_index.html:101
+#: templates/gcd/index.html:188 templates/gcd/tw_index.html:107
 msgid "Last Updated Issues"
 msgstr "Ultimi numeri aggiornati"
 
-#: templates/gcd/index.html:198 templates/gcd/tw_index.html:109
+#: templates/gcd/index.html:198 templates/gcd/tw_index.html:115
 msgid "Statistics"
 msgstr "Statistiche"
 
@@ -812,7 +828,7 @@ msgstr "In vendita questa settimana"
 msgid "On-sale Monthly"
 msgstr "In vendita questo mese"
 
-#: templates/gcd/tw_index.html:117
+#: templates/gcd/tw_index.html:123
 msgid "International Statistics"
 msgstr "Statistiche internazionali"
 
@@ -938,7 +954,7 @@ msgstr "Modifica elementi mostrati"
 #: templates/mycomics/collection.html:76
 #: templates/mycomics/collection_series.html:33
 #: templates/mycomics/collection_subscriptions.html:67
-#: templates/mycomics/tw_user_base.html:35 templates/mycomics/user_base.html:35
+#: templates/mycomics/user_base.html:35
 msgid "Collections"
 msgstr "Collezioni"
 
@@ -1114,13 +1130,14 @@ msgid ""
 "            "
 msgstr ""
 "\n"
-"              <p>Nella pagina seguente otterrai un elenco di numeri candidati "
-"in base al file caricato.\n"
-"              Da lì, segna i numeri che vuoi importare in una collezione, "
-"ad esempio per le\n"
+"              <p>Nella pagina seguente otterrai un elenco di numeri "
+"candidati in base al file caricato.\n"
+"              Da lì, segna i numeri che vuoi importare in una collezione, ad "
+"esempio per le\n"
 "              varianti probabilmente vorrai aggiungerne solo una. Dopo aver "
 "cliccato \"Seleziona numeri\"\n"
-"              potrai scegliere una collezione e confermare l'importazione.</p>\n"
+"              potrai scegliere una collezione e confermare l'importazione.</"
+"p>\n"
 "\n"
 "              <p>Per motivi computazionali, non importare più di 500 righe "
 "per file.\n"
@@ -1128,8 +1145,8 @@ msgstr ""
 "\n"
 "              <p>È possibile importare un file csv, dove ogni riga ha voci "
 "separate da tabulazione per un numero.\n"
-"              La prima voce è il nome della serie, la seconda il numero "
-"del fascicolo.\n"
+"              La prima voce è il nome della serie, la seconda il numero del "
+"fascicolo.\n"
 "              Facoltativamente una terza voce per il nome dell'editore, e "
 "una quarta per il codice della lingua.</p>\n"
 "\n"
@@ -1164,8 +1181,7 @@ msgstr "Elenco collezioni"
 msgid "Add New"
 msgstr "Aggiungi nuovo"
 
-#: templates/mycomics/index.html:30 templates/mycomics/tw_user_base.html:37
-#: templates/mycomics/user_base.html:37
+#: templates/mycomics/index.html:30 templates/mycomics/user_base.html:37
 msgid "Help"
 msgstr "Aiuto"
 
@@ -1260,21 +1276,49 @@ msgstr "Modifica lista di lettura"
 msgid "Copy Reading List"
 msgstr "Copia lista di lettura"
 
-#: templates/mycomics/tw_user_base.html:9 templates/mycomics/user_base.html:9
+#: templates/mycomics/user_base.html:9
 msgid "News for "
 msgstr "Notizie per "
 
-#: templates/mycomics/tw_user_base.html:36
-msgid "Reading Orders"
-msgstr "Liste di lettura"
-
-#: templates/mycomics/tw_user_base.html:38 templates/mycomics/user_base.html:38
+#: templates/mycomics/user_base.html:38
 msgid "News"
 msgstr "Notizie"
 
-#: templates/mycomics/tw_user_base.html:56 templates/mycomics/user_base.html:56
+#: templates/mycomics/user_base.html:56
 msgid "Log Out"
 msgstr "Esci"
+
+#: templates/oi/base_view.html:8
+msgid ""
+"Cloudflare verification is required. <a href=\"/\" target=\"_blank\" "
+"rel=\"noopener\"> Verify in a new tab </a>, close that tab, then retry this "
+"field. Your unsaved changes will remain here."
+msgstr ""
+
+#~ msgid "Replace Publisher's Brand Image"
+#~ msgstr "Sostituisci immagine marchio dell'editore"
+
+#~ msgid "Delete Publisher's Brand Image"
+#~ msgstr "Elimina immagine marchio dell'editore"
+
+#~ msgid "Add Publisher's Brand Image"
+#~ msgstr "Aggiungi immagine marchio dell'editore"
+
+#~ msgid "Edit with another issue"
+#~ msgstr "Modifica con un altro numero"
+
+#, python-format
+#~ msgid ""
+#~ "\n"
+#~ "            page%(suffix)s\n"
+#~ "          "
+#~ msgstr ""
+#~ "\n"
+#~ "            pagina%(suffix)s\n"
+#~ "          "
+
+#~ msgid "Reading Orders"
+#~ msgstr "Liste di lettura"
 
 #~ msgid "username"
 #~ msgstr "nome utente"
