@@ -54,6 +54,10 @@ def _assert_sent(changeset, editor, mailbox, to_editor):
 def test_resubmitted_change_skips_an_editor_who_is_away(
         client, mailoutbox, any_country, any_added_publisher_rev,
         away_days, to_editor):
+    """
+    A change sent back by an editor and submitted again goes to that
+    editor, unless the editor is away today.
+    """
     editor = _editor(any_country, away_days)
     changeset = any_added_publisher_rev.changeset
     changeset.approver = editor
@@ -69,6 +73,10 @@ def test_resubmitted_change_skips_an_editor_who_is_away(
 def test_change_of_a_new_indexer_skips_a_mentor_who_is_away(
         client, mailoutbox, any_country, any_added_publisher_rev,
         away_days, to_editor):
+    """
+    A change of a new indexer goes to the mentor, unless the mentor is
+    away today.
+    """
     mentor = _editor(any_country, away_days)
     changeset = any_added_publisher_rev.changeset
     author = changeset.indexer.indexer
