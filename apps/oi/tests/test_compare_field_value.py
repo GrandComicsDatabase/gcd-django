@@ -205,6 +205,7 @@ def test_compare_page_notes_years_outside_publisher_years(
 @pytest.mark.django_db
 def test_compare_page_notes_brand_use_years_outside_publisher_years(
         client, any_indexer, any_added_brand_use):
+    '''The compare page of a brand use change shows the note.'''
     # the brand use runs from 1970 to 1975, both uncertain
     publisher = any_added_brand_use.publisher
     publisher.year_began = 1972
@@ -246,6 +247,7 @@ def publisher_with_children(any_added_indicia_publisher,
 
 
 def _publisher_value(publisher, field, **years):
+    '''The compare value of a field of a publisher revision with years.'''
     revision = PublisherRevision(publisher=publisher, **years)
     return field_value(revision, field)
 
@@ -267,6 +269,7 @@ def _publisher_value(publisher, field, **years):
 ])
 def test_note_when_years_of_children_outside_publisher_years(
         publisher_with_children, field, years, expected):
+    '''The note counts the records with a certain year outside.'''
     assert _publisher_value(publisher_with_children, field,
                             **years) == expected
 
@@ -283,12 +286,14 @@ def test_note_when_years_of_children_outside_publisher_years(
 ])
 def test_no_note_when_years_of_children_show_no_problem(
         publisher_with_children, field, years):
+    '''No note on a year at the edge, blank or uncertain.'''
     assert _publisher_value(publisher_with_children, field,
                             **years) == years[field]
 
 
 @pytest.mark.django_db
 def test_note_leaves_out_deleted_children(publisher_with_children):
+    '''Deleted indicia publishers and brand groups are not counted.'''
     IndiciaPublisher.objects.filter(parent=publisher_with_children).update(
       deleted=True)
     BrandGroup.objects.filter(parent=publisher_with_children).update(
@@ -301,6 +306,7 @@ def test_note_leaves_out_deleted_children(publisher_with_children):
 @pytest.mark.django_db
 def test_compare_page_notes_children_years_outside_publisher_years(
         client, any_indexer, publisher_with_children):
+    '''The compare page of a publisher change shows the note.'''
     changeset = Changeset.objects.create(
       indexer=any_indexer, state=states.OPEN, change_type=CTYPES['publisher'])
     revision = PublisherRevision.clone(data_object=publisher_with_children,
