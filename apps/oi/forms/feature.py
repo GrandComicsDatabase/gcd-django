@@ -3,7 +3,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.forms.widgets import HiddenInput
 
-from dal import autocomplete
+from dal import autocomplete, forward
 
 from collections import OrderedDict
 
@@ -12,6 +12,7 @@ from crispy_forms.layout import Layout, Field, HTML
 
 from apps.gcd.models import Feature, FeatureNameDetail, FeatureRelationType
 from apps.gcd.models.support import GENRES
+from apps.stddata.models import Language
 
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, FeatureNameDetailRevision,
@@ -336,15 +337,32 @@ class FeatureRelationRevisionForm(forms.ModelForm):
         labels = {'from_feature': 'Feature A', 'relation_type': 'Relation',
                   'to_feature': 'Feature B'}
 
+    field_order = ['from_feature', 'relation_type', 'to_feature_language',
+                   'to_feature']
+
     from_feature = forms.ModelChoiceField(
         queryset=Feature.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='feature_autocomplete',
                                          attrs={'style': 'min-width: 45em'})
     )
 
+    # only narrows the list of Feature B, it is not saved
+    to_feature_language = forms.ModelChoiceField(
+        queryset=Language.objects.filter(
+          id__in=Feature.objects.filter(deleted=False).values('language')),
+        to_field_name='code',
+        required=False,
+        empty_label='All languages',
+        label='Language of Feature B',
+        help_text='Feature B lists only the features of this language.'
+    )
+
     to_feature = forms.ModelChoiceField(
         queryset=Feature.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='feature_autocomplete',
+                                         forward=[forward.Field(
+                                           'to_feature_language',
+                                           'language')],
                                          attrs={'style': 'min-width: 45em'})
     )
 
