@@ -3,7 +3,8 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 import django.urls as urlresolvers
-from django.db.models import Count, Case, When, F, Q
+from django.db.models import Count, Case, When, F, Q, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -508,8 +509,20 @@ class SeriesTable(tables.Table):
         fields = ('name', 'year_began', 'issue_count', 'covers', 'published')
 
     def order_covers(self, query_set, is_descending):
+        """
+        Order the series by their covers that are not deleted.
+
+        A subquery counts the covers of each series, so the series rows
+        are not joined with their issues and covers and then grouped.
+        It counts all the covers of a series, as the Covers column shows
+        them, also when a search has filtered the issues.
+        """
+        covers = (Cover.objects.filter(issue__series=OuterRef('pk'),
+                                       deleted=False)
+                  .order_by().values('issue__series')
+                  .annotate(count=Count('pk')).values('count'))
         query_set = query_set.annotate(
-          covers=Count('issue__cover', filter=Q(issue__cover__deleted=False)))
+          covers=Coalesce(Subquery(covers), 0))
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'covers',
                                        'sort_name',
