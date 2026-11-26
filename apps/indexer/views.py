@@ -21,6 +21,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import get_template
+from django.contrib import messages
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
@@ -66,41 +67,54 @@ class ErrorWithMessage(ViewTerminationError):
         return render_error(request, _(self.message), redirect=False)
 
 
+# The extra tag of the message that carries the text of an error page.
+ERROR_PAGE_TAG = 'error_page'
+
+
 def render_error(request, error_text, redirect=True, is_safe=False):
     """
     Utility function to render an error page as a response.  Can be
     called to return the page directly as a response or used to
-    set up a redirect for which the error message is stored in our
-    custom errors table.
-
-    See apps.indexer.models.Error for more details.
+    set up a redirect, for which the error text is stored as a message
+    of Django's messages framework.
     """
-    if redirect:
-        if error_text != '':
-            salt = hashlib.sha1(str(random()).encode('utf8')).hexdigest()[:5]
-            key = hashlib.sha1((salt + error_text).encode('utf8')).hexdigest()
-            Error.objects.create(error_key=key, is_safe=is_safe,
-                                 error_text=error_text,)
-            return HttpResponseRedirect(
-              urlresolvers.reverse('error') +
-              '?error_key=' + key)
-
-        else:
-            return HttpResponseRedirect(urlresolvers.reverse('error'))
-    else:
-        if is_safe:
-            error_text = mark_safe(error_text)
+    if is_safe:
+        error_text = mark_safe(error_text)
+    if not redirect:
         return error_view(request, error_text)
+    if error_text != '':
+        messages.error(request, error_text, extra_tags=ERROR_PAGE_TAG)
+    return HttpResponseRedirect(urlresolvers.reverse('error'))
+
+
+def _error_page_message(request):
+    """
+    Return the text of the newest message stored by render_error, or ''.
+    Reading the messages marks all of them as shown, so the other
+    messages are stored again for the page that shows them.
+    """
+    error_text = ''
+    for message in messages.get_messages(request):
+        if ERROR_PAGE_TAG in message.tags.split():
+            error_text = message.message
+        else:
+            messages.add_message(request, message.level, message.message,
+                                 extra_tags=message.extra_tags)
+    return error_text
 
 
 def error_view(request, error_text=''):
     """
-    Looks up a specified error in the GCD's custom errors table,
-    and renders a generic error page using that error's text.
+    Renders a generic error page with the given text, or with the text
+    that render_error stored as a message before its redirect.
     Can be used through a redirect or can be called directly from another view.
 
+    A link with the key of an error in the GCD's custom errors table,
+    used before the messages, still shows that error once.
     See apps.indexer.models.Error for more details.
     """
+    if error_text == '':
+        error_text = _error_page_message(request)
     if error_text == '':
         if 'error_key' not in request.GET:
             error_text = 'Unknown error.'
