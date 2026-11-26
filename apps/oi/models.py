@@ -7107,12 +7107,19 @@ class StoryRevision(Revision):
         return 0
 
     def _credits_changed(self, credit_type):
-        """Return whether a StoryCredit of the credit type changed."""
-        for credit in self.story_credit_revisions.filter(
-          credit_type_id=CREDIT_TYPES[credit_type]):
-            credit.compare_changes()
-            if credit.is_changed:
-                return True
+        """Return whether a StoryCredit of the credit type changed.
+
+        A credit that had the type in its previous revision counts too,
+        so one given another type is a change of the type it had.
+        """
+        type_id = CREDIT_TYPES[credit_type]
+        for credit in self.story_credit_revisions.all():
+            previous = credit.previous()
+            if type_id in (credit.credit_type_id,
+                           previous and previous.credit_type_id):
+                credit.compare_changes()
+                if credit.is_changed:
+                    return True
         return False
 
     # we need two checks if relevant reprint revisions exist:

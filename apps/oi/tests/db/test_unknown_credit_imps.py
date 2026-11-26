@@ -132,6 +132,19 @@ def test_question_mark_on_edit_adds_nothing_to_the_credit(
 
 
 @pytest.mark.django_db
+def test_question_mark_next_to_credit_retyped_away_scores(
+        any_edit_story_rev):
+    """A credit retyped to another type is a change of its old type."""
+    rev = any_edit_story_rev
+    credit_revision = _keep_credit(rev, 'script')
+    credit_revision.credit_type = _credit_type(CREDIT_TYPES['pencils'],
+                                               'pencils')
+    credit_revision.save()
+
+    assert _imps_with(rev, 'script', '?') == _imps_with(rev, 'script', '')
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize('credit_type_id, field', [(7, 'inks'),
                                                    (9, 'pencils'),
                                                    (13, 'letters')])
