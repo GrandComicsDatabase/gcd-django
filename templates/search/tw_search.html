@@ -37,7 +37,9 @@
         </span>
         <input type="search" name="q" value="{{ search_term|default:'' }}" placeholder="Search..."
           class="w-full bg-white text-gray-600 border-gray-500 px-1" />
-        <button type='submit' class="border border-gray-500 flex items-center justify-center bg-white px-2">
+        <button type='submit' aria-label="Search"
+          class="border border-gray-500 flex items-center justify-center
+            bg-white px-2">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192.904 192.904" width="16px" class="fill-black">
           <path
             d="m190.707 180.101-47.078-47.077c11.702-14.072 18.752-32.142 18.752-51.831C162.381 36.423 125.959 0 81.191 0 36.422 0 0 36.423 0 81.193c0 44.767 36.422 81.187 81.191 81.187 19.688 0 37.759-7.049 51.831-18.751l47.079 47.078a7.474 7.474 0 0 0 5.303 2.197 7.498 7.498 0 0 0 5.303-12.803zM15 81.193C15 44.694 44.693 15 81.191 15c36.497 0 66.189 29.694 66.189 66.193 0 36.496-29.692 66.187-66.189 66.187C44.693 147.38 15 117.689 15 81.193z">
@@ -79,7 +81,7 @@
 </div>
 <div class="flex">
   <div class="sm:hidden bg-blue-100 h-7 pe-1 absolute left-0 flex">
-    <button class="mobile-facet-menu-button">
+    <button class="mobile-facet-menu-button" aria-label="Filters">
       {% include "gcd/bits/tw_three_bars.html" %}
     </button>
   </div>
@@ -162,12 +164,24 @@
                 <td><img {{ result.object.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
     {% endif %}
     {% if result.model_name == 'issue' %}
-                <td class="pe-2"><a hx-get="{% url "show_issue_modal" issue_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;" title="preview"><img class="inline" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img> [ISSUE]</a></td>
+                <td class="pe-2"><a
+                  hx-get="{% url "show_issue_modal" issue_id=result.object.id %}"
+                  hx-target="body" hx-swap="beforeend"
+                  style="cursor: pointer; color: #00e;" title="preview"><img
+                  class="inline"
+                  src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"
+                  title="preview" alt="preview"></img> [ISSUE]</a></td>
                 <td><img {{ result.object.series.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
                 {{ result.object.publication_date|str_encl:'(' }}</td>
     {% endif %}
     {% if result.model_name == 'story' %}
-                <td class="pe-2"><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;" title="preview"><img class="inline" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img> [STORY]</a></td>
+                <td class="pe-2"><a
+                  hx-get="{% url "show_story_modal" story_id=result.object.id %}"
+                  hx-target="body" hx-swap="beforeend"
+                  style="cursor: pointer; color: #00e;" title="preview"><img
+                  class="inline"
+                  src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"
+                  title="preview" alt="preview"></img> [STORY]</a></td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title:1 }}</a>
       {% if result.object.has_feature %} / {{ result.object.show_feature }}{% endif %} / {{ result.object.type }}
       {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
