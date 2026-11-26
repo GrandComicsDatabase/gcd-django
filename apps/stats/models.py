@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.conf import settings
-from django.utils.translation import gettext_noop
+from django.utils.translation import ngettext_lazy
 from django.contrib.auth.models import User
 
 from apps.stddata.models import Country, Language
@@ -133,16 +133,23 @@ class CountStatsManager(models.Manager):
                                   language=language, country=country)
 
 
-# The values of CountStats.name. The pages translate them with
-# {% trans stat.name %}, which makemessages cannot read, so they are
-# marked here for the message files.
-STAT_NAMES = (
-    gettext_noop('publishers'), gettext_noop('brands'),
-    gettext_noop('indicia publishers'), gettext_noop('series'),
-    gettext_noop('issues'), gettext_noop('variant issues'),
-    gettext_noop('issue indexes'), gettext_noop('covers'),
-    gettext_noop('stories'), gettext_noop('creators'),
-)
+# The values of CountStats.name with their singular and plural, for the
+# message files. The key 'count' makes ngettext_lazy choose the form when
+# the name is formatted with {'count': ...}: see name_for_count().
+STAT_NAMES = {
+    'publishers': ngettext_lazy('publisher', 'publishers', 'count'),
+    'brands': ngettext_lazy('brand', 'brands', 'count'),
+    'indicia publishers': ngettext_lazy(
+        'indicia publisher', 'indicia publishers', 'count'),
+    'series': ngettext_lazy('series', 'series', 'count'),
+    'issues': ngettext_lazy('issue', 'issues', 'count'),
+    'variant issues': ngettext_lazy(
+        'variant issue', 'variant issues', 'count'),
+    'issue indexes': ngettext_lazy('issue index', 'issue indexes', 'count'),
+    'covers': ngettext_lazy('cover', 'covers', 'count'),
+    'stories': ngettext_lazy('story', 'stories', 'count'),
+    'creators': ngettext_lazy('creator', 'creators', 'count'),
+}
 
 
 class CountStats(models.Model):
@@ -164,6 +171,12 @@ class CountStats(models.Model):
 
     def __str__(self):
         return self.name + ": " + str(self.count)
+
+    def name_for_count(self):
+        """The name in the language of the page, in the form of the count."""
+        if self.name not in STAT_NAMES:
+            return self.name
+        return STAT_NAMES[self.name] % {'count': self.count}
 
 
 class RecentIndexedIssueManager(models.Manager):
