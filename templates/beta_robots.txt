@@ -1,5 +1,5 @@
 #
-# robots.txt for http://beta.comics.org/ 
+# robots.txt for https://beta.comics.org/ 
 # 
 # we don't want our dev-site beta.comics.org being indexed at all
 # www.comics.org should be it
