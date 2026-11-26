@@ -15,23 +15,27 @@ class _LinkParser(HTMLParser):
     """Keeps the addresses of the links of a page, by the text of a link."""
 
     def __init__(self):
+        """No link is open yet and no link is kept."""
         super().__init__()
         self.href = None
         self.text = ''
         self.links = {}
 
     def handle_starttag(self, tag, attrs):
+        """A link opens: keep its address and start its text."""
         if tag == 'a':
             self.href = dict(attrs).get('href')
             self.text = ''
 
     def handle_endtag(self, tag):
+        """A link closes: keep its address under its text."""
         if tag == 'a' and self.href is not None:
             text = ' '.join(self.text.split())
             self.links.setdefault(text, []).append(self.href)
             self.href = None
 
     def handle_data(self, data):
+        """The text inside an open link is added to the text of the link."""
         if self.href is not None:
             self.text += data
 
