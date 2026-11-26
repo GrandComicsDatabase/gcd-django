@@ -104,6 +104,9 @@ BOX_PLURALS = [
     ('Recorded as for sale by %(counter)s user.',
      'Recorded as for sale by %(counter)s users.'),
 ]
+# The plural rule of Serbian: three forms.
+SERBIAN_RULE = ('nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && '
+                'n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);')
 SIX_LANGUAGES = {
     'it': ('nplurals=2; plural=(n != 1);', [
       ('Registrato in %(total)s collezione.',
@@ -131,8 +134,7 @@ SIX_LANGUAGES = {
        'Tengo %(count)d ejemplares de este comic.'),
       ('En venta por %(counter)s usuario.',
        'En venta por %(counter)s usuarios.')]),
-    'sr': ('nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && '
-           'n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);', [
+    'sr': (SERBIAN_RULE, [
       ('Praceno: %(total)s zbirka.', 'Praceno: %(total)s zbirke.',
        'Praceno: %(total)s zbirki.'),
       ('Imam %(count)d primerak ovog stripa.',
