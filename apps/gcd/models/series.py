@@ -538,11 +538,15 @@ class SeriesTable(tables.Table):
         return (QuerySet, True)
 
     def render_issue_count(self, record):
-        return ngettext('%(issues)d issue (%(indexed)d indexed)',
-                        '%(issues)d issues (%(indexed)d indexed)',
-                        record.issue_count) % {
-          'issues': record.issue_count,
-          'indexed': record.issue_indexed_count}
+        # Two numbers, so two texts: each takes the plural form of its own
+        # number. The first one is the text of the counts of the series page.
+        issues = ngettext('%(counter)s issue', '%(counter)s issues',
+                          record.issue_count) % {
+          'counter': record.issue_count}
+        indexed = ngettext('%(counter)s indexed', '%(counter)s indexed',
+                           record.issue_indexed_count) % {
+          'counter': record.issue_indexed_count}
+        return '%s (%s)' % (issues, indexed)
 
     def render_name(self, record):
         name_link = '<a href="%s">%s</a> %s' % (record.get_absolute_url(),

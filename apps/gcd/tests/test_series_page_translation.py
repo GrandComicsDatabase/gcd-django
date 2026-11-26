@@ -19,6 +19,7 @@ from apps.gcd.models import (
     IndiciaPublisher, Issue, Publisher, ReceivedAward, Series, SeriesBond,
     SeriesBondType, SeriesPublicationType, Story, StoryCredit, StoryType)
 from apps.gcd.models.creator import Creator, CreatorNameDetail
+from apps.gcd.models.issue import INDEXED as INDEX_STATUS
 from apps.gcd.models.story import StoryCharacter
 from apps.indexer.models import Indexer
 from apps.oi.models import OngoingReservation
@@ -95,10 +96,10 @@ MIGRATE = ("<a href='%(page_url)s'>%(counter)s issue</a> with content to "
            "migrate.",
            "<a href='%(page_url)s'>%(counter)s issues</a> with content to "
            "migrate.")
-INDEXED = ('%(issues)d issue (%(indexed)d indexed)',
-           '%(issues)d issues (%(indexed)d indexed)')
 DATES = ('Publication Date:', 'Publication Dates:')
 ISSUES = ('%(counter)s issue', '%(counter)s issues')
+# One form in English; a language gives it the forms of its plural rule.
+INDEXED = ('%(counter)s indexed', '%(counter)s indexed')
 DISPLAYING = ('Displaying %(start)s to %(end)s of %(counter)s issue.',
               'Displaying %(start)s to %(end)s of %(counter)s issues.')
 PLURALS = (MIGRATE, INDEXED, DATES, ISSUES, DISPLAYING)
@@ -183,11 +184,12 @@ def message_files(settings, tmp_path):
     settings.LOCALE_PATHS = [str(tmp_path)]
 
 
-def _issue(id, series, number, key_date='', **fields):
+def _issue(id, series, number, key_date='', indexed=False, **fields):
     """An issue of the series with the number as its sort code."""
     return Issue.objects.create(
       id=id, series=series, number=str(number), sort_code=number,
-      key_date=key_date, **fields)
+      key_date=key_date,
+      is_indexed=INDEX_STATUS['full' if indexed else 'skeleton'], **fields)
 
 
 def _series(id, name, publisher, issues=0, **fields):
@@ -237,8 +239,9 @@ def catalog(country, member):
     cover, an award, a bond, an ongoing reservation, an issue to migrate,
     issues with good, bad and no key dates; a series that is not of comics;
     a one-issue series with a cover; a current series of five issues with
-    no reservation; an empty series. A creator and a character appear in
-    the main series. The ids are fixed so that the pages are the same on
+    no reservation; an empty series. One issue of the main series and every
+    issue of the other series is indexed. A creator and a character appear
+    in the main series. The ids are fixed so that the pages are the same on
     every run.
     """
     Script.objects.get_or_create(
@@ -266,7 +269,7 @@ def catalog(country, member):
       on_sale_date='1989-12-01', volume='1', title='Some Title',
       indicia_frequency='monthly', isbn='9780000000002',
       barcode='012345678905', rating='All Ages', price='1.00 USD',
-      indicia_publisher=imprint)
+      indicia_publisher=imprint, indexed=True)
     first.brand_emblem.add(Brand.objects.create(
       id=9631, name='Test Brand', year_began=1990))
     _issue(9632, main, 2, '1990-02-00', publication_date='February 1990',
@@ -283,19 +286,20 @@ def catalog(country, member):
 
     magazine = _series(9632, 'Test Magazine', publisher, issues=2,
                        is_comics_publication=False)
-    _issue(9635, magazine, 1)
-    _issue(9636, magazine, 2)
+    _issue(9635, magazine, 1, indexed=True)
+    _issue(9636, magazine, 2, indexed=True)
     _first_and_last(magazine)
     annual = _series(9633, 'Test Annual', publisher, issues=1,
                      is_comics_publication=True, has_gallery=True)
     Cover.objects.create(id=9632, limit_display=True,
-                         issue=_issue(9637, annual, 1, '1700-01-00'))
+                         issue=_issue(9637, annual, 1, '1700-01-00',
+                                      indexed=True))
     _first_and_last(annual)
     weekly = _series(9634, 'Test Weekly', publisher, issues=5,
                      is_current=True, is_comics_publication=True)
-    _issue(9638, weekly, 1, '1991-01-00')
+    _issue(9638, weekly, 1, '1991-01-00', indexed=True)
     for number in range(2, 6):
-        _issue(9637 + number, weekly, number)
+        _issue(9637 + number, weekly, number, indexed=True)
     _first_and_last(weekly)
     empty = _series(9635, 'Test Empty', publisher,
                     is_comics_publication=True)
@@ -569,18 +573,22 @@ def test_counts(client, message_files, catalog, tr):
     of the publisher in the plural form that the language gives the number:
     in French 0 takes the singular, Serbian has one form for 1, one for 2
     to 4 and one for 5 and more, Japanese has one form for every number.
+    In that list the count of the indexed issues, 0, 1, 2, 1 and 5, takes
+    the form of its own number.
     """
     publisher = _get(client, _url('show_publisher', catalog['publisher'],
                                   'publisher_id'), tr)
     missing = []
-    for key, count in (('empty', 0), ('annual', 1), ('magazine', 2),
-                       ('main', 4), ('weekly', 5)):
+    for key, count, indexed in (('empty', 0, 0), ('annual', 1, 1),
+                                ('magazine', 2, 2), ('main', 4, 1),
+                                ('weekly', 5, 5)):
         details = _get(client, _url('series_details', catalog[key]), tr)
         page = _get(client, _url('show_series', catalog[key]), tr)
         missing += _missing(details, [tr.plural(DISPLAYING, count) % {
           'start': min(count, 1), 'end': count, 'counter': count}])
         missing += _missing(page, [tr.plural(DATES, count) + '</span>'])
-        missing += _missing(publisher, [tr.plural(INDEXED, count) % {
-          'issues': count, 'indexed': 0}])
+        missing += _missing(publisher, ['%s (%s)' % (
+          tr.plural(ISSUES, count) % {'counter': count},
+          tr.plural(INDEXED, indexed) % {'counter': indexed})])
 
     assert missing == []
