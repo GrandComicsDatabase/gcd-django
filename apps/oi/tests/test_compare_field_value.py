@@ -236,6 +236,10 @@ def publisher_with_children(any_added_indicia_publisher,
     from 1978 to 1985.
     '''
     publisher = any_added_brand_use.publisher
+    # adding a brand group, or a brand to a group, also adds a brand use
+    # with its years: keep only the uses below
+    BrandUse.objects.filter(publisher=publisher).exclude(
+      id=any_added_brand_use.id).delete()
     IndiciaPublisher.objects.filter(parent=publisher).update(
       year_began=1975, year_began_uncertain=False)
     BrandUse.objects.filter(publisher=publisher).update(
