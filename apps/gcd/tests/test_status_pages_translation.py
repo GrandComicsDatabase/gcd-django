@@ -48,7 +48,7 @@ DOWNLOAD = (
     'A low-traffic announcement-only list', 'Documentation',
     'Currently, the dump is only available', 'We used to offer a dump',
     'Additional formats are under investigation',
-    '<a href="http://docs.comics.org/wiki/Current_Schema">Schema',
+    '<a href="https://docs.comics.org/wiki/Current_Schema">Schema',
     'Downloads', 'Data last updated:', 'never', '[Optional] Purpose:',
     'Private use', 'Public / Non-Commercial use', 'Public / Commercial use',
     '[Optional] How or where do you plan to use the data?',
