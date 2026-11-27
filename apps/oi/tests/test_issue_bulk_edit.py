@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 
 import pytest
 
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.forms import ModelMultipleChoiceField
 from django.urls import reverse
 
@@ -11,6 +11,7 @@ from apps.gcd.models import CreditType, Issue
 from apps.gcd.models.creator import Creator, CreatorNameDetail
 from apps.gcd.models.issue import IssueCredit
 from apps.gcd.models.story import CREDIT_TYPES
+from apps.indexer.models import Indexer
 from apps.mycomics.models import Collector, ConditionGradeScale
 from apps.oi.models import CTYPES, IssueCreditRevision, IssueRevision
 from apps.stddata.models import Date, Script
@@ -87,9 +88,10 @@ def test_bulk_change_link_on_issue_search(client, any_added_issue,
 
 
 def _creator_name(name):
-    """A creator name to credit, of a creator of its own."""
+    """A creator name to credit, the official one of a creator of its own."""
     return CreatorNameDetail.objects.create(
-      name=name, in_script=Script.objects.get_or_create(
+      name=name, is_official_name=True,
+      in_script=Script.objects.get_or_create(
         id=Script.LATIN_PK,
         defaults={'code': 'Latn', 'number': Script.LATIN_PK,
                   'name': 'Latin'})[0],
@@ -166,3 +168,58 @@ def test_bulk_edit_removes_a_shared_credit(client, any_added_issue,
       changeset__change_type=CTYPES['issue_bulk']).values_list(
         'issue_credit', 'deleted')) == expected
     assert response.status_code == 302
+
+
+def _approve(changeset, country):
+    """Approve a submitted change as an editor of its own."""
+    editor = User.objects.create_user('editor')
+    Indexer.objects.create(user=editor, country=country)
+    changeset.assign(approver=editor, notes='')
+    changeset.approve(notes='')
+
+
+@pytest.mark.django_db
+def test_copy_from_an_issue_of_a_bulk_change_takes_its_credits(
+  client, any_added_issue, any_added_issue_rev, searching_indexer,
+  any_country):
+    """
+    A bulk change of issues with different credits has no credit
+    revisions, and the issues keep their credits. Copying the editing of
+    one of them to another issue takes those credits.
+    """
+    _allow_reserving(searching_indexer)
+    client.force_login(searching_indexer)
+    source = any_added_issue
+    target = Issue.objects.create(
+      number='2', series=source.series, sort_code=source.sort_code + 1,
+      editing=source.editing, price=source.price)
+    target_revision = IssueRevision.objects.create(
+      changeset=any_added_issue_rev.changeset, issue=target,
+      series=target.series, number=target.number)
+    _add_editing_credit(_creator_name('Source Editor'), any_added_issue_rev)
+    _add_editing_credit(_creator_name('Target Editor'), target_revision)
+    url = reverse('edit_issues_in_bulk')
+    search = dict(SEARCH, series='Series for Issues')
+    page = client.get(url, search)
+    assert page.context['credits_formset'] is None
+    client.post(url + '?' + urlencode(search),
+                dict(_browser_post(page.context['form']), price='0.25 USD'))
+    bulk_change = searching_indexer.changesets.get(
+      change_type=CTYPES['issue_bulk'])
+    assert not bulk_change.issuecreditrevisions.exists()
+    _approve(bulk_change, any_country)
+    client.post(reverse('reserve_revision',
+                        kwargs={'model_name': 'issue', 'id': target.id}))
+    revision = IssueRevision.objects.get(
+      issue=target, changeset__change_type=CTYPES['issue'])
+    copy_url = reverse('compare_issues_copy', kwargs={
+      'issue_revision_id': revision.id, 'issue_id': source.id})
+    assert 'Source Editor' in client.get(copy_url).content.decode()
+
+    response = client.post(copy_url, {'field_to_copy': ['editing'],
+                                      'copy_select': 'Copy Selected Values'})
+
+    assert response.status_code == 302
+    assert dict(revision.issue_credit_revisions.values_list(
+      'creator__name', 'deleted')) == {'Source Editor': False,
+                                       'Target Editor': True}
