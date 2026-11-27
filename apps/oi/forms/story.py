@@ -88,6 +88,25 @@ def _genre_choices(language=None, additional_genres=None):
         choices=choices)
 
 
+def non_comics_sequence_types(series, issue):
+    """
+    Return the sequence types offered for a new sequence in the issue of a
+    series which is not a comics publication.
+    """
+    sequence_filter = ['comic story', 'photo story', 'cartoon',
+                       'cover reprint (on interior page)',
+                       'comics-form advertising',
+                       'preview (from the publisher)']
+    if series.has_about_comics is True:
+        sequence_filter.append('about comics')
+        if issue.is_indexed == INDEXED['full']:
+            sequence_filter.extend(['cover',
+                                    'illustration'])
+        elif issue.is_indexed >= INDEXED['ten_percent']:
+            sequence_filter.extend(['cover',])
+    return StoryType.objects.filter(name__in=sequence_filter)
+
+
 def get_story_revision_form(revision=None, user=None,
                             issue_revision=None):
     extra = {}
@@ -141,18 +160,7 @@ def get_story_revision_form(revision=None, user=None,
             current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     elif not is_comics_publication:
-        sequence_filter = ['comic story', 'photo story', 'cartoon',
-                           'cover reprint (on interior page)',
-                           'comics-form advertising',
-                           'preview (from the publisher)']
-        if has_about_comics is True:
-            sequence_filter.append('about comics')
-            if issue.is_indexed == INDEXED['full']:
-                sequence_filter.extend(['cover',
-                                        'illustration'])
-            elif issue.is_indexed >= INDEXED['ten_percent']:
-                sequence_filter.extend(['cover',])
-        queryset = StoryType.objects.filter(name__in=sequence_filter)
+        queryset = non_comics_sequence_types(series, issue)
         # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
             current_type_not_allowed_id = revision.type.id
