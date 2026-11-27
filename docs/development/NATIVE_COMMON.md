@@ -53,6 +53,10 @@ queries return empty sets, and all queries succeeded. An existing account at
 any host is a reason to stop and review. Do not drop it, change its password,
 or use `IF NOT EXISTS` to skip these checks.
 
+MariaDB has no `partial_revokes` variable: on a MariaDB server leave
+`@@GLOBAL.partial_revokes` out of the first query and use the escaped
+database grants below.
+
 For a fresh server with `partial_revokes=0`, run:
 
 ```sql

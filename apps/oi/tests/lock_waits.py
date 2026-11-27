@@ -35,13 +35,15 @@ def wait_for_lock_waits(table, count=1, timeout=30):
     the server shows it.
     """
     # InnoDB refreshes the Information Schema lock tables that MariaDB
-    # reads only when they were not read in the last 0.1 seconds.
+    # reads only when they were not read in the last 0.1 seconds, so the
+    # pause comes before each read, the first one too: a read soon after
+    # an earlier call would see that call's waits.
     interval = 0.2 if connection.mysql_is_mariadb else 0.05
     end = time.monotonic() + timeout
     with connection.cursor() as cursor:
         while time.monotonic() < end:
+            time.sleep(interval)
             if lock_waits(cursor, table) >= count:
                 return
-            time.sleep(interval)
     raise AssertionError('fewer than %d transactions wait for %s'
                          % (count, table))
