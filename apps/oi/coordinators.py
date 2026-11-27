@@ -5,6 +5,7 @@ import django.urls as urlresolvers
 from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from apps.oi import states
@@ -76,9 +77,24 @@ def clear_reservations_one_week(request=None):
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations(request=None, changes=None):
+    """
+    Submit each of these old changes that changes data and discard the
+    others.  When the edit form refuses the saved data of a change, its
+    messages go into the automatic comment and onto this page, so that
+    the approver decides on it.
+    """
+    # imported here, as apps.oi.views imports this module through
+    # apps.oi.templatetags.editing
+    from apps.oi.views import validate_changeset_revisions
     submitted_list = []
     discarded_list = []
     for changeset in changes:
+        # Lock the change, as the views that change its state do, and leave
+        # alone a change submitted or discarded in the meantime.
+        changeset = Changeset.objects.select_for_update().filter(
+          id=changeset.id, state=states.OPEN).first()
+        if changeset is None:
+            continue
         changed = False
         if changeset.inline():
             revision = changeset.inline_revision()
@@ -105,11 +121,22 @@ def clear_reservations(request=None, changes=None):
            str(changeset),
            str(changeset.indexer.indexer))
         if changed:
+            notes = ('This is an automatic submit for an old reservation. If '
+                     'the change contains useful information but needs '
+                     'correction please reserve and edit after approval.')
+            invalid = validate_changeset_revisions(changeset, request)
+            if invalid:
+                # Its indexer is not here to correct it, as the submit view
+                # would ask: the approver gets the reasons instead.
+                reasons = '; '.join('%s: %s' % (revision, ' '.join(messages))
+                                    for revision, messages in invalid)
+                notes += '\nThe saved data does not pass the edit form: ' + \
+                    reasons
+                info_text = format_html('{} The saved data does not pass the '
+                                        'edit form: {}', mark_safe(info_text),
+                                        reasons)
             if not SCRIPT_DEBUG:
-                changeset.submit(notes='This is an automatic submit for an '
-                                 'old reservation. If the change contains '
-                                 'useful information but needs correction '
-                                 'please reserve and edit after approval.')
+                changeset.submit(notes=notes)
             submitted_list.append(mark_safe(info_text))
         else:
             if not SCRIPT_DEBUG:
