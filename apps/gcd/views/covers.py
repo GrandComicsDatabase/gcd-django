@@ -13,8 +13,8 @@ def get_generic_image_tag(image, alt_text):
         width = min(image.image_file.width, 400)
     except IOError:
         width = 0
-    return mark_safe('<img src="' + image.scaled_image.url + '?' +
-                     str(hash(image.modified)) + '" alt="' + esc(alt_text)
+    return mark_safe('<img src="' + image.scaled_image_url
+                     + '" alt="' + esc(alt_text)
                      + '" ' + ' class="' + img_class +
                      '" width="' + str(width) + '"/>')
 
