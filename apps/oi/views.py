@@ -2226,9 +2226,10 @@ def edit_issues_in_bulk(request):
         cd_credits = []
         for form in credits_formset:
             # a removed row takes its credit also when the form rejects
-            # its other fields: it needs only its creator
-            if form.is_valid() or (form.cleaned_data.get('DELETE') and
-                                   form.cleaned_data.get('creator')):
+            # its other fields: it needs only its creator. A row left
+            # untouched is valid without a creator and takes no credit.
+            if (form.is_valid() or form.cleaned_data.get('DELETE')) and \
+               form.cleaned_data.get('creator'):
                 cd_credits.append(form.cleaned_data)
     for issue in items:
         revision_lock = _lock_current(issue, changeset)
