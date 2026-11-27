@@ -101,7 +101,7 @@ def test_placeholder_of_limited_cover_has_one_class():
 def test_compare_brand_emblem_has_spaced_attributes():
     """The emblem image that field_value builds for a brand is valid."""
     brand = SimpleNamespace(
-      emblem=SimpleNamespace(icon=SimpleNamespace(url='/media/emblem.png')),
+      emblem=SimpleNamespace(icon_url='/media/emblem.png'),
       get_absolute_url=lambda: '/brand/1/')
     value = field_value(SimpleNamespace(brand=brand), 'brand')
     assert _glued_attributes(value) == []
