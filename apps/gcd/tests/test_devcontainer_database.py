@@ -60,7 +60,10 @@ def init_hook(tmp_path):
     'gcd_dev', 'gcd_dev_editor', 'gcd_django_dev', 'gcd_dev_' + 'a' * 51,
 ])
 def test_init_hook_scopes_both_database_grants(init_hook, database):
-    """Replace any image-created grants with two literal database grants."""
+    """
+    Replace any image-created grants with two literal database grants and
+    SELECT on the two Performance Schema lock tables.
+    """
     result, calls = init_hook(MYSQL_DATABASE=database)
 
     assert result.returncode == 0, result.stderr
@@ -76,7 +79,10 @@ def test_init_hook_scopes_both_database_grants(init_hook, database):
     assert calls[1]['sql'].strip() == (
         "REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'gcd_dev'@'%';\n"
         f"GRANT ALL PRIVILEGES ON `{escaped}`.* TO 'gcd_dev'@'%';\n"
-        f"GRANT ALL PRIVILEGES ON `test\\_{escaped}`.* TO 'gcd_dev'@'%';"
+        f"GRANT ALL PRIVILEGES ON `test\\_{escaped}`.* TO 'gcd_dev'@'%';\n"
+        "GRANT SELECT ON performance_schema.data_locks TO 'gcd_dev'@'%';\n"
+        "GRANT SELECT ON performance_schema.data_lock_waits "
+        "TO 'gcd_dev'@'%';"
     )
     assert all(call['password_provided'] for call in calls)
     assert 'WITH GRANT OPTION' not in calls[1]['sql']

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from django.apps import apps
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import Permission
 from django.core.management import call_command
 from django.db import connection
 from django.db.migrations.recorder import MigrationRecorder
@@ -18,11 +19,16 @@ from apps.stddata.models import Country
 ROOT = Path(__file__).resolve().parents[3]
 
 
-@pytest.mark.django_db(transaction=True, serialized_rollback=True)
+@pytest.mark.django_db(transaction=True)
 def test_native_reset_management_sequence_can_seed_again(settings, tmp_path):
     """Replay actual reset commands only inside Django's disposable test DB."""
     assert connection.settings_dict['NAME'].startswith('test_')
     settings.MEDIA_ROOT = str(tmp_path / 'media')
+    # A transactional test run before this one leaves empty the tables
+    # that the migrations fill. serialized_rollback would fill them again,
+    # but its flush at the end sends no post_migrate, and the tests after
+    # this one would find no content types or permissions.
+    call_command('restore_development_reference_data', verbosity=0)
     call_command('seed_development_data', verbosity=0)
     assert Series.objects.filter(name='[GCD DEV] Adventures').exists()
     before = set(MigrationRecorder(connection).applied_migrations())
@@ -55,6 +61,17 @@ def test_native_reset_management_sequence_can_seed_again(settings, tmp_path):
         'voting.VoteType',
     ):
         assert apps.get_model(label).objects.exists(), label
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_test_after_the_native_reset_finds_the_permissions():
+    """
+    pytest-django keeps the transactional tests of a module in their
+    order, so this one runs right after the native reset test. That test
+    leaves an emptied database, in which the next transactional test
+    still needs the content types and the permissions.
+    """
+    assert Permission.objects.filter(codename='can_reserve').exists()
 
 
 @pytest.mark.django_db
