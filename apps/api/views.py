@@ -12,6 +12,17 @@ from apps.gcd.models.issue import issues_for_iso_week
 from apps.gcd.models.story import Story
 
 
+def _has_non_bmp_characters(value):
+    """
+    Return True if value contains characters outside the Basic Multilingual
+    Plane (e.g. emoji). Those need 4 bytes in UTF-8 and cannot be stored in, or
+    compared against, the utf8mb3 name columns; MySQL raises error 1267
+    ("Illegal mix of collations") for such a LIKE. Since no stored name can
+    contain them, a search including them can never match anything.
+    """
+    return any(ord(char) > 0xFFFF for char in value)
+
+
 class ReadOnlyModelView(mixins.RetrieveModelMixin,
                         viewsets.GenericViewSet):
     """
@@ -36,6 +47,8 @@ class SeriesList(generics.ListAPIView):
 
     def get_queryset(self):
         name = self.kwargs['name']
+        if _has_non_bmp_characters(name):
+            return Series.objects.none()
         if 'year' in self.kwargs:
             year = self.kwargs['year']
 
@@ -64,6 +77,8 @@ class IssuesList(generics.ListAPIView):
     def get_queryset(self):
         name = self.kwargs['name']
         number = self.kwargs['number']
+        if _has_non_bmp_characters(name) or _has_non_bmp_characters(number):
+            return Issue.objects.none()
         if 'year' in self.kwargs:
             year = self.kwargs['year']
 
