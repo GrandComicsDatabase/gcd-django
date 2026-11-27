@@ -117,6 +117,6 @@ def test_charter_note_only_in_the_mail_of_the_charter(mailoutbox):
     _calculate_results([charter, motion])
 
     bodies = {mail.subject: mail.body for mail in mailoutbox}
-    subject = 'GCD Vote Result: #%d %s'
+    subject = 'GCD Vote #%d Result: %s'
     assert CHARTER_NOTE in bodies[subject % (charter.id, 'Charter')]
     assert CHARTER_NOTE not in bodies[subject % (motion.id, 'Motion')]
