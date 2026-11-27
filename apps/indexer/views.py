@@ -382,7 +382,7 @@ Mentor this indexer: %s
                ', '.join([lang.name for lang in indexer.languages.all()]),
                indexer.interests,
                indexer.from_where,
-               'http://' + request.get_host() +
+               'https://' + request.get_host() +
                urlresolvers.reverse('mentor',
                                     kwargs={'user_id': indexer.user.id}))
 
