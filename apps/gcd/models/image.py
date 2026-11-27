@@ -156,6 +156,42 @@ class Image(models.Model):
         return self.revisions.filter(changeset__state__in=states.ACTIVE)\
                              .count() == 0
 
+    def _with_version(self, url):
+        """
+        The address with the version of the image, a query string that
+        changes when the image is replaced, so that no cache in between
+        keeps showing the old file at the same address. hash() of a time
+        with a time zone gives the same number in every process.
+        """
+        if self.modified is None:
+            return url
+        return '%s?%d' % (url, hash(self.modified))
+
+    @property
+    def image_file_url(self):
+        """The address of the uploaded file, with the version."""
+        return self._with_version(self.image_file.url)
+
+    @property
+    def scaled_image_url(self):
+        """The address of the scaled image, with the version."""
+        return self._with_version(self.scaled_image.url)
+
+    @property
+    def thumbnail_url(self):
+        """The address of the thumbnail, with the version."""
+        return self._with_version(self.thumbnail.url)
+
+    @property
+    def icon_url(self):
+        """The address of the icon, with the version."""
+        return self._with_version(self.icon.url)
+
+    @property
+    def cropped_face_url(self):
+        """The address of the cropped face, with the version."""
+        return self._with_version(self.cropped_face.url)
+
     def description(self):
         return mark_safe('%s for <a href="%s">%s</a>' % (
           self.type.description,

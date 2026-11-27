@@ -45,17 +45,22 @@ def make_stats():
 def make_stats_after_flush(sender, **kwargs):
     """
     Receive the post_migrate that a flush sends once it has emptied the
-    database, and make the statistics again.
+    database, and make the totals again. The flush also removed the test
+    country, whose statistics any_country() makes with it. Making the
+    country here would leave a row in an emptied reference table, and a
+    test of another app that flushes, such as the native reset, would
+    then skip loading the countries.
     """
-    make_stats()
+    CountStats.objects.init_stats()
 
 
 @pytest.fixture(scope='session')
 def django_db_setup(django_db_setup, django_db_blocker):
     """
-    Make the statistics once for the session, and again after each flush
-    that sends post_migrate: a transactional test empties the database
-    when it ends, and a test after it would find no statistics to update.
+    Make the statistics once for the session, and the totals again after
+    each flush that sends post_migrate: a transactional test empties the
+    database when it ends, and a test after it would find no statistics
+    to update.
     A flush with available_apps or serialized_rollback sends none.  The
     data that the migrations load is not made again, so a transactional
     test must not need it.
@@ -141,8 +146,15 @@ def any_variant_adding_changeset(any_indexer):
 
 
 def any_country():
-    c = Country.objects.get_or_create(code='XZZ', name='Test Country')
-    return c[0]
+    """
+    Return the test country. When it does not exist yet, make it with the
+    statistics that a commit to the display updates.
+    """
+    country, created = Country.objects.get_or_create(code='XZZ',
+                                                     name='Test Country')
+    if created:
+        CountStats.objects.init_stats(country=country)
+    return country
 
 
 @pytest.fixture(name="any_country")
