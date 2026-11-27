@@ -955,7 +955,7 @@ class BrandEmblemSelect(forms.Select):
         if value:
             brand = value.instance
             if brand.emblem and not settings.FAKE_IMAGES:
-                option_dict['url'] = brand.emblem.icon.url
+                option_dict['url'] = brand.emblem.icon_url
                 option_dict['image_width'] = brand.emblem.icon.width
         return option_dict
 
