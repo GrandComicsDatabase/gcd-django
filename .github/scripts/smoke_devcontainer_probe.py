@@ -41,10 +41,14 @@ with connection.cursor() as cursor:
     assert (database, account, pool) == ('gcd_dev', 'gcd_dev@%', 1073741824)
     cursor.execute('SHOW GRANTS')
     grants = [row[0] for row in cursor.fetchall()]
-assert len(grants) == 3, grants
+assert len(grants) == 5, grants
 assert sum(grant.startswith('GRANT USAGE ON *.* TO ') for grant in grants) == 1
 assert any('ON `gcd\\_dev`.*' in grant for grant in grants), grants
 assert any('ON `test\\_gcd\\_dev`.*' in grant for grant in grants), grants
+for table in ('data_locks', 'data_lock_waits'):
+    assert any(
+        grant.startswith('GRANT SELECT ON `performance_schema`.`%s` ' % table)
+        for grant in grants), grants
 assert not any('WITH GRANT OPTION' in grant for grant in grants)
 
 subprocess.run(['python', 'scripts/check_dev_environment.py'], check=True)
