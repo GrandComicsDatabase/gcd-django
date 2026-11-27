@@ -129,6 +129,8 @@ def view_collection(request, collection_id):
     vars = {'collection': collection,
             'collection_list': collection_list,
             'base_url': base_url,
+            'deleted_items': items.filter(issue__deleted=True)
+                                .select_related('issue__series__publisher'),
             'needed_covers_url': needed_covers_url,
             'unindexed_issues_url': unindexed_issues_url}
     data = set(items.values_list('issue__series__publisher'))
