@@ -4,7 +4,9 @@
   class="block dropdown-toggle py-1 px-1 rounded {% if MYCOMICS %}
     hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %}">
   <span class="pointer-events-none max-lg:hidden">
-    <img class="w-10" src='{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/avatar-default-symbolic.svg" %}'>
+    <img class="w-10"
+      src='{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/avatar-default-symbolic.svg" %}'
+      alt="">
   </span>
 </button>
 <div class="dropdown-menu absolute right-0 hidden {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} text-white rounded-b-lg pb-2 w-48">
