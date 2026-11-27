@@ -67,12 +67,12 @@
   {% if MYCOMICS %}
   <div class="www_comics_cross_link">
     {% trans "Weekly on-sale list at www.comics.org" as cross_link %}
-    <a href="http://www.comics.org{{ request.path }}">{{ cross_link }}</a>
+    <a href="https://www.comics.org{{ request.path }}">{{ cross_link }}</a>
   </div>
   {% else %}
   <div class="my_comics_cross_link">
     {% trans "Weekly on-sale list at my.comics.org" as cross_link %}
-    <a href="http://my.comics.org{{ request.path }}">{{ cross_link }}</a>
+    <a href="https://my.comics.org{{ request.path }}">{{ cross_link }}</a>
   </div>
   {% endif %}
 </div>
