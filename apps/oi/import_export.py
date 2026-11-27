@@ -205,7 +205,7 @@ def _process_file(request, changeset_url, is_issue, use_csv=False):
 # order of the fields in line with the OI, but not
 # all fields (i.e. no_...) are present explicitly
 # relevant documentation and order is here:
-# http://docs.comics.org/wiki/Indexing_Offline
+# https://docs.comics.org/wiki/Indexing_Offline
 def _check_for_none(value):
     if value.strip().lower() == 'none':
         return '', True
