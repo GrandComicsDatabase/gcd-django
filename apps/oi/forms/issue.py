@@ -16,7 +16,8 @@ from crispy_forms.layout import Layout, Field, HTML
 from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       VARIANT_NAME_HELP_TEXT, VARIANT_COVER_STATUS_HELP_TEXT,
-                      ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
+                      ISSUE_LABELS, ISSUE_HELP_TEXTS, CREDIT_NAME_LABEL,
+                      KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       _strip_list,
@@ -494,7 +495,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
                 'A concise and clear description of the external source of '
                 'the credit.'
         }
-        labels = {'credit_name': 'Credit description'}
+        labels = {'credit_name': CREDIT_NAME_LABEL}
 
     def __init__(self, *args, **kwargs):
         super(IssueCreditRevisionForm, self).__init__(*args, **kwargs)
@@ -541,6 +542,35 @@ class IssueCreditRevisionForm(forms.ModelForm):
             cd['sourced_by'] = ""
 
         return cd
+
+    # The fields that a browser posts with a value also for a row left
+    # untouched: the credit type, whose list has no empty choice, and the
+    # hidden link to the change. The hidden id is posted empty for a new
+    # row and with a value for an existing credit.
+    UNTOUCHED_ROW_VALUES = ('credit_type', 'issue_revision')
+
+    def _is_untouched(self):
+        """
+        Return whether nothing was typed or ticked in the row: every field
+        is posted empty but the ones that a browser fills in by itself.
+        """
+        return not any(self[name].data for name in self.fields
+                       if name not in self.UNTOUCHED_ROW_VALUES)
+
+    def full_clean(self):
+        """
+        Check the row, and keep no errors on a row left untouched.
+
+        The list of credit types has one choice and no empty one, so a
+        browser posts it also for a row left untouched, and the row is
+        checked. clean() drops that row and the formset leaves it out, but
+        its errors would show when the page comes back for an error
+        elsewhere. A row with anything typed in it keeps its errors.
+        """
+        super(IssueCreditRevisionForm, self).full_clean()
+        cd = getattr(self, 'cleaned_data', {})
+        if cd.get('DELETE') and self._is_untouched():
+            self._errors.clear()
 
 
 IssueRevisionFormSet = inlineformset_factory(
