@@ -16,7 +16,7 @@ from apps.api_v2.filters.common import (
     TimestampFilterSet,
 )
 from apps.gcd.models import Series
-
+from settings import COLLATE_SEARCH
 
 class SeriesFilterSet(TimestampFilterSet):
     """Filters for series list endpoints."""
@@ -69,7 +69,7 @@ class SeriesFilterSet(TimestampFilterSet):
             queryset.annotate(
                 _search_title=Collate(
                     'name',
-                    'utf8mb4_0900_as_ci',
+                    COLLATE_SEARCH,
                 ),
                 _search_rank=Case(
                     When(_search_title__exact=query, then=Value(0)),

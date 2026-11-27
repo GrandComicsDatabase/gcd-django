@@ -108,6 +108,12 @@ DATABASES = {
     },
 }
 
+# accent-sensitive, case-insensitive collation for utf8mb4,
+# for MySQL use
+COLLATE_SEARCH = 'utf8mb4_0900_as_ci'
+# on MariaDB use
+# COLLATE_SEARCH = 'utf8mb4_uca1400_as_ci'
+
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE = (
    'django.middleware.csrf.CsrfViewMiddleware',
