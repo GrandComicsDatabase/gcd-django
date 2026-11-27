@@ -80,6 +80,13 @@
     {% endif %}
     </h1>
   </div>
+  {% if deleted_items %}
+  <div class="alert alert-warning">
+    {% trans "These issues of the collection were deleted from the GCD:" %}
+    {% for item in deleted_items %}{% if not forloop.first %};{% endif %}
+      <a href="{% url "view_item" item.id collection.id %}">{{ item.issue.full_name }}</a>{% endfor %}
+  </div>
+  {% endif %}
 
   <div class="row">
     <div class="col-md-2 hidden-xs">

@@ -999,7 +999,7 @@ class CreatorSignatureAutocomplete(LoginRequiredMixin,
             return format_html(
               '%s <img class="inline" src="%s">' % (
                 creator_signature.name,
-                creator_signature.signature.icon.url))
+                creator_signature.signature.icon_url))
         else:
             return format_html('%s [generic]' % creator_signature.name)
 
@@ -1092,7 +1092,7 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         if feature_logo.logo:
             return format_html(
               '%s <img src="%s">' % (feature_logo.name,
-                                     feature_logo.logo.icon.url))
+                                     feature_logo.logo.icon_url))
         else:
             if feature_logo.generic:
                 return format_html('%s [generic]' % feature_logo.name)
@@ -1278,7 +1278,7 @@ class KeywordAutocomplete(LoginRequiredMixin,
         if not auth:
             return False
 
-        if request.user.has_perm('gcd.can_vote'):
+        if request.user.has_perm('indexer.can_vote'):
             return True
 
         return False
@@ -1400,7 +1400,7 @@ class BrandEmblemAutocomplete(LoginRequiredMixin,
         if brand_emblem.emblem and not settings.FAKE_IMAGES:
             return format_html(
               '<img class="inline" src="%s"> %s' % (
-                brand_emblem.emblem.icon.url, brand_emblem.name))
+                brand_emblem.emblem.icon_url, brand_emblem.name))
         else:
             if brand_emblem.generic:
                 return format_html('%s [generic]' % brand_emblem.name)
@@ -1719,7 +1719,7 @@ def filter_issues(request, issues, story_type_filter=False,
                          language_filter=language_filter
                          )
     issues = filter.qs
-    if not issues:
+    if not issues.exists():
         filter.form.fields.pop('publisher', None)
         filter.form.fields.pop('country', None)
         filter.form.fields.pop('language', None)
@@ -1744,7 +1744,7 @@ def filter_sequences(request, sequences, language_filter=True):
                             publisher='issue__series__publisher',
                             language_filter=language_filter)
     sequences = filter.qs
-    if not sequences:
+    if not sequences.exists():
         filter.form.fields.pop('publisher', None)
         filter.form.fields.pop('country', None)
         filter.form.fields.pop('language', None)
