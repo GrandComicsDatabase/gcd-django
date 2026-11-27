@@ -1130,6 +1130,11 @@ msgid "Edit"
 msgstr "Επεξεργασία"
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:65
+msgid "These issues of the collection were deleted from the GCD:"
+msgstr "Αυτά τα τεύχη της συλλογής διαγράφηκαν από το GCD:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:66
 msgid "Filters"
 msgstr "Φίλτρα"
@@ -1187,6 +1192,16 @@ msgstr "Διαγραφή από τη συλλογή"
 #: templates/mycomics/collection_item.html:113
 msgid "To other collection"
 msgstr "Σε άλλη συλλογή"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:121
+msgid "This issue was deleted from the GCD."
+msgstr "Αυτό το τεύχος διαγράφηκε από το GCD."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:122
+msgid "See its change history."
+msgstr "Δείτε το ιστορικό αλλαγών του."
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:133

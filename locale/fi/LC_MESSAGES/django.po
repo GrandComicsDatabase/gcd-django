@@ -1119,6 +1119,11 @@ msgid "Edit"
 msgstr "Muokkaa"
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:65
+msgid "These issues of the collection were deleted from the GCD:"
+msgstr "Nämä kokoelman numerot on poistettu GCD:stä:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:66
 msgid "Filters"
 msgstr "Suodattimet"
@@ -1176,6 +1181,16 @@ msgstr "Poista kokoelmasta"
 #: templates/mycomics/collection_item.html:113
 msgid "To other collection"
 msgstr "Toiseen kokoelmaan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:121
+msgid "This issue was deleted from the GCD."
+msgstr "Tämä numero on poistettu GCD:stä."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:122
+msgid "See its change history."
+msgstr "Katso sen muutoshistoria."
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:133

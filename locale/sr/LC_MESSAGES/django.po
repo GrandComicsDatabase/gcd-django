@@ -1121,6 +1121,11 @@ msgid "Edit"
 msgstr "Уреди"
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:65
+msgid "These issues of the collection were deleted from the GCD:"
+msgstr "Ови бројеви из колекције обрисани су из базе GCD:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:66
 msgid "Filters"
 msgstr "Филтери"
@@ -1178,6 +1183,16 @@ msgstr "Обриши из колекције"
 #: templates/mycomics/collection_item.html:113
 msgid "To other collection"
 msgstr "У другу колекцију"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:121
+msgid "This issue was deleted from the GCD."
+msgstr "Овај број је обрисан из базе GCD."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:122
+msgid "See its change history."
+msgstr "Погледајте историју његових измена."
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:133

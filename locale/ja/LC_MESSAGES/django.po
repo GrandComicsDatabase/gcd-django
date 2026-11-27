@@ -1119,6 +1119,11 @@ msgid "Edit"
 msgstr "編集"
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:65
+msgid "These issues of the collection were deleted from the GCD:"
+msgstr "コレクション内の次の号は GCD から削除されました:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection.html:66
 msgid "Filters"
 msgstr "絞り込み"
@@ -1176,6 +1181,16 @@ msgstr "コレクションから削除"
 #: templates/mycomics/collection_item.html:113
 msgid "To other collection"
 msgstr "他のコレクションへ"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:121
+msgid "This issue was deleted from the GCD."
+msgstr "この号は GCD から削除されました。"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:122
+msgid "See its change history."
+msgstr "この号の変更履歴をご覧ください。"
 
 # Automatic translation (AI), not yet reviewed by a native speaker.
 #: templates/mycomics/collection_item.html:133
