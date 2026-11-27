@@ -306,10 +306,76 @@ validate_dump_schema() {
 
 copy_dump_catalog() {
   local catalog_copy_sql auto_increment_sql
-  catalog_copy_sql="$(mysql_root_query "SET SESSION group_concat_max_len = 1000000; SELECT CONCAT('DELETE FROM ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), '; INSERT INTO ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ' (', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ') SELECT ', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ' FROM ', CHAR(96), 'gcd_dev_import_stage', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ';') FROM information_schema.columns WHERE table_schema = 'gcd_dev_import_stage' AND table_name REGEXP '^(gcd|stddata)_' GROUP BY table_name ORDER BY table_name;")"
+  local bond_missing_timestamps column bond_columns="" bond_values=""
+
+  # Older dumps were produced before the API added persistent Series Bond
+  # timestamps. The target is already migrated, so emulate the migration's
+  # shared baseline for absent timestamps without replacing supplied values.
+  bond_missing_timestamps="$(mysql_root_query "
+    SELECT target.column_name
+    FROM information_schema.columns AS target
+    LEFT JOIN information_schema.columns AS source
+      ON source.table_schema = 'gcd_dev_import_stage'
+      AND source.table_name = target.table_name
+      AND source.column_name = target.column_name
+    WHERE target.table_schema = '${MYSQL_DATABASE}'
+      AND target.table_name = 'gcd_series_bond'
+      AND target.column_name IN ('created', 'modified')
+      AND source.column_name IS NULL
+      AND EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'gcd_dev_import_stage'
+          AND table_name = 'gcd_series_bond'
+      )
+      AND 2 = (
+        SELECT COUNT(*) FROM information_schema.columns
+        WHERE table_schema = '${MYSQL_DATABASE}'
+          AND table_name = 'gcd_series_bond'
+          AND column_name IN ('created', 'modified')
+          AND column_type = 'datetime(6)' AND is_nullable = 'NO'
+      )
+    ORDER BY target.ordinal_position;")"
+  while IFS= read -r column; do
+    case "$column" in
+      created|modified)
+        bond_columns+=",\`${column}\`"
+        bond_values+=',@gcd_series_bond_import_baseline'
+        ;;
+      '') ;;
+      *)
+        echo "Unexpected Series Bond timestamp column in dump metadata: $column" >&2
+        return 1
+        ;;
+    esac
+  done <<< "$bond_missing_timestamps"
+
+  catalog_copy_sql="$(mysql_root_query "
+    SET SESSION group_concat_max_len = 1000000;
+    SELECT CONCAT(
+      'DELETE FROM ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.',
+      CHAR(96), table_name, CHAR(96), '; INSERT INTO ',
+      CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name,
+      CHAR(96), ' (',
+      GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96))
+                   ORDER BY ordinal_position SEPARATOR ','),
+      IF(table_name = 'gcd_series_bond', '${bond_columns}', ''),
+      ') SELECT ',
+      GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96))
+                   ORDER BY ordinal_position SEPARATOR ','),
+      IF(table_name = 'gcd_series_bond', '${bond_values}', ''),
+      ' FROM ', CHAR(96), 'gcd_dev_import_stage', CHAR(96), '.',
+      CHAR(96), table_name, CHAR(96), ';'
+    )
+    FROM information_schema.columns
+    WHERE table_schema = 'gcd_dev_import_stage'
+      AND table_name REGEXP '^(gcd|stddata)_'
+    GROUP BY table_name ORDER BY table_name;")"
   auto_increment_sql="$(mysql_root_query "SELECT CONCAT('ALTER TABLE ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ' AUTO_INCREMENT = 1;') FROM information_schema.columns WHERE table_schema = 'gcd_dev_import_stage' AND table_name REGEXP '^(gcd|stddata)_' AND extra LIKE '%auto_increment%' GROUP BY table_name ORDER BY table_name;")"
   {
     printf '%s\n' 'SET FOREIGN_KEY_CHECKS=0;'
+    if [[ -n "$bond_values" ]]; then
+      printf '%s\n' 'SET @gcd_series_bond_import_baseline = UTC_TIMESTAMP(6);'
+    fi
     printf '%s\n' "$catalog_copy_sql"
     printf '%s\n' "$auto_increment_sql"
     printf '%s\n' 'SET FOREIGN_KEY_CHECKS=1;'
