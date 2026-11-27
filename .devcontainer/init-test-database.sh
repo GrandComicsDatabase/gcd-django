@@ -32,10 +32,13 @@ fi
 # Database GRANT identifiers are patterns when partial_revokes is disabled.
 # Clear grants from the fresh image-created account without assuming how that
 # image escaped its initial schema grant. Then grant only the exact application
-# and test schemas, never global privileges or GRANT OPTION.
+# and test schemas, never global privileges or GRANT OPTION, and SELECT on the
+# two Performance Schema tables that the tests of concurrent changes read.
 escaped_database="${database//_/\\_}"
 "${mysql_admin[@]}" <<SQL
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM '$application_user'@'%';
 GRANT ALL PRIVILEGES ON \`$escaped_database\`.* TO '$application_user'@'%';
 GRANT ALL PRIVILEGES ON \`test\\_$escaped_database\`.* TO '$application_user'@'%';
+GRANT SELECT ON performance_schema.data_locks TO '$application_user'@'%';
+GRANT SELECT ON performance_schema.data_lock_waits TO '$application_user'@'%';
 SQL
