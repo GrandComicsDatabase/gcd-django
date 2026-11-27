@@ -1,5 +1,5 @@
 #
-# robots.txt for http://www.comics.org/ 
+# robots.txt for https://www.comics.org/ 
 # Based on ??
 #
 # Please note: There are a lot of pages on this site, and there are
