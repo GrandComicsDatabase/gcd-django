@@ -169,6 +169,18 @@ def test_the_link_reads_the_collection_without_owner_controls(
         assert control not in page
 
 
+def test_the_deleted_issues_notice_keeps_the_key(client, data):
+    """With the link, the notice of the deleted issues links their items
+    with the key, as the list of the items does."""
+    want = data.want
+    key = _share(want)
+    first = data.items[0]
+    Issue.objects.filter(id=first.issue_id).update(deleted=True)
+    page = client.get(_collection_url(want, key)).content.decode()
+    notice = re.search(r'<div class="alert alert-warning">(.*?)</div>',
+                       page, re.S).group(1)
+    assert 'href="%s"' % _item_url(first, want, key) in notice
+
 @pytest.mark.parametrize('key', [
   'wrong', '', chr(233), 'withdrawn', 'of the have collection',
   'of the other collector'])

@@ -71,7 +71,7 @@
   <div class="alert alert-warning">
     {% trans "These issues of the collection were deleted from the GCD:" %}
     {% for item in deleted_items %}{% if not forloop.first %};{% endif %}
-      <a href="{% url "view_item" item.id collection.id %}">{{ item.issue.full_name }}</a>{% endfor %}
+      <a href="{% url "view_item" item.id collection.id %}{{ key_query }}">{{ item.issue.full_name }}</a>{% endfor %}
   </div>
   {% endif %}
 
