@@ -35,7 +35,7 @@ from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 from .custom_layout_object import Formset, FormsetTabHolder
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
-    _strip_list,
+    _strip_list, _set_title_case_label,
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
     KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS, CREDIT_NAME_LABEL,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
@@ -188,6 +188,7 @@ def get_story_revision_form(revision=None, user=None,
         def __init__(self, *args, **kwargs):
             kwargs['user'] = user
             super(RuntimeStoryRevisionForm, self).__init__(*args, **kwargs)
+            _set_title_case_label(self, language)
             if revision and revision.feature != '':
                 self.fields['feature'].label = \
                   '<btn class="btn-blue-editing inline">' \
@@ -700,6 +701,9 @@ class StoryRevisionForm(KeywordBaseForm):
             'keywords':
                 KEYWORDS_HELP,
         }
+
+    class Media:
+        js = ('js/oi/title_case.js',)
 
     def __init__(self, *args, **kwargs):
         """
