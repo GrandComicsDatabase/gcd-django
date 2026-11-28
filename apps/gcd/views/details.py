@@ -1951,7 +1951,7 @@ def show_brand_use(request, brand_use_id):
                                   alt_text='Random Cover from %s' % brand_use)
 
     context = {'brand_use': brand_use,
-               'error_subject': '%s' % brand,
+               'error_subject': '%s' % brand_use,
                'image_tag': image_tag,
                'image_issue': selected_issue,
                'issues_count': brand_issues.count()
