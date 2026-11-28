@@ -1424,20 +1424,22 @@ def do_advanced_search(request):
         filter = BrandGroup.objects.exclude(deleted=True)
         if query:
             filter = filter.filter(query)
-        items = filter.order_by(*terms).select_related('parent').distinct()
+        items = filter.order_by(*terms).select_related(
+          'parent__country').distinct()
 
     elif data['target'] == 'brand_emblem':
         filter = Brand.objects.exclude(deleted=True)
         if query:
             filter = filter.filter(query)
-        items = filter.order_by(*terms).prefetch_related('group__parent')\
-                                       .distinct()
+        items = filter.order_by(*terms).prefetch_related(
+          'group__parent__country', 'image_resources').distinct()
 
     elif data['target'] == 'indicia_publisher':
         filter = IndiciaPublisher.objects.exclude(deleted=True)
         if query:
             filter = filter.filter(query)
-        items = filter.order_by(*terms).select_related('parent').distinct()
+        items = filter.order_by(*terms).select_related(
+          'country', 'parent__country').distinct()
 
     elif data['target'] == 'series':
         filter = Series.objects.exclude(deleted=True)
