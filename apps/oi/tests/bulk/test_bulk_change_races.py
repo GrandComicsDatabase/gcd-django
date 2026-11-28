@@ -345,15 +345,19 @@ def test_requests_at_the_same_moment(settings,
     changeset = Changeset.objects.get(indexer=reserving_indexer,
                                       change_type=CTYPES['bulk'],
                                       state=states.OPEN)
-    with _held_change(changeset):
-        operation = _started(
-          results, 'operation',
-          lambda: author.post(reverse('edit_issues_in_bulk') +
-                              '?changeset=%d' % changeset.id, _pages('40')))
-        _wait_for_lock_wait('oi_changeset')
-        # It waits before it writes anything.
-        assert _row_locks('oi_issue_revision') == 0
-    operation.join(60)
+    results, threads = {}, []
+    try:
+        with _held_change(changeset):
+            threads.append(_started(
+              results, 'operation',
+              lambda: author.post(reverse('edit_issues_in_bulk') +
+                                  '?changeset=%d' % changeset.id,
+                                  _pages('40'))))
+            _wait_for_lock_wait('oi_changeset')
+            # It waits before it writes anything.
+            assert _row_locks('oi_issue_revision') == 0
+    finally:
+        _joined(threads)
 
     assert results['operation'].status_code == 302
     assert len(bulk.operation_records(changeset)) == 2
@@ -498,13 +502,16 @@ def test_requests_at_the_same_moment(settings,
                                                  modified=long_ago)
     any_approver.user_permissions.add(Permission.objects.get(
       codename='change_ongoingreservation'))
-    results = {}
-    with _held_row(swept, then=lambda: Changeset.objects.filter(
-      id=swept.id).update(modified=timezone.now())):
-        thread = _started(results, 'sweep', lambda: _repeatable_read(
-          lambda: approver.get(reverse('clear_issues'))))
-        _wait_for_lock_wait('oi_changeset')
-    thread.join(90)
+    results, threads = {}, []
+    try:
+        with _held_row(swept, then=lambda: Changeset.objects.filter(
+          id=swept.id).update(modified=timezone.now())):
+            threads.append(_started(
+              results, 'sweep', lambda: _repeatable_read(
+                lambda: approver.get(reverse('clear_issues')))))
+            _wait_for_lock_wait('oi_changeset')
+    finally:
+        _joined(threads)
 
     assert results['sweep'].status_code == 200
     swept.refresh_from_db()
