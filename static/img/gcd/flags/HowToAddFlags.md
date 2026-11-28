@@ -15,5 +15,5 @@ To add a missing icon:
 * commit both the PNG and SVG file to git
 
 Users in the "admin" group can check for missing flags using
-http://www.comics.org/countries/
+https://www.comics.org/countries/
 
