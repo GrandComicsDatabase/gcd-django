@@ -94,7 +94,18 @@ jobs:
           "
 
       - name: Run application smoke tests
+        shell: bash
         run: |
+          # Each Series regression module can be removed by a separate revert.
+          series_tests=()
+          for test_file in \
+            apps/gcd/tests/test_typed_series_search.py \
+            apps/gcd/tests/test_typed_series_page_counts.py; do
+            if [[ -f "$test_file" ]]; then
+              series_tests+=("$test_file")
+            fi
+          done
+
           ./bin/dev --runtime native test -q \
             apps/gcd/tests/test_dev_environment_core.py \
             apps/gcd/tests/test_dev_environment.py \
@@ -115,7 +126,8 @@ jobs:
             apps/gcd/tests/test_issue.py \
             apps/gcd/tests/test_story.py \
             apps/gcd/tests/test_reprint.py \
-            apps/stats/tests/test_countstats.py
+            apps/stats/tests/test_countstats.py \
+            "${series_tests[@]}"
 
       - name: Run API v2 tests when available
         run: |
