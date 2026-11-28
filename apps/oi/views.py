@@ -1396,13 +1396,14 @@ def discuss(request, id):
           request,
           'Only EDITING OR REVIEWING changes can be put into discussion.')
 
-    comment_text = request.POST['comments'].strip()
+    comment_text = request.POST.get('comments', '').strip()
+    if not comment_text:
+        return render_error(
+          request, 'A comment is required to put a change into discussion.')
+
     changeset.discuss(commenter=request.user, notes=comment_text)
 
-    if comment_text:
-        email_comments = ' with the comment:\n"%s"' % comment_text
-    else:
-        email_comments = '.'
+    email_comments = ' with the comment:\n"%s"' % comment_text
 
     if request.user == changeset.indexer:
         action_by = 'indexer %s' % str(changeset.indexer.indexer)
@@ -1433,11 +1434,8 @@ thanks,
        settings.SITE_NAME,
        settings.SITE_URL)
 
-    if comment_text:
-        subject = 'GCD change put into discussion with a comment'
-        send_comment_observer(request, changeset, comment_text)
-    else:
-        subject = 'GCD change put into discussion'
+    subject = 'GCD change put into discussion with a comment'
+    send_comment_observer(request, changeset, comment_text)
 
     if request.user == changeset.indexer:
         changeset.approver.email_user(subject, email_body,

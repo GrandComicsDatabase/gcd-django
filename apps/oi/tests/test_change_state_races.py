@@ -4,7 +4,6 @@ runs in a thread with its own database connection, and they are lined
 up behind a row that the test holds, never by timed waits.
 """
 import threading
-import time
 from contextlib import contextmanager
 from datetime import timedelta
 from unittest import mock
@@ -12,7 +11,7 @@ from unittest import mock
 import pytest
 
 from django.contrib.auth.models import Permission, User
-from django.db import connection, connections, transaction
+from django.db import connections, transaction
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -21,6 +20,7 @@ from apps.indexer.models import Indexer
 from apps.oi import states
 from apps.oi.models import (
     Changeset, PublisherRevision, CTYPES, _get_revision_lock)
+from apps.oi.tests.lock_waits import wait_for_lock_waits
 
 
 @pytest.mark.django_db(transaction=True)
@@ -250,7 +250,7 @@ def _behind_held_row(row, *calls):
     try:
         for thread in threads:
             thread.start()
-        _wait_for_lock_waits(type(row)._meta.db_table, len(calls))
+        wait_for_lock_waits(type(row)._meta.db_table, len(calls))
     finally:
         release.set()
         holder.join(30)
@@ -308,24 +308,3 @@ def _run(results, index, call):
         results[index] = error
     finally:
         connections.close_all()
-
-
-def _wait_for_lock_waits(table, count, timeout=30):
-    """
-    Wait until count transactions wait for a lock on a row of table, as
-    the server shows it.
-    """
-    end = time.monotonic() + timeout
-    with connection.cursor() as cursor:
-        while time.monotonic() < end:
-            cursor.execute(
-              'SELECT COUNT(*) FROM performance_schema.data_lock_waits w '
-              'JOIN performance_schema.data_locks l '
-              'ON l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID '
-              'WHERE l.OBJECT_SCHEMA = DATABASE() AND l.OBJECT_NAME = %s',
-              [table])
-            if cursor.fetchone()[0] >= count:
-                return
-            time.sleep(0.05)
-    raise AssertionError('fewer than %d transactions wait for %s'
-                         % (count, table))
