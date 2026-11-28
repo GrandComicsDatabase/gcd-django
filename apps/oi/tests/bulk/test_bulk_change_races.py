@@ -131,9 +131,10 @@ def test_requests_at_the_same_moment(settings,
     Requests that really run at once, so each commits; the cases share one
     test, since a transactional test empties the database when it ends.
 
-    Two indexers apply to the same objects: one change takes them all,
-    the other finds them reserved and makes no change, and no lock is
-    left without its change.  Then one indexer posts one selection twice
+    Two indexers apply to the same objects, the second while the first
+    holds a reservation: the first change takes them all, the other finds
+    them reserved and makes no change, and no lock is left without its
+    change.  Then one indexer posts one selection twice
     at once, as with a double click or two tabs: the second request waits
     for the first and finds the selection applied.  Then two tabs apply
     two lists at once, and the limit of active bulk changes holds; a
@@ -151,9 +152,22 @@ def test_requests_at_the_same_moment(settings,
     first = _logged_in(reserving_indexer, approved_issues)
     second = _logged_in(second_indexer, approved_issues)
 
-    results = _together(lambda: _apply(first), lambda: _apply(second))
+    # The first Apply reserves the first issue and waits for a reservation
+    # in flight of the second one; the other Apply then waits for the
+    # reservation of the first issue, which the first Apply holds.
+    results, threads = {}, []
+    try:
+        with _held_lock(approved_issues[1]):
+            threads.append(_started(results, 'first', lambda: _apply(first)))
+            _wait_for_lock_wait('oi_revision_lock')
+            threads.append(_started(results, 'second',
+                                    lambda: _apply(second)))
+            _wait_for_lock_wait('oi_revision_lock', waiting=2)
+    finally:
+        _joined(threads)
 
     changeset = Changeset.objects.get(change_type=CTYPES['bulk'])
+    assert changeset.indexer == reserving_indexer
     assert changeset.issuerevisions.count() == 3
     # The change holds the lock of each issue; a lock of another model
     # with the same id is not equal to the issue.
@@ -162,9 +176,10 @@ def test_requests_at_the_same_moment(settings,
     assert set(RevisionLock.objects.filter(
       object_id__in=[issue.id for issue in approved_issues])
       .values_list('changeset', flat=True)) == {changeset.id}
-    pages = [result.content.decode() for result in results]
-    assert sum('Nothing was changed' in page for page in pages) == 1
-    assert 'reserved 3' in ''.join(pages)
+    assert results['first'].status_code == 302
+    page = results['second'].content.decode()
+    assert 'Nothing was changed' in page
+    assert 'reserved 3' in page
 
     changeset.discard(changeset.indexer)
     settings.BULK_CHANGE_MAX_ACTIVE = 2

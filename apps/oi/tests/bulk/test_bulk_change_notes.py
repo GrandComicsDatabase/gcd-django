@@ -9,6 +9,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils.html import strip_tags
 
+from apps.oi.bulk import compare_rows
 from apps.oi.models import (
     BrandRevision, IndiciaPublisherRevision, IssueRevision)
 from apps.oi.templatetags.compare import field_value
@@ -200,6 +201,35 @@ def test_old_key_date_outside_the_years(client, bulk_change, add_issues,
     assert new.endswith(new_note)
     assert strip_tags(new[:len(new) - len(new_note)]) == key_date
     assert new.count('Note:') == (1 if new_note else 0)
+
+
+@pytest.mark.django_db
+def test_notes_read_the_rows_of_the_diff(bulk_change, add_issues,
+                                         add_indicia_publisher,
+                                         years_publisher):
+    """
+    The notes read the rows that the diff reads, not the revisions read
+    before them: an operation saved in between, which changes the key
+    date again and takes the indicia publisher back to its own, changes
+    both sides of the note.
+    """
+    other = add_indicia_publisher('Older Publisher', 1960, 1970)
+    [issue] = add_issues(1, '1985-01-00', years_publisher)
+    changeset = bulk_change([issue], IssueRevision, key_date='1995-01-00',
+                            indicia_publisher=other)
+    revisions = list(changeset.issuerevisions.all())
+    changeset.issuerevisions.update(key_date='1975-01-00',
+                                    indicia_publisher=years_publisher)
+
+    [(revision, name, fields)] = compare_rows(revisions)
+
+    [(label, old, new)] = fields
+    expected = note('Indicia publisher', 'Years Publisher', 1975,
+                    'before its first year 1980')
+    assert label == 'Key Date'
+    assert strip_tags(old) == '1985-01-00'
+    assert new.endswith(expected)
+    assert strip_tags(new[:-len(expected)]) == '1975-01-00'
 
 
 @pytest.mark.django_db
