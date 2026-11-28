@@ -1,5 +1,5 @@
 #
-# robots.txt for http://docs.comics.org/ 
+# robots.txt for https://docs.comics.org/ 
 # 
 # setup in the apache config of docs.comics.org:
 # Alias /robots.txt /var/www/gcd-django/templates/docs_robots.txt
