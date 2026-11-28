@@ -164,6 +164,44 @@ def test_the_queue_keeps_an_existing_mentor(any_added_publisher, any_country):
 
 
 @pytest.mark.django_db
+def test_the_queue_makes_no_mentor_once_not_new(any_added_publisher,
+                                                any_country):
+    """
+    An indexer who stops being new after the queue has read them as new,
+    by another request, gets no mentor, and their changes stay pending.
+    """
+    mentee, changes = _new_indexer_with_pending('mentee', any_country)
+    assigned = _open_change(mentee, any_added_publisher)
+    Changeset.objects.filter(id=assigned.id).update(state=states.PENDING)
+    editor = _editor('editor', any_country)
+    assign = Changeset.assign
+
+    def assign_then_not_new(changeset, *args, **kwargs):
+        """
+        For the change of the request, read the indexer as new, then
+        commit them as not new; assign any other change as usual.
+        """
+        if changeset.id == assigned.id:
+            assert changeset.indexer.indexer.is_new
+            Indexer.objects.filter(user=mentee).update(is_new=False)
+        return assign(changeset, *args, **kwargs)
+
+    with mock.patch.object(Changeset, 'assign', assign_then_not_new):
+        response = _client(editor).post(
+          reverse('assign', kwargs={'id': assigned.id}), {'comments': ''})
+
+    # The request reached the assignment, which made the indexer not new.
+    assert response.status_code == 302
+    indexer = Indexer.objects.get(user=mentee)
+    assert (indexer.is_new, indexer.mentor) == (False, None)
+    assigned.refresh_from_db()
+    assert (assigned.state, assigned.approver) == (states.REVIEWING, editor)
+    for change in changes:
+        change.refresh_from_db()
+        assert (change.state, change.approver) == (states.PENDING, None)
+
+
+@pytest.mark.django_db
 def test_a_change_no_longer_pending_is_left_alone(any_indexer, any_country):
     """A change that stopped being pending after the list is not assigned."""
     mentor = _editor('mentor', any_country)

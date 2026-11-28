@@ -23,7 +23,8 @@ from apps.oi.views import (
 @pytest.fixture
 def copy_context():
     user = SimpleNamespace(id=1)
-    changeset = SimpleNamespace(id=10, indexer=user, state=states.OPEN)
+    changeset = SimpleNamespace(id=10, indexer=user, state=states.OPEN,
+                                refuse_manual_edit=lambda: None)
     existing = [MagicMock(id=100, type_id=STORY_TYPES['comic story'], sequence_number=0),
                 MagicMock(id=101, type_id=STORY_TYPES['comic story'], sequence_number=1)]
     issue = MagicMock(id=20, changeset_id=10, variant_of=None)

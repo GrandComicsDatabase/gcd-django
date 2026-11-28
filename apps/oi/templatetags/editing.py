@@ -19,6 +19,10 @@ DOC_URL = 'https://docs.comics.org/wiki/'
 
 @register.filter
 def header_link(changeset):
+    if changeset.change_type == CTYPES['bulk']:
+        # A bulk change names no single object; as for an issue bulk
+        # change, its page carries no header link.
+        return ''
     if changeset.inline():
         revision = changeset.inline_revision()
     else:
@@ -199,9 +203,12 @@ def is_overdue(changeset):
     elif changeset.change_type not in [CTYPES['issue'],
                                        CTYPES['two_issues'],
                                        CTYPES['variant_add']]:
-        changeset.expires = changeset.created + \
-          timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
-        if datetime.now(timezone.utc) - changeset.created > \
+        # a bulk change counts from its last work, as in the sweep
+        start = changeset.modified if changeset.change_type == CTYPES['bulk'] \
+            else changeset.created
+        changeset.expires = start + \
+            timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
+        if datetime.now(timezone.utc) - start > \
                 timedelta(weeks=settings.RESERVE_ISSUE_WEEKS-1):
             return mark_safe("class='text-red-700'")
     elif changeset.issuerevisions.earliest('created').issue and \
