@@ -19,7 +19,14 @@
   <tr>
     <td class="align-top">
       <div class="w-[100px] sm:w-[150px] sm:min-w-[150px]">
-        <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}">
+        {% if creator.portrait %}
+        <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img
+          class="border-2 rounded-full" src="{{ creator.get_portrait_url }}"
+          alt="Change of the portrait"></a>
+        {% else %}
+        <img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}"
+          alt="">
+        {% endif %}
       </div>
     </td>
     <td>
@@ -230,7 +237,7 @@
 {% for signature in creator.active_signatures %}
     <li class="break-inside-avoid-column"><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
 {% if signature.signature and not FAKE_IMAGES %}
-      <img class="inline" src="{{ signature.signature.thumbnail_url }}">
+      <img class="inline" src="{{ signature.signature.thumbnail_url }}" alt="">
 {% else %}
        [generic]
 {% endif %}
@@ -246,12 +253,13 @@
   {% if creator.portrait %}
   <div class="m-2">
     <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img
-      src="{{ creator.portrait.scaled_image_url }}"></a>
+      src="{{ creator.portrait.scaled_image_url }}"
+      alt="Change of the portrait"></a>
   </div>
   {% endif %}
   {% if creator.samplescan %}
   <div class="m-2">
-      <img src="{{ creator.samplescan.scaled_image_url }}">
+      <img src="{{ creator.samplescan.scaled_image_url }}" alt="Sample scan">
   </div>
   {% endif %}
 </div>

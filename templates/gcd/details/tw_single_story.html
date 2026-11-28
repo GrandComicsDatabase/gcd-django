@@ -76,7 +76,8 @@
       {% for credit in story.creator_credits.values %}
           <div class="sm:text-center min-w-[120px]">
             <a href='{{ credit.creator.creator.get_absolute_url }}'></a>
-              <img class="inline w-[100px] border-2 rounded-full" src="{{ credit.creator.creator.get_portrait_url}}">
+              <img class="inline w-[100px] border-2 rounded-full"
+                src="{{ credit.creator.creator.get_portrait_url}}" alt="">
             </a>
             <div>
               {{ credit.display_credit }}

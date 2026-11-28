@@ -22,7 +22,8 @@
             <li><span class="font-bold">Signature:</span>
   {% if creator_signature.signature %}
               <img class="inline"
-                   src="{{ creator_signature.signature.scaled_image_url }}">
+                src="{{ creator_signature.signature.scaled_image_url }}"
+                alt="{{ creator_signature.name }}">
   {% else %}
                generic
   {% endif %}

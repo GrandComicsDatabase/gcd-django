@@ -41,7 +41,8 @@
               {{ brand.issue_count }} (not counting variants)</li>
             <li><span class="font-bold">Publisher's Brand Emblem:</span>
               {% if brand.emblem %}
-              <img src="{{ brand.emblem.scaled_image_url }}">
+              <img src="{{ brand.emblem.scaled_image_url }}"
+                alt="{{ brand.name }}">
               {% endif %}
               {% if brand.generic %}
               generic
