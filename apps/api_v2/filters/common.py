@@ -127,8 +127,12 @@ class LanguageCodeFilter(django_filters.CharFilter):
         return qs.filter(**{f'{self.field_name}_id': language_id})
 
 
-class TimestampFilterSet(django_filters.FilterSet):
-    """Base filter set for standard v2 created/modified ranges."""
+class TimestampFilterSet(django_filters.rest_framework.FilterSet):
+    """Base filter set for standard v2 created/modified ranges.
+
+    The ``rest_framework`` base gives the Filters form of the browsable
+    API a GET method and a Submit button.
+    """
 
     modified__gt = django_filters.IsoDateTimeFilter(
         field_name='modified',
