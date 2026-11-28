@@ -26,6 +26,18 @@
 <div class="edit">
   <form action="{% url 'process_revision' model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
+  {% for label, image in revision.edit_scans %}
+    <details class="mb-2">
+      <summary>{{ label }}</summary>
+      <a href="{{ image.image_file_url }}" target="_blank" rel="noopener">
+        <img src="{{ image.scaled_image_url }}" alt="{{ label }}">
+      </a>
+      <div>
+        <a class="new_window" href="{{ image.image_file_url }}"
+          target="_blank" rel="noopener">Open in a new window</a>
+      </div>
+    </details>
+  {% endfor %}
     <table class="editing">
   {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
     {% crispy form %}
