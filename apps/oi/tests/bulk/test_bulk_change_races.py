@@ -25,6 +25,7 @@ from apps.oi import bulk, states
 from apps.oi.models import (
     Changeset, IssueRevision, RevisionLock, CTYPES, _get_revision_lock)
 from apps.oi.tests.bulk.invariants import check_invariants
+from apps.oi.tests.lock_waits import lock_waits, wait_for_lock_waits
 from apps.stddata.models import Country
 
 TOKEN = 'race-token'
@@ -159,10 +160,10 @@ def test_requests_at_the_same_moment(settings,
     try:
         with _held_lock(approved_issues[1]):
             threads.append(_started(results, 'first', lambda: _apply(first)))
-            _wait_for_lock_wait('oi_revision_lock')
+            wait_for_lock_waits('oi_revision_lock')
             threads.append(_started(results, 'second',
                                     lambda: _apply(second)))
-            _wait_for_lock_wait('oi_revision_lock', waiting=2)
+            wait_for_lock_waits('oi_revision_lock', 2)
     finally:
         _joined(threads)
 
@@ -250,10 +251,10 @@ def test_requests_at_the_same_moment(settings,
         with _held_lock(held_issue):
             threads.append(_started(results, 'apply', lambda: _apply(
               applying, token='add')))
-            _wait_for_lock_wait('oi_revision_lock')
+            wait_for_lock_waits('oi_revision_lock')
             threads.append(_started(results, 'approve', lambda: approver.post(
               reverse('approve', kwargs={'id': adding.id}), {'comments': ''})))
-            _wait_for_lock_wait('gcd_series')
+            wait_for_lock_waits('gcd_series')
     finally:
         _joined(threads)
 
@@ -285,10 +286,10 @@ def test_requests_at_the_same_moment(settings,
             with _held_lock(held_issue):
                 threads.append(_started(results, 'apply', lambda: _apply(
                   applying, token=kind)))
-                _wait_for_lock_wait('oi_revision_lock')
+                wait_for_lock_waits('oi_revision_lock')
                 threads.append(_started(results, 'approve', lambda: _approve(
                   reviewing.id)))
-                _wait_for_lock_wait('gcd_series')
+                wait_for_lock_waits('gcd_series')
         finally:
             _joined(threads)
 
@@ -320,7 +321,7 @@ def test_requests_at_the_same_moment(settings,
         with _held_lock(held_issue):
             threads.append(_started(results, 'apply', lambda: _apply(
               applying, token='last')))
-            _wait_for_lock_wait('oi_revision_lock')
+            wait_for_lock_waits('oi_revision_lock')
             discard = _started(results, 'discard',
                                lambda: _discard(discarded.id))
             threads.append(discard)
@@ -373,7 +374,7 @@ def test_requests_at_the_same_moment(settings,
             with _held_lock(held_issue, commit=commits):
                 threads.append(_started(results, 'apply', lambda: _apply(
                   applying, token='flight%s' % commits)))
-                _wait_for_lock_wait('oi_revision_lock')
+                wait_for_lock_waits('oi_revision_lock')
         finally:
             _joined(threads)
 
@@ -427,8 +428,8 @@ def test_requests_at_the_same_moment(settings,
             with _held_row(first.series):
                 threads.append(_started(results, 'apply', lambda: _apply(
                   applying, token='two', data=FREQUENCY)))
-                _wait_for_lock_wait('gcd_series')
-            _wait_for_lock_wait('gcd_indicia_publisher')
+                wait_for_lock_waits('gcd_series')
+            wait_for_lock_waits('gcd_indicia_publisher')
     finally:
         _joined(threads)
     assert results['apply'].status_code == 302
@@ -477,7 +478,7 @@ def test_requests_at_the_same_moment(settings,
             threads.append(_started(results, 'approve', lambda: approver.post(
               reverse('approve', kwargs={'id': reviewing.id}),
               {'comments': ''})))
-            _wait_for_lock_wait('gcd_series')
+            wait_for_lock_waits('gcd_series')
     finally:
         _joined(threads)
 
@@ -670,7 +671,7 @@ def _behind_indexer(user, **calls):
         with _held(_hold_indexer, user):
             for name, call in calls.items():
                 threads.append(_started(results, name, call))
-            _wait_for_lock_wait(Indexer._meta.db_table, waiting=len(calls))
+            wait_for_lock_waits(Indexer._meta.db_table, len(calls))
     finally:
         _joined(threads)
     return results
@@ -819,7 +820,7 @@ def _lock_waits_until_done(thread, table):
     end = time.monotonic() + 30
     with connection.cursor() as cursor:
         while thread.is_alive() and time.monotonic() < end:
-            seen += _lock_waits(cursor, table)
+            seen += lock_waits(cursor, table)
             time.sleep(0.02)
     return seen
 
