@@ -9044,11 +9044,11 @@ class ReprintRevision(Revision):
             elif self.previous_revision.target and \
                     self.previous_revision.target.issue == base_issue:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.target)
             else:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.origin)
         return mark_safe(reprint)
 
@@ -9623,13 +9623,14 @@ class CreatorRevision(Revision):
 
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
-        # clone date instances
-        birth_date = self.creator.birth_date
+        # clone date instances; a fork has no creator yet
+        creator = fork_source if fork else self.creator
+        birth_date = creator.birth_date
         birth_date.pk = None
         birth_date.save()
         self.birth_date = birth_date
 
-        death_date = self.creator.death_date
+        death_date = creator.death_date
         death_date.pk = None
         death_date.save()
         self.death_date = death_date
