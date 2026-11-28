@@ -256,7 +256,7 @@ def _send_result_email(topic, extra=''):
                                          topic.get_absolute_url())
 
             list_config.send_mail(
-              subject="GCD Vote Result: #%d %s" % (topic.id, topic),
+              subject="GCD Vote #%d Result: %s" % (topic.id, topic),
               message=email_body)
 
 

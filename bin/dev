@@ -22,7 +22,8 @@ Commands:
   up                  Start the application at http://127.0.0.1:8000
   setup [--dump ARCHIVE] [--replace --yes]
                       Create a ready-to-use local environment, optionally
-                      loading a manually downloaded GCD catalog dump
+                      loading a GCD catalog dump (Docker only); native setup
+                      seeds sample data without replacing the database
   search-up           Start the application with Elasticsearch and queued updates
   search-rebuild [args]
                       Start search and rebuild the Haystack index
@@ -44,6 +45,7 @@ Examples:
   ./bin/dev test apps/gcd/tests
   ./bin/dev manage createsuperuser
   ./bin/dev --runtime native up
+  ./bin/dev --runtime native setup
 EOF
 }
 
@@ -171,11 +173,37 @@ validate_dump_archive() {
 }
 
 validate_setup_database_name() {
-  if [[ ! "$MYSQL_DATABASE" =~ ^gcd_dev(_[a-z0-9_]+)?$ ]] && \
-     [[ "$MYSQL_DATABASE" != "gcd_django_dev" ]]; then
-    echo "setup only permits a local development database named gcd_dev, gcd_django_dev, or gcd_dev_* (got $MYSQL_DATABASE)." >&2
+  local database_name="$1"
+  if [[ ! "$database_name" =~ ^gcd_dev(_[a-z0-9_]+)?$ ]] && \
+     [[ "$database_name" != "gcd_django_dev" ]]; then
+    echo "setup only permits a local development database named gcd_dev, gcd_django_dev, or gcd_dev_* (got $database_name)." >&2
     exit 2
   fi
+}
+
+setup_native_environment() {
+  local database_name
+  if [[ $# -ne 0 ]]; then
+    echo "Native setup accepts no options. For Docker-only dump imports, use ./bin/dev setup --dump ARCHIVE [--replace --yes]." >&2
+    exit 2
+  fi
+  cd "$PROJECT_ROOT"
+  require_native_python
+  native_environment
+  # Sample setup is core-only, even when the calling shell enabled search.
+  export USE_ELASTICSEARCH=false
+  # Preserve the selected name, removing only the probe's print newline.
+  # Plain command substitution would also strip newlines within the name.
+  database_name="$(native_database_name && printf '.')"
+  database_name="${database_name%.}"
+  database_name="${database_name%$'\n'}"
+  validate_setup_database_name "$database_name"
+  "$PYTHON_BIN" manage.py migrate --noinput
+  "$PYTHON_BIN" manage.py seed_development_data
+  "$PYTHON_BIN" scripts/check_dev_environment.py
+  echo "GCD is available at http://127.0.0.1:${GCD_WEB_PORT}"
+  echo "Local sample accounts are for development only; see docs/development/CORE_SETUP.md#ready-to-use-development-data."
+  exec "$PYTHON_BIN" manage.py runserver "127.0.0.1:${GCD_WEB_PORT}"
 }
 
 database_has_user_data() {
@@ -278,10 +306,76 @@ validate_dump_schema() {
 
 copy_dump_catalog() {
   local catalog_copy_sql auto_increment_sql
-  catalog_copy_sql="$(mysql_root_query "SET SESSION group_concat_max_len = 1000000; SELECT CONCAT('DELETE FROM ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), '; INSERT INTO ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ' (', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ') SELECT ', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ' FROM ', CHAR(96), 'gcd_dev_import_stage', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ';') FROM information_schema.columns WHERE table_schema = 'gcd_dev_import_stage' AND table_name REGEXP '^(gcd|stddata)_' GROUP BY table_name ORDER BY table_name;")"
+  local bond_missing_timestamps column bond_columns="" bond_values=""
+
+  # Older dumps were produced before the API added persistent Series Bond
+  # timestamps. The target is already migrated, so emulate the migration's
+  # shared baseline for absent timestamps without replacing supplied values.
+  bond_missing_timestamps="$(mysql_root_query "
+    SELECT target.column_name
+    FROM information_schema.columns AS target
+    LEFT JOIN information_schema.columns AS source
+      ON source.table_schema = 'gcd_dev_import_stage'
+      AND source.table_name = target.table_name
+      AND source.column_name = target.column_name
+    WHERE target.table_schema = '${MYSQL_DATABASE}'
+      AND target.table_name = 'gcd_series_bond'
+      AND target.column_name IN ('created', 'modified')
+      AND source.column_name IS NULL
+      AND EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'gcd_dev_import_stage'
+          AND table_name = 'gcd_series_bond'
+      )
+      AND 2 = (
+        SELECT COUNT(*) FROM information_schema.columns
+        WHERE table_schema = '${MYSQL_DATABASE}'
+          AND table_name = 'gcd_series_bond'
+          AND column_name IN ('created', 'modified')
+          AND column_type = 'datetime(6)' AND is_nullable = 'NO'
+      )
+    ORDER BY target.ordinal_position;")"
+  while IFS= read -r column; do
+    case "$column" in
+      created|modified)
+        bond_columns+=",\`${column}\`"
+        bond_values+=',@gcd_series_bond_import_baseline'
+        ;;
+      '') ;;
+      *)
+        echo "Unexpected Series Bond timestamp column in dump metadata: $column" >&2
+        return 1
+        ;;
+    esac
+  done <<< "$bond_missing_timestamps"
+
+  catalog_copy_sql="$(mysql_root_query "
+    SET SESSION group_concat_max_len = 1000000;
+    SELECT CONCAT(
+      'DELETE FROM ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.',
+      CHAR(96), table_name, CHAR(96), '; INSERT INTO ',
+      CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name,
+      CHAR(96), ' (',
+      GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96))
+                   ORDER BY ordinal_position SEPARATOR ','),
+      IF(table_name = 'gcd_series_bond', '${bond_columns}', ''),
+      ') SELECT ',
+      GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96))
+                   ORDER BY ordinal_position SEPARATOR ','),
+      IF(table_name = 'gcd_series_bond', '${bond_values}', ''),
+      ' FROM ', CHAR(96), 'gcd_dev_import_stage', CHAR(96), '.',
+      CHAR(96), table_name, CHAR(96), ';'
+    )
+    FROM information_schema.columns
+    WHERE table_schema = 'gcd_dev_import_stage'
+      AND table_name REGEXP '^(gcd|stddata)_'
+    GROUP BY table_name ORDER BY table_name;")"
   auto_increment_sql="$(mysql_root_query "SELECT CONCAT('ALTER TABLE ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ' AUTO_INCREMENT = 1;') FROM information_schema.columns WHERE table_schema = 'gcd_dev_import_stage' AND table_name REGEXP '^(gcd|stddata)_' AND extra LIKE '%auto_increment%' GROUP BY table_name ORDER BY table_name;")"
   {
     printf '%s\n' 'SET FOREIGN_KEY_CHECKS=0;'
+    if [[ -n "$bond_values" ]]; then
+      printf '%s\n' 'SET @gcd_series_bond_import_baseline = UTC_TIMESTAMP(6);'
+    fi
     printf '%s\n' "$catalog_copy_sql"
     printf '%s\n' "$auto_increment_sql"
     printf '%s\n' 'SET FOREIGN_KEY_CHECKS=1;'
@@ -338,7 +432,7 @@ seed_docker_development_data() {
 
 setup_docker_environment() {
   local archive="$1" replace="$2" yes="$3"
-  validate_setup_database_name
+  validate_setup_database_name "$MYSQL_DATABASE"
   if [[ -n "$archive" ]]; then
     validate_dump_archive "$archive"
   fi
@@ -371,33 +465,33 @@ set_defaults
 case "$command" in
   help|-h|--help) usage ;;
   setup)
-    setup_archive=""
-    setup_replace=false
-    setup_yes=false
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        --dump)
-          if [[ $# -lt 2 ]]; then
-            echo "Usage: ./bin/dev setup --dump ARCHIVE [--replace --yes]" >&2
+    if [[ "$runtime" == "native" ]]; then
+      setup_native_environment "$@"
+    else
+      setup_archive=""
+      setup_replace=false
+      setup_yes=false
+      while [[ $# -gt 0 ]]; do
+        case "$1" in
+          --dump)
+            if [[ $# -lt 2 ]]; then
+              echo "Usage: ./bin/dev setup --dump ARCHIVE [--replace --yes]" >&2
+              exit 2
+            fi
+            setup_archive="$2"
+            shift 2
+            ;;
+          --replace) setup_replace=true; shift ;;
+          --yes) setup_yes=true; shift ;;
+          *)
+            echo "Unknown setup option: $1" >&2
             exit 2
-          fi
-          setup_archive="$2"
-          shift 2
-          ;;
-        --replace) setup_replace=true; shift ;;
-        --yes) setup_yes=true; shift ;;
-        *)
-          echo "Unknown setup option: $1" >&2
-          exit 2
-          ;;
-      esac
-    done
-    if [[ "$runtime" != "docker" ]]; then
-      echo "setup currently supports the default Docker runtime. Use ./bin/dev --runtime native up for Docker-free development." >&2
-      exit 2
+            ;;
+        esac
+      done
+      require_docker
+      setup_docker_environment "$setup_archive" "$setup_replace" "$setup_yes"
     fi
-    require_docker
-    setup_docker_environment "$setup_archive" "$setup_replace" "$setup_yes"
     ;;
   up)
     if [[ "$runtime" == "docker" ]]; then
@@ -503,7 +597,7 @@ case "$command" in
     fi
     compose logs --follow "$service" ;;
   reset)
-    if [[ "${1:-}" != "--yes" ]]; then
+    if [[ $# -ne 1 || "${1:-}" != "--yes" ]]; then
       echo "reset is destructive; rerun with: ./bin/dev reset --yes" >&2; exit 2
     fi
     if [[ "$runtime" == "docker" ]]; then
@@ -512,12 +606,17 @@ case "$command" in
       compose up --build --wait
     else
       require_native_python; native_environment
-      database_name="$(native_database_name)"
+      # As in setup, retain newlines belonging to the configured name. A
+      # normalized name must not authorize flushing a different database.
+      database_name="$(native_database_name && printf '.')"
+      database_name="${database_name%.}"
+      database_name="${database_name%$'\n'}"
       if [[ "$database_name" != "gcd_dev" && "$database_name" != "gcd_django_dev" ]]; then
         echo "Native reset only permits gcd_dev or gcd_django_dev (got $database_name)." >&2; exit 2
       fi
       "$PYTHON_BIN" manage.py flush --noinput
       "$PYTHON_BIN" manage.py migrate --noinput
+      "$PYTHON_BIN" manage.py restore_development_reference_data
     fi ;;
   *) echo "Unknown command: $command" >&2; usage >&2; exit 2 ;;
 esac
