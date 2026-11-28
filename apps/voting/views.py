@@ -314,6 +314,10 @@ def vote(request):
     if not options:
         return render_error(request,
                             'You must choose at least one option to vote.')
+    # The checks below look at the ballot of the first option only.
+    if len({option.topic_id for option in options}) > 1:
+        return render_error(request,
+                            'You can vote on only one ballot at a time.')
     for option in options:
         if first is True:
             first = False
@@ -327,6 +331,12 @@ def vote(request):
                   'We are sorry, but you do not have permission to vote '
                   'on this ballot.  You must have the "%s" permission.' %
                   topic.agenda.permission.name)
+
+            # The same conditions as the open ballots of the agenda page.
+            if not topic.open or topic.result_calculated or \
+               topic.deadline <= timezone.now():
+                return render_error(request,
+                                    'This ballot is not open for votes.')
 
             if topic.token is not None and \
                request.POST['token'].strip() != topic.token:
