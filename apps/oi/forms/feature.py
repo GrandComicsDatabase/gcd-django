@@ -3,7 +3,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.forms.widgets import HiddenInput
 
-from dal import autocomplete
+from dal import autocomplete, forward
 
 from collections import OrderedDict
 
@@ -12,6 +12,7 @@ from crispy_forms.layout import Layout, Field, HTML
 
 from apps.gcd.models import Feature, FeatureNameDetail, FeatureRelationType
 from apps.gcd.models.support import GENRES
+from apps.stddata.models import Language
 
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, FeatureNameDetailRevision,
@@ -254,13 +255,27 @@ class FeatureLogoRevisionForm(forms.ModelForm):
         super(FeatureLogoRevisionForm, self).__init__(*args, **kwargs)
         ordering = list(self.fields)
         ordering.insert(3, 'feature_logo_image')
+        ordering.insert(2, 'feature_name_language')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+
+    # only narrows the list of Feature name, it is not saved
+    feature_name_language = forms.ModelChoiceField(
+        queryset=Language.objects.filter(
+          id__in=Feature.objects.filter(deleted=False).values('language')),
+        to_field_name='code',
+        required=False,
+        empty_label='All languages',
+        label='Feature language',
+        help_text='Feature name lists only the names of the features of this '
+                  'language.'
+    )
 
     feature_name = forms.ModelMultipleChoiceField(
         queryset=FeatureNameDetail.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2Multiple(
-          url='feature_name_autocomplete')
+          url='feature_name_autocomplete',
+          forward=[forward.Field('feature_name_language', 'language')])
     )
     generic = forms.BooleanField(
         required=False,
