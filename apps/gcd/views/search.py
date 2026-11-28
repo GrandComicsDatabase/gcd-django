@@ -22,7 +22,9 @@ from urllib.parse import quote, unquote_plus
 from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
 
-from apps.gcd.views.search_haystack import GcdNameQuery
+from apps.gcd.views.search_haystack import GcdNameQuery, \
+                                           SEARCH_DEFAULTS_COOKIE, \
+                                           default_filters
 
 from apps.stddata.models import Country, Language
 
@@ -1249,13 +1251,13 @@ def search(request):
               urlresolvers.reverse("mycomics_search") + "?q=%s" % quoted_query)
 
     if request.GET['search_type'] == "haystack":
+        url = urlresolvers.reverse("haystack_search") + "?q=%s" % quoted_query
         if sort == ORDER_CHRONO:
-            return HttpResponseRedirect(
-              urlresolvers.reverse("haystack_search") + "?q=%s&sort=year" %
-              quoted_query)
-        else:
-            return HttpResponseRedirect(
-              urlresolvers.reverse("haystack_search") + "?q=%s" % quoted_query)
+            url += "&sort=year"
+        kept = default_filters(request.COOKIES.get(SEARCH_DEFAULTS_COOKIE))
+        if kept:
+            url += "&" + urlencode(kept)
+        return HttpResponseRedirect(url)
 
     if request.GET['search_type'] == "series_and_issue":
         issue_pos = request.GET['query'].rstrip().rfind(' ')

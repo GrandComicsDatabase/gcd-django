@@ -3,7 +3,7 @@ from django.urls import path, re_path
 from django.views.generic import base as bv
 from haystack.forms import FacetedSearchForm
 from haystack.views import search_view_factory
-from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
+from apps.gcd.views.search_haystack import EverythingSearchView, \
      GcdSearchQuerySet
 from apps.gcd.views.health import health
 
@@ -819,7 +819,7 @@ urlpatterns = [
 # haystack search
 urlpatterns += [re_path(r'^searchNew/',
                 search_view_factory(
-                  view_class=PaginatedFacetedSearchView,
+                  view_class=EverythingSearchView,
                   form_class=FacetedSearchForm,
                   template='search/tw_search.html',
                   searchqueryset=GcdSearchQuerySet()),
