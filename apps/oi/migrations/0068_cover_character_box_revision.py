@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     """The revisions of the boxes of characters on covers."""
     dependencies = [
-        ('gcd', '0072_cover_character_box'),
+        ('gcd', '0076_cover_character_box'),
         ('oi', '0067_changeset_comment_utf8mb4'),
     ]
 

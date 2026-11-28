@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     """The boxes of characters on covers."""
     dependencies = [
-        ('gcd', '0071_feature_description'),
+        ('gcd', '0075_merge_feature_names_api_v2'),
     ]
 
     operations = [
