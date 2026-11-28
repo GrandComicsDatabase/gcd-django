@@ -297,6 +297,21 @@ def test_series_bond_dump_copy_refuses_unexpected_column_metadata():
     assert result.stdout == ''
 
 
+def test_publisher_dump_copy_fills_a_missing_sort_name():
+    """A dump made before publishers had a sort name gets their names."""
+    result = _run_catalog_copy_with_fake_metadata()
+    assert result.returncode == 0, result.stderr
+    query = ' '.join(result.stderr.split())
+    no_sort_name = ("IF(table_name = 'gcd_publisher' "
+                    "AND SUM(column_name = 'sort_name') = 0, ")
+    column = no_sort_name + "CONCAT(',', CHAR(96), 'sort_name', CHAR(96)), '')"
+    value = no_sort_name + "CONCAT(',', CHAR(96), 'name', CHAR(96)), '')"
+    assert column in query
+    assert value in query
+    assert query.index(column) < query.index("') SELECT '") \
+        < query.index(value)
+
+
 def test_dev_launcher_copies_catalog_keywords_by_content_type():
     """Dump keywords are linked through matching content types, not raw ids."""
     launcher = _read_project_file('bin/dev')

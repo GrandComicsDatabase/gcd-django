@@ -23,7 +23,7 @@ from .support import (
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision, BrandGroupRevision,
     BrandRevision, BrandUseRevision, get_brand_use_field_list,
-    PrinterRevision, IndiciaPrinterRevision)
+    PrinterRevision, IndiciaPrinterRevision, remove_leading_article)
 
 from apps.stddata.models import Country
 from apps.gcd.models import BrandGroup
@@ -60,6 +60,7 @@ class PublisherRevisionForm(KeywordBaseForm):
     class Meta:
         model = PublisherRevision
         fields = _get_publisher_fields(middle=('country',))
+        fields.insert(fields.index('name') + 1, 'leading_article')
         widgets = {'name': forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
                                                   'autofocus': ''}), }
         help_texts = PUBLISHER_HELP_TEXTS
@@ -88,6 +89,12 @@ class PublisherRevisionForm(KeywordBaseForm):
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
+            # the forms of indicia publishers and printers have no box
+            if (cd.get('leading_article') and
+                    cd['name'] == remove_leading_article(cd['name'])):
+                raise forms.ValidationError(
+                    'The name is only one word, you cannot specify '
+                    'a leading article in this case.')
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         _check_year_range(self)

@@ -2641,6 +2641,7 @@ class PublisherRevision(PublisherRevisionBase):
 
     publisher = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
                                   null=True, related_name='revisions')
+    leading_article = models.BooleanField(default=False)
 
     country = models.ForeignKey('stddata.Country', on_delete=models.CASCADE,
                                 db_index=True)
@@ -2669,6 +2670,24 @@ class PublisherRevision(PublisherRevisionBase):
         self.publisher = value
 
     _update_stats = True
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        """
+        Tick the box when the publisher sorts by another name.  A publisher
+        saved outside a change, which has no sort name, gets no tick.
+        """
+        if fork is False:
+            sort_name = self.publisher.sort_name
+            self.leading_article = bool(sort_name) and (
+                sort_name != self.publisher.name)
+
+    def _post_assign_fields(self, changes):
+        """Set the name to sort by, without the leading article if any."""
+        if self.leading_article:
+            self.publisher.sort_name = remove_leading_article(self.name)
+        else:
+            self.publisher.sort_name = self.name
 
     def _do_create_dependent_revisions(self, delete=False):
         if delete:
@@ -2718,12 +2737,14 @@ class PublisherRevision(PublisherRevisionBase):
     def _field_list(self):
         fields = []
         fields.extend(PublisherRevisionBase._field_list(self))
+        fields.insert(fields.index('name') + 1, 'leading_article')
         fields.insert(fields.index('url'), 'country')
         fields.extend(('is_master', 'parent'))
         return fields
 
     def _get_blank_values(self):
         blank_values = PublisherRevisionBase._get_blank_values(self)
+        blank_values['leading_article'] = False
         blank_values['country'] = None
         blank_values['is_master'] = True
         blank_values['parent'] = None

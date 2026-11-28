@@ -137,6 +137,9 @@ If an older dump lacks Series Bond creation or modification timestamps, setup
 uses the import time for the missing values and preserves any timestamps in
 the dump. Those fallback values are not historical edit dates.
 
+If an older dump has no sort name for publishers, setup copies each publisher's
+name into it, as the migration does.
+
 #### MySQL memory for the full catalog
 
 The full catalog is larger than 7 GiB, so MySQL's default 128 MiB InnoDB
