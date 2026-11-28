@@ -407,7 +407,12 @@ def changed_fields(changeset, object):
         return ""
 
     changed_list = []
-    if revision.added:
+    if changeset.change_type == CTYPES['bulk']:
+        # A bulk change lists its exact changes, as its own page shows them.
+        changed_list = [field_name(name) for name in
+                        _exact_changes(type(revision), [revision.id])
+                        [revision.id]]
+    elif revision.added:
         # Only list the initial add of the object.
         # Otherwise too many fields to list.
         changed_list = ['%s added' % title(revision.source_name
@@ -423,10 +428,21 @@ def changed_fields(changeset, object):
     return ", ".join(changed_list)
 
 
-@register.filter
-def changed_story_list(changeset):
+def _exact_changes(rev_class, revision_ids):
     """
-    get a bulleted list of changes at the sequence level
+    Return the exact changes of the revisions of a bulk change, as
+    apps.oi.bulk.exact_diff gives them.
+    """
+    # Imported here, as apps.oi.bulk imports this module.
+    from apps.oi.bulk import exact_diff
+    return exact_diff(rev_class, revision_ids)
+
+
+@register.filter
+def changed_story_list(changeset, object=None):
+    """
+    get a bulleted list of changes at the sequence level; for a bulk
+    change, only those in the given issue
     """
     if changeset.issuerevisions.count() and \
        changeset.change_type not in [CTYPES['series'],
@@ -434,14 +450,25 @@ def changed_story_list(changeset):
         # only relevant for single issue changesets
         story_revisions = changeset.storyrevisions.all()\
                                    .order_by('sequence_number')
+        if changeset.change_type == CTYPES['bulk']:
+            if not isinstance(object, Issue):
+                return ''
+            story_revisions = story_revisions.filter(issue=object)
     else:
         return ''
 
     output = ''
     if story_revisions.count() > 0:
+        if changeset.change_type == CTYPES['bulk']:
+            changes = _exact_changes(
+              story_revisions.model,
+              [story_revision.id for story_revision in story_revisions])
         for story_revision in story_revisions:
             story_changed_list = []
-            if story_revision.added:
+            if changeset.change_type == CTYPES['bulk']:
+                story_changed_list = [field_name(name) for name in
+                                      changes[story_revision.id]]
+            elif story_revision.added:
                 story_changed_list = ['Sequence added']
             elif story_revision.deleted:
                 story_changed_list = ['Sequence deleted']

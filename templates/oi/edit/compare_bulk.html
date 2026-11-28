@@ -1,0 +1,81 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+GCD :: Compare :: Bulk Change :: {{ heading }}
+{% endblock %}
+
+{% block view_body %}
+<h1>
+Bulk change: {{ heading }}
+</h1>
+{% if reverts %}
+<p>
+Reverts
+<a href="{% url 'compare' id=reverts.change %}">change {{ reverts.change }}</a>:
+{{ reverts.part }} {{ reverts.verb }} back to the values before it.
+</p>
+  {% if reverts.left %}
+<p>
+Left out, keeping their present values: {{ reverts.left }}.
+    {% if reverts.more %}
+The comments list the first {{ reverts.listed }} of
+each{% if reverts.full_list %}:
+<a href="{% url 'edit_issues_in_bulk' %}?revert={{ reverts.change }}">see the
+full list</a>{% endif %}.
+    {% elif reverts.in_comments %}
+The comments list them.
+    {% endif %}
+</p>
+  {% endif %}
+{% endif %}
+<p>
+Each row is one changed field.  Highlighted parts represent
+<span class="added border border-gray-400 p-1">added</span> and
+<span class="deleted border border-gray-400 p-1">deleted</span> data;
+spaces and case count.
+</p>
+{% if revert_status.text or revert_status.can_revert %}
+<p>
+  {% if revert_status.text %}
+{{ revert_status.text }} {{ revert_status.links }}.
+{{ revert_status.in_turn }}
+  {% endif %}
+  {% if revert_status.can_revert %}
+<a href="{% url 'edit_issues_in_bulk' %}?revert={{ changeset.id }}">Revert this
+bulk change</a>
+  {% endif %}
+</p>
+{% endif %}
+{% if can_change %}
+<p>
+  {% if no_operation %}
+{{ no_operation }}
+  {% else %}
+<a href="{% url 'edit_issues_in_bulk' %}?changeset={{ changeset.id }}">
+Add an operation</a> on these {{ objects_label }}.
+  {% endif %}
+</p>
+{% endif %}
+{% if can_remove %}
+<form action="{% url 'process' id=changeset.id %}" method="POST">
+  {% csrf_token %}
+  {% include 'oi/bits/bulk_rows.html' %}
+  <button class="btn-blue-editing inline" type="submit" name="bulk_remove">
+    Remove selected
+  </button>
+  A removed {{ object_label }} leaves this change and keeps its present values.
+</form>
+{% else %}
+  {% include 'oi/bits/bulk_rows.html' %}
+{% endif %}
+{% if page.has_other_pages %}
+  {% include 'gcd/bits/tw_pagination_bar.html' %}
+{% endif %}
+
+<h3> Comments </h3>
+{% with changeset.comments as comments %}
+{% include 'oi/bits/comments.html' %}
+{% endwith %}
+
+{% include 'oi/bits/compare_actions.html' %}
+{% endblock %}

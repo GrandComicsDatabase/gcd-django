@@ -6,7 +6,6 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
 
 from apps.oi import states
 from apps.oi.models import Changeset, CTYPES
@@ -47,7 +46,11 @@ def clear_reservations_three_weeks(request=None):
     changes_overdue = list(changes.exclude(change_type__in=
                                            [CTYPES['issue'],
                                             CTYPES['two_issues'],
-                                            CTYPES['variant_add']]))
+                                            CTYPES['variant_add']])
+                           # a bulk change counts from its last work: it
+                           # may have been sent back or retracted
+                           .exclude(change_type=CTYPES['bulk'],
+                                    modified__gte=clearing_date))
     for c in changes_issue:
         # issue edits with more than two existing revisions cannot be
         # changes due to ongoing reservations (which have more time)
@@ -96,7 +99,18 @@ def clear_reservations(request=None, changes=None):
         if changeset is None:
             continue
         changed = False
-        if changeset.inline():
+        if changeset.change_type == CTYPES['bulk']:
+            # The list was made before this loop, and a bulk change counts
+            # from its last work: leave one worked on since then, as the
+            # locked row shows it at any isolation level.
+            clearing_date = timezone.now() - timedelta(
+                weeks=settings.RESERVE_ISSUE_WEEKS)
+            if changeset.modified >= clearing_date:
+                continue
+            # A bulk change is never submitted for its indexer: an old
+            # one is discarded, which frees its locks.
+            revision = None
+        elif changeset.inline():
             revision = changeset.inline_revision()
         elif changeset.issuerevisions.count() > 0:
             revision = changeset.issuerevisions.all()[0]
@@ -104,22 +118,22 @@ def clear_reservations(request=None, changes=None):
             raise NotImplementedError
 
         # old (forgotten) cover uploads stay unchanged and get discarded
-        if changeset.change_type != CTYPES['cover']:
+        if revision and changeset.change_type != CTYPES['cover']:
             revision.compare_changes()
             if revision.is_changed:
                 changed = True
 
-        if not changed and changeset.storyrevisions.count():
+        if not changed and revision and changeset.storyrevisions.count():
             for story in changeset.storyrevisions.all():
                 story.compare_changes()
                 if story.is_changed:
                     changed = True
 
-        info_text = 'Created: %s <a href="%s%s">Change: %s</a> Indexer: %s' % \
-          (str(changeset.created), settings.SITE_URL,
-           urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
-           str(changeset),
-           str(changeset.indexer.indexer))
+        info_text = format_html(
+          'Created: {} <a href="{}{}">Change: {}</a> Indexer: {}',
+          changeset.created, settings.SITE_URL,
+          urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
+          changeset, changeset.indexer.indexer)
         if changed:
             notes = ('This is an automatic submit for an old reservation. If '
                      'the change contains useful information but needs '
@@ -133,17 +147,20 @@ def clear_reservations(request=None, changes=None):
                 notes += '\nThe saved data does not pass the edit form: ' + \
                     reasons
                 info_text = format_html('{} The saved data does not pass the '
-                                        'edit form: {}', mark_safe(info_text),
-                                        reasons)
+                                        'edit form: {}', info_text, reasons)
             if not SCRIPT_DEBUG:
                 changeset.submit(notes=notes)
-            submitted_list.append(mark_safe(info_text))
+            submitted_list.append(info_text)
         else:
+            if revision:
+                notes = ('This is an automatic discard of an unchanged '
+                         'edit which was reserved for 9 weeks')
+            else:
+                notes = ('This is an automatic discard of a bulk change '
+                         'which was not submitted in time.')
             if not SCRIPT_DEBUG:
-                changeset.discard(changeset.indexer, notes='This is an '
-                                  'automatic discard of an unchanged edit '
-                                  'which was reserved for 9 weeks')
-            discarded_list.append(mark_safe(info_text))
+                changeset.discard(changeset.indexer, notes=notes)
+            discarded_list.append(info_text)
     return render(request, 'oi/edit/clear_reservations.html',
                   {'submitted_list': submitted_list,
                    'discarded_list': discarded_list})

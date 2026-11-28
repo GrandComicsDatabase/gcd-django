@@ -1,0 +1,135 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+GCD :: Bulk Change
+{% endblock %}
+
+{% block view_body %}
+<h1>
+Bulk change
+</h1>
+<p>
+{% if changeset %}
+Selection: the {{ selection }} of
+<a href="{% url 'compare' id=changeset.id %}">change {{ changeset.id }}</a>.
+{% else %}
+Selection: {{ selection }} from
+<a href="{{ source }}">{{ source_label }}</a>{% if deleted %};
+{{ deleted }} deleted since{% endif %}.
+{% endif %}
+</p>
+<p>
+Choose a field and press Preview to see its values.  Then choose the
+old value, the operation and the new value, and press Preview again.
+</p>
+<form action="{% url 'edit_issues_in_bulk' %}" method="GET">
+  <input type="hidden" name="{{ page_param }}" value="{{ page_value }}">
+  <table class="editing">
+  {{ form.as_table }}
+  </table>
+  {% if more_values %}
+  <p>
+  {{ more_values }} more value{{ more_values|pluralize }} not listed: narrow
+  the list to choose among them.
+  </p>
+  {% endif %}
+  <button class="btn-blue-editing inline" type="submit">Preview</button>
+</form>
+
+{% if bulk_preview %}
+<h3> Preview </h3>
+<p>
+Changes to {{ form.field_label }}: {{ bulk_preview.changed }} of
+{{ selection }}.
+</p>
+  {% if bulk_preview.deleted %}
+<details>
+  <summary>
+  Deleted since the list was chosen, so left out:
+  {{ bulk_preview.deleted|length }}
+  </summary>
+  <ul class="list-disc ps-4">
+    {% for data_object in bulk_preview.deleted %}
+    <li><a href="{{ data_object.get_absolute_url }}">{{ data_object }}</a></li>
+    {% endfor %}
+  </ul>
+</details>
+  {% endif %}
+  {% if bulk_preview.reserved %}
+<details>
+  <summary>
+  Reserved by other changes, so left out: {{ bulk_preview.reserved|length }}
+  </summary>
+  <ul class="list-disc ps-4">
+    {% for data_object in bulk_preview.reserved %}
+    <li><a href="{{ data_object.get_absolute_url }}">{{ data_object }}</a></li>
+    {% endfor %}
+  </ul>
+</details>
+  {% endif %}
+  {% if bulk_preview.turned_off %}
+<details>
+  <summary>
+  Field turned off in their series, so left out:
+  {{ bulk_preview.turned_off|length }}
+  </summary>
+  <ul class="list-disc ps-4">
+    {% for data_object in bulk_preview.turned_off %}
+    <li><a href="{{ data_object.get_absolute_url }}">{{ data_object }}</a></li>
+    {% endfor %}
+  </ul>
+</details>
+  {% endif %}
+  {% if bulk_preview.leaving %}
+<details>
+  <summary>
+  Back to their present values, so they leave this change:
+  {{ bulk_preview.leaving|length }}
+  </summary>
+  <ul class="list-disc ps-4">
+    {% for data_object in bulk_preview.leaving %}
+    <li><a href="{{ data_object.get_absolute_url }}">{{ data_object }}</a></li>
+    {% endfor %}
+  </ul>
+</details>
+  {% endif %}
+  {% if bulk_preview.rows %}
+<table class="max-w-[calc(100vw-0.5rem)] border border-gray-200 max-w-full">
+<tr class="bg-blue-100 [&>th]:px-1.5">
+  <th> {{ object_label|capfirst }} </th>
+  <th> Old </th>
+  <th> New </th>
+</tr>
+    {% for data_object, old, new in bulk_preview.rows %}
+<tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
+  <td> <a href="{{ data_object.get_absolute_url }}">{{ data_object }}</a> </td>
+  <td> {{ old }} </td>
+  <td> {{ new }} </td>
+</tr>
+    {% endfor %}
+</table>
+  {% endif %}
+  {% if bulk_preview.left_empty %}
+<p>
+That would leave this bulk change without objects. To give it up, please
+discard it.
+</p>
+  {% elif bulk_preview.changed %}
+<form action="{% url 'edit_issues_in_bulk' %}?{{ page_param }}={{ page_value }}"
+      method="POST">
+  {% csrf_token %}
+    {% for field in form %}
+  <input type="hidden" name="{{ field.html_name }}"
+         value="{{ field.value|default_if_none:'' }}">
+    {% endfor %}
+  <button class="btn-blue-editing inline" type="submit">Apply</button>
+  {% if changeset %}Changes{% else %}Reserves{% endif %}
+  {% if bulk_preview.changed == 1 %}this {{ object_label }}
+  {% else %}these {{ bulk_preview.changed }} {{ objects_label }}
+  {% endif %} in {% if changeset %}this{% else %}one{% endif %} change, not
+  yet submitted. Any {{ object_label }} that fails the checks of its edit
+  form is left out.
+</form>
+  {% endif %}
+{% endif %}
+{% endblock %}
