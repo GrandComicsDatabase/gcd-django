@@ -110,6 +110,12 @@ DATABASES = {
     },
 }
 
+# accent-sensitive, case-insensitive collation for utf8mb4,
+# for MySQL use
+COLLATE_SEARCH = 'utf8mb4_0900_as_ci'
+# on MariaDB use
+# COLLATE_SEARCH = 'utf8mb4_uca1400_as_ci'
+
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE = (
    'django.middleware.csrf.CsrfViewMiddleware',
@@ -162,6 +168,7 @@ INSTALLED_APPS = (
     'apps.voting',
     'apps.stddata',
     'apps.mycomics',
+    'apps.api_v2',
     'compressor',
     'templatesadmin',
     'taggit',
@@ -169,6 +176,7 @@ INSTALLED_APPS = (
     'haystack',
     'bootstrap3',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_contact_form',
     'django_recaptcha',
     'crispy_forms',
