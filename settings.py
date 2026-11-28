@@ -51,11 +51,18 @@ TEMPLATES = [
                 'apps.gcd.context_processors.gcd',
             ],
             'loaders': [
-                # insert your TEMPLATE_LOADERS here
-                'django.template.loaders.filesystem.Loader',
-                'django.template.loaders.app_directories.Loader',
+                # The templates edited with templatesadmin are read from
+                # disk on each use, so that an edit shows at once.
+                'apps.gcd.template_loaders.ManagedContentLoader',
+                # The others are compiled once and kept between requests.
+                ('django.template.loaders.cached.Loader', [
+                    # insert your TEMPLATE_LOADERS here
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+                ]),
             ],
-            'debug': DEBUG,
+            # No 'debug' here: Django takes it from DEBUG as it is after
+            # settings_local.
         },
     },
 ]
