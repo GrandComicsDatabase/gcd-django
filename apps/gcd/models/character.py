@@ -8,7 +8,7 @@ from taggit.managers import TaggableManager
 
 import django_tables2 as tables
 
-from .gcddata import GcdData, GcdLink
+from .gcddata import GcdData, GcdLink, TranslatedMixin
 from apps.stddata.models import Language
 from .datasource import ExternalLink
 from .support_tables import TW_COLUMN_ALIGN_RIGHT, DailyChangesTable
@@ -145,7 +145,7 @@ class CharacterRelationType(models.Model):
         return str(self.type)
 
 
-class CharacterGroupBase(GcdData):
+class CharacterGroupBase(TranslatedMixin, GcdData):
     class Meta:
         abstract = True
         app_label = 'gcd'
@@ -313,17 +313,24 @@ class Character(CharacterGroupBase):
 
     # what is with translation over character records ?
     # German . English - French, copying from first to last ?
-    def translations(self, language):
+    def translations_in(self, language):
+        """
+        Return the translations of this character in the language or, if
+        there are none, the character in the language it is translated
+        from.
+        """
         relations = self.active_translations()
         if relations.filter(to_character__language=language).count():
             return Character.objects.filter(
               language=language,
               from_related_character__from_character=self,
+              from_related_character__relation_type_id=1,
               deleted=False)
         if relations.filter(from_character__language=language).count():
             return Character.objects.filter(
               language=language,
               to_related_character__to_character=self,
+              to_related_character__relation_type_id=1,
               deleted=False)
         return Character.objects.none()
 
@@ -515,17 +522,23 @@ class Group(CharacterGroupBase):
 
     # what is with translation over character records ?
     # German . English - French, copying from first to last ?
-    def translations(self, language):
+    def translations_in(self, language):
+        """
+        Return the translations of this group in the language or, if there
+        are none, the group in the language it is translated from.
+        """
         relations = self.active_translations()
         if relations.filter(to_group__language=language).count():
             return Group.objects.filter(
               language=language,
               from_related_group__from_group=self,
+              from_related_group__relation_type_id=1,
               deleted=False)
         if relations.filter(from_group__language=language).count():
             return Group.objects.filter(
               language=language,
               to_related_group__to_group=self,
+              to_related_group__relation_type_id=1,
               deleted=False)
         return Group.objects.none()
 

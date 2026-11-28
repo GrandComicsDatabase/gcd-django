@@ -5549,16 +5549,10 @@ class StoryCharacterRevision(Revision):
         of character id and universe id, gets no revision.
         """
         language = story_revision.language
-        translations = character.character.character.translations(
-            language)
-        if translations.count() == 0 and \
-           character.character.character.translated_from():
-            translations = character.character.character.translated_from()\
-                                              .translations(language)
-        if translations.count() == 1 and \
-           (translations.get().id, character.universe_id) not in kept:
-            character.character = translations.get()\
-                                              .official_name()
+        translation = character.character.character.translation_in(language)
+        if translation is not None and \
+           (translation.id, character.universe_id) not in kept:
+            character.character = translation.official_name()
             new_character = StoryCharacterRevision.clone(
               character,
               story_revision.changeset,
@@ -5569,16 +5563,9 @@ class StoryCharacterRevision(Revision):
             if new_character.group_name.exists():
                 for group_name in new_character.group_name.all():
                     new_character.group_name.remove(group_name)
-                    translations = group_name.group.translations(
-                        language)
-                    if translations.count() == 0 and \
-                       group_name.group.translated_from():
-                        translations = group_name.group\
-                                                 .translated_from()\
-                                                 .translations(language)
-                    if translations.count() == 1:
-                        new_character.group_name.add(
-                            translations.get().official_name())
+                    group = group_name.group.translation_in(language)
+                    if group is not None:
+                        new_character.group_name.add(group.official_name())
                     else:
                         new_character.group_universe = None
                         new_character.save()
@@ -6111,7 +6098,7 @@ class StoryRevision(Revision):
                 # TODO this works for now, but make consistent with
                 # StoryCharacterRevision.copied_translation and
                 # extend to StoryArcs
-                # in particular, use .translations(language)
+                # in particular, use .translation_in(language)
                 translations = feature_name.feature.translations().filter(
                   to_feature__language=issue_revision.series.language)
                 if translations.count() == 1:
@@ -6190,17 +6177,10 @@ class StoryRevision(Revision):
                                              fork=True,
                                              story_revision=revision)
                 else:
-                    translations = group.group_name.group.translations(
+                    translation = group.group_name.group.translation_in(
                       issue_revision.series.language)
-                    if translations.count() == 0 and \
-                       group.group_name.group.translated_from():
-                        translations = group.group_name.group\
-                                            .translated_from()\
-                                            .translations(issue_revision
-                                                          .series.language)
-
-                    if translations.count() == 1:
-                        group.group_name = translations.get().official_name()
+                    if translation is not None:
+                        group.group_name = translation.official_name()
                         StoryGroupRevision.clone(
                           group, revision.changeset, fork=True,
                           story_revision=revision)

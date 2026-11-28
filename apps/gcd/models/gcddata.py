@@ -125,3 +125,32 @@ class GcdLink(GcdBase):
     class Meta:
         app_label = 'gcd'
         abstract = True
+
+
+class TranslatedMixin:
+    """
+    Finds the translation of a data object in another language.
+
+    A class using it defines translated_from(), the object it is a
+    translation of or None, and translations_in(language), the objects in
+    the language linked to it as translation or as its source.
+    """
+
+    def translation_in(self, language):
+        """
+        Return the one object in the language that translates this one.
+
+        The translations and the source of this object come first, then
+        the other translations of its source. None when there is no such
+        object or more than one.
+        """
+        found = self.translations_in(language)
+        if not found.exists():
+            source = self.translated_from()
+            if source is None:
+                return None
+            found = source.translations_in(language)
+        found = list(found[:2])
+        if len(found) == 1:
+            return found[0]
+        return None
