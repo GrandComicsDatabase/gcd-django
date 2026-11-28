@@ -59,12 +59,19 @@
     {% else %} / {{ collection.collector.user.indexer }}
     {% endif %}
     </h1>
+    {% if share_url %}
+      <label for="share-url">
+        {% trans "Anyone with this secret link can view the collection:" %}
+      </label>
+      <input type="text" id="share-url" class="form-control" readonly
+             value="{{ share_url }}">
+    {% endif %}
   </div>
   {% if deleted_items %}
   <div class="alert alert-warning">
     {% trans "These issues of the collection were deleted from the GCD:" %}
     {% for item in deleted_items %}{% if not forloop.first %};{% endif %}
-      <a href="{% url "view_item" item.id collection.id %}">{{ item.issue.full_name }}</a>{% endfor %}
+      <a href="{% url "view_item" item.id collection.id %}{{ key_query }}">{{ item.issue.full_name }}</a>{% endfor %}
   </div>
   {% endif %}
 
@@ -74,12 +81,17 @@
       <div class="list-group">
         <form method="get">
             {% bootstrap_form filter.form %}
+            {% if share_key %}
+              <input type="hidden" name="key" value="{{ share_key }}">
+            {% endif %}
             <input style="width: 100%;" class="btn btn-primary" type="submit" />
         </form>
       </div>
+      {% if not share_key %}
       <a href="{% url 'edit_collection_items' collection.id %}?{{ extra_query_string }}">
         <button type="button" class="btn btn-primary">{% trans "Edit Shown Items" %}
       </button></a>
+      {% endif %}
       <h3>{% trans "Collections" %}:</h3>
       <div class="list-group">
         {% for col_item in collection_list %}
@@ -104,13 +116,15 @@
         {% for item in items %}
           <div class="col-md-2">
             <div class="btn-group pull-right">
+              {% if not share_key %}
               <button type="button" class="my-btn btn-primary btn-sm"
                       style="display: inline-block;" data-toggle="modal" onclick="remove_issue({{ item.id }}, {{ collection.id }});"
                       id="remove-item-{{ item.id }}" data-issue="{{ item.issue.full_name }}" data-collection="{{ collection.name }}">
                   <span class="glyphicon glyphicon-remove"></span>
               </button>
+              {% endif %}
             </div>
-          <a href="{% url "view_item" item.id collection.id %}">
+          <a href="{% url "view_item" item.id collection.id %}{{ key_query }}">
             <div class="thumbnail">
               {{ item.issue|show_cover_tag }}
               <div class="caption">{{ item.issue.full_name }}</div>

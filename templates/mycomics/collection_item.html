@@ -88,13 +88,22 @@
   <div class="page-header middle-header">
     <h1>{{ item.issue.full_name_with_variant_link }}
     {% if item_after %}
-    <a href="{% url 'view_item' item_id=item_after.id collection_id=collection.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-right"></span></button></a>
+    <a href="{% url "view_item" item_after.id collection.id %}{{ key_query }}">
+      <button type="button" class="btn btn-default pull-right"
+              data-dismiss="modal">
+        <span class="glyphicon glyphicon-chevron-right"></span>
+      </button></a>
     {% endif %}
     {% if item_before %}
-    <a href="{% url 'view_item' item_id=item_before.id collection_id=collection.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-left"></span></button></a>
+    <a href="{% url "view_item" item_before.id collection.id %}{{ key_query }}">
+      <button type="button" class="btn btn-default pull-right"
+              data-dismiss="modal">
+        <span class="glyphicon glyphicon-chevron-left"></span>
+      </button></a>
     {% endif %}
     </h1>
-    <h4>In: <a href="{% url "view_collection" collection.id %}?page={{ page }}">{{ collection.name }}</a>
+    <h4>In: <a href="{% url "view_collection" collection.id %}{{ page_query }}">
+      {{ collection.name }}</a>
     {% if request.user.collector == collection.collector %}
       {% if other_collections %}
         {% trans "Also in:" %}

@@ -1,3 +1,6 @@
+import secrets
+
+from django.forms import BooleanField
 from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect, \
                          ValidationError
 from apps.mycomics.models import Collector, Collection, CollectionItem, \
@@ -31,9 +34,17 @@ class CollectionForm(ModelForm):
           choices=((True, "comic is for sale"),
                    (False, "comic is not for sale"))), }
 
+    shared = BooleanField(
+      required=False,
+      label="Collection can be viewed by anyone with its secret link",
+      help_text="Unchecking it withdraws the link, checking it again makes "
+                "a new link.")
+    field_order = ['name', 'description', 'keywords', 'public', 'shared']
+
     def __init__(self, *args, **kwargs):
         super(CollectionForm, self).__init__(*args, **kwargs)
         instance = kwargs['instance']
+        self.fields['shared'].initial = bool(instance.share_key)
         self.fields['location_default'].queryset = \
             instance.collector.location_set.all()
         self.fields['purchase_location_default'].queryset = \
@@ -61,6 +72,17 @@ class CollectionForm(ModelForm):
             raise ValidationError('To use "Default purchase location" the '
                                   '"Show purchase location" needs to be '
                                   'activated.')
+
+    def save(self, commit=True):
+        """
+        Creates the key of the secret link when the box is checked and drops
+        it when the box is unchecked, so the withdrawn link stops working.
+        """
+        if not self.cleaned_data['shared']:
+            self.instance.share_key = ''
+        elif not self.instance.share_key:
+            self.instance.share_key = secrets.token_urlsafe(32)
+        return super(CollectionForm, self).save(commit)
 
 
 class LocationForm(ModelForm):

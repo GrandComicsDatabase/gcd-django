@@ -1,4 +1,5 @@
 import os
+import secrets
 import tempfile
 import chardet
 
@@ -88,6 +89,18 @@ def display_message(request):
     return render(request, MESSAGE_TEMPLATE, {})
 
 
+def get_share_key(request, collection):
+    """
+    Returns the key given in the request when it opens the secret link of
+    the collection. A wrong or withdrawn key gives a 404.
+    """
+    key = request.GET['key']
+    if not collection.share_key or not secrets.compare_digest(
+      key.encode(), collection.share_key.encode()):
+        raise Http404
+    return key
+
+
 @login_required
 def collections_list(request):
     def_have = request.user.collector.default_have_collection
@@ -101,10 +114,18 @@ def collections_list(request):
 
 def view_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
+    share_key, share_url = '', ''
     if request.user.is_authenticated and \
        collection.collector == request.user.collector:
         collection_list = request.user.collector.ordered_collections()
+        if collection.share_key:
+            share_url = request.build_absolute_uri(
+              '%s?key=%s' % (collection.get_absolute_url(),
+                             collection.share_key))
     elif collection.public is True:
+        collection_list = Collection.objects.none()
+    elif 'key' in request.GET:
+        share_key = get_share_key(request, collection)
         collection_list = Collection.objects.none()
     elif not request.user.is_authenticated:
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
@@ -153,6 +174,10 @@ def view_collection(request, collection_id):
                              series=series, locations=locations,
                              purchase_locations=purchase_locations)
     vars['filter'] = f
+    # a reader with the secret link keeps its key on the next pages
+    vars['share_key'] = share_key
+    vars['key_query'] = '?key=' + share_key if share_key else ''
+    vars['share_url'] = share_url
     paginator = ResponsePaginator(f.qs, vars=vars,
                                   per_page=get_default_per_page(request),
                                   alpha=True)
@@ -473,10 +498,14 @@ def move_item(request, item_id, collection_id):
 def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     collector = collection.collector
+    share_key = ''
     if request.user.is_authenticated and \
        collector == request.user.collector:
         item = get_item_for_collector(item_id, request.user.collector)
     elif collection.public is True:
+        item = get_item_for_collector(item_id, collector)
+    elif 'key' in request.GET:
+        share_key = get_share_key(request, collection)
         item = get_item_for_collector(item_id, collector)
     elif not request.user.is_authenticated:
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
@@ -543,11 +572,18 @@ def view_item(request, item_id, collection_id):
     if item_after:
         item_after = item_after[0]
 
+    # a reader with the secret link keeps its key on the next pages
+    key_query = '?key=' + share_key if share_key else ''
+    page_query = '?page=%d' % page
+    if share_key:
+        page_query += '&key=' + share_key
+
     return render(request, COLLECTION_ITEM_TEMPLATE,
                   {'item': item, 'item_form': item_form,
                    'item_before': item_before,
                    'item_after': item_after,
-                   'page': page,
+                   'key_query': key_query,
+                   'page_query': page_query,
                    'collection': collection,
                    'other_collections': other_collections,
                    'sell_date_form': sell_date_form,
