@@ -593,7 +593,7 @@ class Creator(GcdData):
 
     def get_portrait_url(self):
         if self.portrait:
-            return self.portrait.cropped_face.url
+            return self.portrait.cropped_face_url
         else:
             from django.templatetags.static import static
             return f"{static('img/avatar.png')}"
