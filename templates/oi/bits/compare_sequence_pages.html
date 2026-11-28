@@ -1,0 +1,14 @@
+{% if sequences.has_other_pages %}
+<p>
+  Sequences {{ sequences.start_index }}-{{ sequences.end_index }}
+  of {{ sequences.paginator.count }}
+  {% if sequences.has_previous %}
+  / <a href="{% querystring page=sequences.previous_page_number %}">Previous
+    sequences</a>
+  {% endif %}
+  {% if sequences.has_next %}
+  / <a href="{% querystring page=sequences.next_page_number %}">Next
+    sequences</a>
+  {% endif %}
+</p>
+{% endif %}
