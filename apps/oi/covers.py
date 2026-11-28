@@ -11,7 +11,8 @@ from django.shortcuts import render, get_object_or_404
 from django.core.files import File
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
-from django.http import HttpResponseRedirect
+from django.db.models import Min
+from django.http import Http404, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 from apps.indexer.views import render_error
@@ -256,18 +257,43 @@ def edit_covers(request, issue_id):
     """
 
     issue = get_object_or_404(Issue, id=issue_id)
+    if request.method == 'POST':
+        return _show_cover_first(request, issue)
     if issue.has_covers():
         covers = get_image_tags_per_issue(issue, "current covers", ZOOM_MEDIUM,
                                           as_list=True, variants=True)
+        own_ids = issue.cover_set.exclude(deleted=True) \
+                                 .values_list('id', flat=True)
         return render(
           request,
           'oi/edit/edit_covers.html',
           {'issue': issue,
            'covers': covers,
+           'show_first_ids': list(own_ids)[1:],
            'table_width': UPLOAD_WIDTH
            })
     else:
         return upload_cover(request, issue_id=issue_id)
+
+
+def _show_cover_first(request, issue):
+    """
+    Show the cover of the issue posted as 'first' before its other covers.
+    A direct action of an editor, like the mark for replacement.
+    """
+    if not request.user.has_perm('indexer.can_approve'):
+        return render_error(
+          request, 'Only editors can choose the cover that is shown first.',
+          redirect=False)
+    first = request.POST.get('first', '')
+    if not first.isdecimal():
+        raise Http404
+    cover = get_object_or_404(Cover, id=first, issue=issue, deleted=False)
+    lowest = issue.cover_set.aggregate(lowest=Min('position'))['lowest']
+    # update() leaves the modified time of the cover as it is
+    Cover.objects.filter(id=cover.id).update(position=lowest - 1)
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'edit_covers', kwargs={'issue_id': issue.id}))
 
 
 def needed_issue_list(objects, issue, cover=False):
