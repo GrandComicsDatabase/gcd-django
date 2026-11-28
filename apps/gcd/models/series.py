@@ -365,6 +365,39 @@ class Series(GcdData):
                                                    Q(editing__startswith='?'))
         return issues | issue_edits
 
+    def _dated_ends(self):
+        """
+        Return the issues that give the start and the end date of the series.
+
+        They are the first and the last issue, unless a base issue has a
+        key date from an earlier or a later year, within the years of the
+        series. Such an issue can only exist if the series begins before
+        the year of its first issue or ends after the year of its last
+        one, so the issues are read only then. A current series ends at
+        present: its end is None and its last issue is not read.
+        """
+        start = self.first_issue
+        end = None if self.is_current else self.last_issue
+        first_year = start.key_date[:4]
+        last_year = end.key_date[:4] if end else ''
+        before = str(self.year_began) < first_year
+        after = last_year and (
+            not self.year_ended or last_year < str(self.year_ended))
+        if before or after:
+            issues = self.active_issues().filter(
+              variant_of=None, key_date__gte=str(self.year_began))
+            if self.year_ended:
+                issues = issues.filter(
+                  key_date__lt=str(self.year_ended + 1))
+            if before:
+                start = issues.filter(key_date__lt=first_year).order_by(
+                  'key_date', 'sort_code').first() or start
+            if after:
+                end = issues.filter(
+                  key_date__gte=str(int(last_year) + 1)).order_by(
+                  '-key_date', '-sort_code').first() or end
+        return start, end
+
     def _date_uncertain(self, flag):
         return ' ?' if flag else ''
 
@@ -380,16 +413,17 @@ class Series(GcdData):
                                  self._date_uncertain(
                                    self.year_began_uncertain))
         else:
-            if self.first_issue.publication_date:
-                date = '%s - ' % self.first_issue.publication_date
+            start, end = self._dated_ends()
+            if start.publication_date:
+                date = '%s - ' % start.publication_date
             else:
                 date = '%s%s - ' % (self.year_began,
                                     self._date_uncertain(
                                       self.year_began_uncertain))
             if self.is_current:
                 date += 'present'
-            elif self.last_issue.publication_date:
-                date += self.last_issue.publication_date
+            elif end.publication_date:
+                date += end.publication_date
             elif self.year_ended:
                 date += '%s%s' % (str(self.year_ended),
                                   self._date_uncertain(
