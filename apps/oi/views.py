@@ -1278,11 +1278,12 @@ def assign(request, id):
               changeset.approver.indexer,
               redirect=False)
 
-    # One statement, so that of two editors only one becomes the mentor.
+    # One statement, so that of two editors only one becomes the mentor,
+    # and only of an indexer who is still new.
     if changeset.indexer.indexer.is_new and \
        changeset.change_type is not CTYPES['cover'] and \
        Indexer.objects.filter(id=changeset.indexer.indexer.id,
-                              mentor__isnull=True) \
+                              mentor__isnull=True, is_new=True) \
               .update(mentor=request.user):
         changeset.indexer.indexer.assign_pending_changes(request.user)
 
