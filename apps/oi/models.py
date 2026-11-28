@@ -4052,6 +4052,33 @@ def _process_formset(self, formset, revision_type=None, generic=False):
             raise ValueError
 
 
+def _name_by_disambiguation(credit):
+    """
+    Return the creator name that a text credit 'Name [text]' points to.
+
+    The name before the bracket is looked up as for a credit without one,
+    and the text in the bracket must be, ignoring case, the disambiguation
+    of the creator of exactly one of those names. The result is that name
+    as a queryset, or None; with None the credit is read as before.
+    """
+    name, _, disambiguation = credit.partition('[')
+    disambiguation = disambiguation.strip()
+    if not disambiguation.endswith(']'):
+        return None
+    name = name.strip()
+    disambiguation = disambiguation[:-1].strip()
+    if not name or not disambiguation:
+        return None
+    names = CreatorNameDetail.objects.filter(
+      name=name, deleted=False,
+      creator__disambiguation__iexact=disambiguation)
+    # exclude ghost names
+    names = names.exclude(type=12)
+    if names.count() == 1:
+        return names
+    return None
+
+
 class IssueRevision(Revision):
     class Meta:
         db_table = 'oi_issue_revision'
@@ -4691,7 +4718,8 @@ class IssueRevision(Revision):
                         note = with_note[with_note.find('('):].strip()
                 else:
                     note = ''
-                if credit.find('[') > 1:
+                disambiguated = _name_by_disambiguation(credit)
+                if credit.find('[') > 1 and disambiguated is None:
                     value = credit[credit.find('[')+1:]
                     value = value[value.find(' ')+1:]
                     value = value.strip().strip(']')
@@ -4701,6 +4729,8 @@ class IssueRevision(Revision):
                                                            deleted=False)
                 # exclude ghost names
                 creator = creator.exclude(type=12)
+                if disambiguated is not None:
+                    creator = disambiguated
 
                 if creator.count() == 1:
                     creator = creator.get()
@@ -6755,7 +6785,8 @@ class StoryRevision(Revision):
                             note = with_note[with_note.find('('):].strip()
                     else:
                         note = ''
-                    if credit.find('[') > 1:
+                    disambiguated = _name_by_disambiguation(credit)
+                    if credit.find('[') > 1 and disambiguated is None:
                         value = credit[credit.find('[')+1:]
                         value = value[value.find(' ')+1:]
                         value = value.strip().strip(']')
@@ -6771,6 +6802,8 @@ class StoryRevision(Revision):
                     if not ghost_possible:
                         # exclude ghost names
                         creator = creator.exclude(type=12)
+                    if disambiguated is not None:
+                        creator = disambiguated
 
                     if creator.count() == 1:
                         creator = creator.get()

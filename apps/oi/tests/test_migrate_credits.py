@@ -9,7 +9,7 @@ from apps.oi.models import (Changeset, CreatorNameDetailRevision,
 from apps.stddata.models import Date, Script
 
 
-def _creator(name, indexer):
+def _creator(name, indexer, disambiguation=''):
     """Create a creator with its official name through approved revisions."""
     script, _ = Script.objects.get_or_create(
       id=Script.LATIN_PK,
@@ -19,6 +19,7 @@ def _creator(name, indexer):
                                          change_type=CTYPES['creator'])
     revision = CreatorRevision.objects.create(
       changeset=changeset, gcd_official_name=name,
+      disambiguation=disambiguation,
       birth_date=Date.objects.create(), death_date=Date.objects.create())
     CreatorNameDetailRevision.objects.create(
       changeset=changeset, creator_revision=revision, name=name,
@@ -263,3 +264,109 @@ def test_story_credit_note_is_migrated_as_before(
     assert credit.is_credited == is_credited
     assert credit.credited_as == ''
     assert credit.credit_name == credit_name
+
+
+@pytest.fixture
+def same_name_creators(any_indexer):
+    """
+    Create five creators named 'Some Editor', with the disambiguations
+    'comics editor', 'colorist', twice 'letterer' and none, and one
+    creator named 'S. Editeur'.
+    """
+    for disambiguation in ['comics editor', 'colorist', 'letterer',
+                           'letterer', '']:
+        _creator('Some Editor', any_indexer, disambiguation)
+    _creator('S. Editeur', any_indexer)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+  'text,disambiguation,credited_as,credit_name,uncertain', [
+    ('Some Editor [comics editor]', 'comics editor', '', 'editor', False),
+    ('Some Editor [Comics Editor]', 'comics editor', '', 'editor', False),
+    ('Some Editor [ comics editor ] (managing editor) ?', 'comics editor',
+     '', 'managing editor', True),
+    ('Some Editor [colorist] (credited as S. E.)', 'colorist', 'S. E.',
+     'editor', False),
+  ])
+def test_issue_credit_with_a_disambiguation_is_migrated(
+  issue_revision, same_name_creators, credit_types, text, disambiguation,
+  credited_as, credit_name, uncertain):
+    """The bracket picks the creator of the name with that disambiguation."""
+    issue_revision.editing = text
+
+    issue_revision.migrate_credits()
+
+    assert issue_revision.editing == ''
+    credit = issue_revision.issue_credit_revisions.get()
+    assert credit.creator.name == 'Some Editor'
+    assert credit.creator.creator.disambiguation == disambiguation
+    assert credit.credited_as == credited_as
+    assert credit.credit_name == credit_name
+    assert credit.uncertain == uncertain
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+  'text,disambiguation,is_signed,credit_name,uncertain', [
+    ('Some Editor [comics editor]', 'comics editor', False, '', False),
+    ('Some Editor [colorist] (signed)', 'colorist', True, '', False),
+    ('Some Editor [Colorist] (painting) ?', 'colorist', False, 'painting',
+     True),
+  ])
+def test_story_credit_with_a_disambiguation_is_migrated(
+  any_edit_story_rev, same_name_creators, credit_types, text,
+  disambiguation, is_signed, credit_name, uncertain):
+    """The bracket picks the creator of the name with that disambiguation."""
+    any_edit_story_rev.script = text
+
+    any_edit_story_rev.migrate_credits()
+
+    assert any_edit_story_rev.script == ''
+    credit = any_edit_story_rev.story_credit_revisions.get()
+    assert credit.creator.name == 'Some Editor'
+    assert credit.creator.creator.disambiguation == disambiguation
+    assert credit.is_signed == is_signed
+    assert credit.signed_as == ''
+    assert credit.credit_name == credit_name
+    assert credit.uncertain == uncertain
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('text', [
+    'Some Editor',
+    'Some Editor [letterer]',
+    'Some Editor [inker]',
+    'Some Editor []',
+    'Other Editor [colorist]',
+])
+def test_credit_without_one_disambiguated_name_stays_as_text(
+  any_edit_story_rev, issue_revision, same_name_creators, credit_types,
+  text):
+    """A bracket that picks no creator, or two, leaves the text."""
+    any_edit_story_rev.script = text
+    issue_revision.editing = text
+
+    any_edit_story_rev.migrate_credits()
+    issue_revision.migrate_credits()
+
+    assert any_edit_story_rev.script == text
+    assert not any_edit_story_rev.story_credit_revisions.exists()
+    assert issue_revision.editing == text
+    assert not issue_revision.issue_credit_revisions.exists()
+
+
+@pytest.mark.django_db
+def test_credit_with_as_in_brackets_is_migrated_as_before(
+  any_edit_story_rev, issue_revision, same_name_creators, credit_types):
+    """A name in [as ...] is still the one credited."""
+    any_edit_story_rev.script = 'Some Editor [as S. Editeur]'
+    issue_revision.editing = 'Some Editor [as S. Editeur]'
+
+    any_edit_story_rev.migrate_credits()
+    issue_revision.migrate_credits()
+
+    story_credit = any_edit_story_rev.story_credit_revisions.get()
+    issue_credit = issue_revision.issue_credit_revisions.get()
+    assert story_credit.creator.name == 'S. Editeur'
+    assert issue_credit.creator.name == 'S. Editeur'
