@@ -34,6 +34,7 @@ from django_filters import ChoiceFilter, FilterSet, MultipleChoiceFilter
 
 from apps.stddata.models import Country
 
+from apps.indexer.models import Indexer
 from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import (
@@ -780,7 +781,8 @@ def submit(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(),
+                                  id=id)
     if (request.user != changeset.indexer):
         return oi_render(
           request, 'indexer/error.html',
@@ -1276,21 +1278,13 @@ def assign(request, id):
               changeset.approver.indexer,
               redirect=False)
 
+    # One statement, so that of two editors only one becomes the mentor.
     if changeset.indexer.indexer.is_new and \
-       changeset.indexer.indexer.mentor is None and\
-       changeset.change_type is not CTYPES['cover']:
-
-        changeset.indexer.indexer.mentor = request.user
-        changeset.indexer.indexer.save()
-
-        for pending in changeset.indexer.changesets\
-                                        .filter(state=states.PENDING):
-            try:
-                pending.assign(approver=request.user, notes='')
-            except ValueError:
-                # Someone is already reviewing this.
-                # Unlikely, and just let it go.
-                pass
+       changeset.change_type is not CTYPES['cover'] and \
+       Indexer.objects.filter(id=changeset.indexer.indexer.id,
+                              mentor__isnull=True) \
+              .update(mentor=request.user):
+        changeset.indexer.indexer.assign_pending_changes(request.user)
 
     if comment_text:
         email_body = """
@@ -1402,13 +1396,14 @@ def discuss(request, id):
           request,
           'Only EDITING OR REVIEWING changes can be put into discussion.')
 
-    comment_text = request.POST['comments'].strip()
+    comment_text = request.POST.get('comments', '').strip()
+    if not comment_text:
+        return render_error(
+          request, 'A comment is required to put a change into discussion.')
+
     changeset.discuss(commenter=request.user, notes=comment_text)
 
-    if comment_text:
-        email_comments = ' with the comment:\n"%s"' % comment_text
-    else:
-        email_comments = '.'
+    email_comments = ' with the comment:\n"%s"' % comment_text
 
     if request.user == changeset.indexer:
         action_by = 'indexer %s' % str(changeset.indexer.indexer)
@@ -1439,11 +1434,8 @@ thanks,
        settings.SITE_NAME,
        settings.SITE_URL)
 
-    if comment_text:
-        subject = 'GCD change put into discussion with a comment'
-        send_comment_observer(request, changeset, comment_text)
-    else:
-        subject = 'GCD change put into discussion'
+    subject = 'GCD change put into discussion with a comment'
+    send_comment_observer(request, changeset, comment_text)
 
     if request.user == changeset.indexer:
         changeset.approver.email_user(subject, email_body,
