@@ -814,7 +814,7 @@ def _hold_change(changeset, held, release):
         with transaction.atomic():
             Changeset.objects.select_for_update().get(id=changeset.id)
             held.set()
-            release.wait(60)
+            release.wait()
     finally:
         connections.close_all()
 
