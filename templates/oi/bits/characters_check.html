@@ -1,0 +1,38 @@
+<div class="w-full lg:w-4/5 border border-gray-400 rounded px-1 max-h-60
+            overflow-y-auto">
+  {% if message %}
+  <div>{{ message }}</div>
+  {% elif check.items or check.entries %}
+  <div>
+    {{ check.items }} item{{ check.items|pluralize }}:
+    {{ check.well_formed }} well-formed,
+    {{ check.warnings }} warning{{ check.warnings|pluralize }},
+    {{ check.errors }} error{{ check.errors|pluralize }}.
+  </div>
+  {% else %}
+  <div>No characters in the text.</div>
+  {% endif %}
+  {% for entry in check.entries %}
+  {% if entry.level == 'error' %}<div class="my-1 bg-red-50">
+  {% else %}<div class="my-1 bg-amber-50">{% endif %}
+    <div>
+      {% if entry.number %}
+      <span class="font-bold">{{ entry.number }}</span>
+      {% endif %}
+      {{ entry.text }}
+    </div>
+    {% for line in entry.lines %}
+    <div{% if line.level == 'error' %} class="text-red-600"{% endif %}>
+      {{ line.label }}: {{ line.message }}
+    </div>
+    {% endfor %}
+    {% if entry.read_as %}
+    <div>Read as: {{ entry.read_as }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% if check.more %}
+  <div>And {{ check.more }} more item{{ check.more|pluralize }} with
+    findings.</div>
+  {% endif %}
+</div>
