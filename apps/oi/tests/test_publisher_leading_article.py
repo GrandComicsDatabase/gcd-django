@@ -89,7 +89,7 @@ def test_the_migration_sorts_each_publisher_by_its_name(any_country):
     publisher = Publisher.objects.create(name='The Alpha Press',
                                          country=any_country)
     migration = importlib.import_module(
-        'apps.gcd.migrations.0072_publisher_sort_name')
+        'apps.gcd.migrations.0076_publisher_sort_name')
 
     migration.fill_sort_name(django_apps, None)
 
