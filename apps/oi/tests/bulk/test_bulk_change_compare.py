@@ -183,7 +183,10 @@ def test_page_follows_the_limit(client, settings, bulk_change,
 @pytest.mark.django_db
 def test_second_page_after_100_objects(client, bulk_change,
                                        many_approved_issues):
-    """The page holds 100 objects; the next ones are on page 2."""
+    """
+    The page holds the first 100 objects, in the order of the list; the
+    next ones are on page 2.
+    """
     changeset = bulk_change(many_approved_issues, IssueRevision,
                             price='0.25 USD')
     client.force_login(changeset.indexer)
@@ -192,11 +195,12 @@ def test_second_page_after_100_objects(client, bulk_change,
     second = client.get(compare_url(changeset), {'page': 2})
 
     assert first.context['heading'] == '101 issues'
-    assert len(first.context['rows']) == 100
     assert 'page=2' in first.content.decode()
-    assert [revision for revision, name, fields
-            in second.context['rows']] == \
-        [changeset.issuerevisions.order_by('id').last()]
+    issue_ids = [issue.id for issue in many_approved_issues]
+    for response, shown in ((first, issue_ids[:100]),
+                            (second, issue_ids[100:])):
+        assert [revision.issue_id for revision, name, fields
+                in response.context['rows']] == shown
 
 
 @pytest.mark.django_db
@@ -336,18 +340,23 @@ def test_page_shows_the_comments(client, bulk_change, approved_issues):
 @pytest.mark.django_db
 def test_queries_do_not_grow_with_the_rows(client, bulk_change,
                                            approved_issues):
-    """A page of three objects needs as many queries as one of two."""
-    counts = []
+    """
+    A page of three objects needs as many queries as one of two, and the
+    measured pages show their two and three rows.
+    """
+    counts, shown = [], []
     for issues in (approved_issues[:2], approved_issues):
         changeset = bulk_change(issues, IssueRevision, price='0.25 USD')
         client.force_login(changeset.indexer)
         # The first request also fills the caches of the site.
         client.get(compare_url(changeset))
         with CaptureQueriesContext(connection) as queries:
-            client.get(compare_url(changeset))
+            response = client.get(compare_url(changeset))
         counts.append(len(queries))
+        shown.append(len(response.context['rows']))
         changeset.discard(changeset.indexer)
 
+    assert shown == [2, 3]
     assert counts[0] == counts[1]
 
 
