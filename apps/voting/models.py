@@ -423,7 +423,7 @@ def topic_post_save(sender, **kwargs):
                   settings.TIME_ZONE)
 
                 list_config.send_mail(
-                  "GCD Ballot Open: #%d %s" % (topic.id, topic), email_body)
+                  "GCD Ballot #%d Open: %s" % (topic.id, topic), email_body)
 
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)

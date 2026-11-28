@@ -234,7 +234,7 @@
 {% for signature in creator.active_signatures %}
     <li class="break-inside-avoid-column"><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
 {% if signature.signature and not FAKE_IMAGES %}
-      <img class="inline" src="{{ signature.signature.thumbnail.url }}">
+      <img class="inline" src="{{ signature.signature.thumbnail_url }}">
 {% else %}
        [generic]
 {% endif %}
@@ -249,12 +249,13 @@
   <div class="flex flex-col sm:flex-row">
   {% if creator.portrait %}
   <div class="m-2">
-    <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img src="{{ creator.portrait.scaled_image.url }}"></a>
+    <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img
+      src="{{ creator.portrait.scaled_image_url }}"></a>
   </div>
   {% endif %}
   {% if creator.samplescan %}
   <div class="m-2">
-      <img src="{{ creator.samplescan.scaled_image.url }}">
+      <img src="{{ creator.samplescan.scaled_image_url }}">
   </div>
   {% endif %}
 </div>

@@ -224,8 +224,77 @@ def test_dev_launcher_validates_dump_before_replacing_database():
 def test_dev_launcher_allows_long_catalog_column_lists():
     """Dump table-copy SQL is not truncated by MySQL's default limit."""
     launcher = _read_project_file('bin/dev')
-    assert 'SET SESSION group_concat_max_len = 1000000; SELECT CONCAT' \
-        in launcher
+    assert 'SET SESSION group_concat_max_len = 1000000;' in launcher
+
+
+def _run_catalog_copy_with_fake_metadata(*missing_columns):
+    """Run the copy helper against mocked MySQL commands."""
+    launcher = _read_project_file('bin/dev')
+    definition = launcher.split('copy_dump_catalog() {', 1)[1]
+    body = definition.split('\n}\n', 1)[0]
+    shell = textwrap.dedent('''
+        set -euo pipefail
+        MYSQL_DATABASE=gcd_dev_copy_test
+        missing_columns="$1"
+        mysql_root_query() {
+          printf '%s\\n' "$1" >&2
+          case "$1" in
+            *'SELECT target.column_name'*) printf '%s' "$missing_columns" ;;
+            *'group_concat_max_len'*) printf '%s\\n' 'COPY_CATALOG;' ;;
+            *'AUTO_INCREMENT = 1'*) printf '%s\\n' 'RESET_AUTO_INCREMENT;' ;;
+            *) return 99 ;;
+          esac
+        }
+        mysql_root() { cat; }
+    ''')
+    shell += 'copy_dump_catalog() {' + body + '\n}\ncopy_dump_catalog\n'
+    return subprocess.run(
+        ['bash', '-c', shell, 'copy-dump-catalog', '\n'.join(missing_columns)],
+        check=False,
+        capture_output=True,
+        cwd=PROJECT_ROOT,
+        text=True,
+    )
+
+
+@pytest.mark.parametrize('missing_columns', [
+    (), ('created',), ('modified',), ('created', 'modified'),
+])
+def test_series_bond_dump_copy_fills_only_missing_timestamps(missing_columns):
+    """Only the missing Series Bond timestamps receive the shared baseline."""
+    result = _run_catalog_copy_with_fake_metadata(*missing_columns)
+    assert result.returncode == 0, result.stderr
+    assert "WHERE target.table_schema = 'gcd_dev_copy_test'" in result.stderr
+    assert "target.table_name = 'gcd_series_bond'" in result.stderr
+    assert "source.table_schema = 'gcd_dev_import_stage'" in result.stderr
+    assert 'source.column_name IS NULL' in result.stderr
+    assert 'AND 2 = (' in result.stderr
+    assert "column_type = 'datetime(6)' AND is_nullable = 'NO'" \
+        in result.stderr
+
+    columns = ''.join(f',`{column}`' for column in missing_columns)
+    values = ',@gcd_series_bond_import_baseline' * len(missing_columns)
+    assert f"IF(table_name = 'gcd_series_bond', '{columns}', '')" \
+        in result.stderr
+    assert f"IF(table_name = 'gcd_series_bond', '{values}', '')" \
+        in result.stderr
+    baseline = 'SET @gcd_series_bond_import_baseline = UTC_TIMESTAMP(6);'
+    assert result.stdout.splitlines() == [
+        'SET FOREIGN_KEY_CHECKS=0;',
+        *([baseline] if missing_columns else []),
+        'COPY_CATALOG;',
+        'RESET_AUTO_INCREMENT;',
+        'SET FOREIGN_KEY_CHECKS=1;',
+    ]
+
+
+def test_series_bond_dump_copy_refuses_unexpected_column_metadata():
+    """Metadata outside the two literal column names must not reach SQL."""
+    result = _run_catalog_copy_with_fake_metadata('other_column')
+    assert result.returncode == 1
+    assert 'Unexpected Series Bond timestamp column' in result.stderr
+    assert 'group_concat_max_len' not in result.stderr
+    assert result.stdout == ''
 
 
 def test_dev_launcher_copies_catalog_keywords_by_content_type():
