@@ -169,8 +169,7 @@ def test_requests_at_the_same_moment(settings,
               twin, token='twice')))
             _wait_for_lock_wait(Indexer._meta.db_table, waiting=2)
     finally:
-        for thread in threads:
-            thread.join(90)
+        _joined(threads)
 
     assert Changeset.objects.filter(change_type=CTYPES['bulk'],
                                     state=states.OPEN).count() == 1
@@ -228,8 +227,7 @@ def test_requests_at_the_same_moment(settings,
               reverse('approve', kwargs={'id': adding.id}), {'comments': ''})))
             _wait_for_lock_wait('gcd_series')
     finally:
-        for thread in threads:
-            thread.join(90)
+        _joined(threads)
 
     assert not isinstance(results['approve'], Exception), results['approve']
     assert results['approve'].status_code == 302
@@ -264,8 +262,7 @@ def test_requests_at_the_same_moment(settings,
                   reviewing.id)))
                 _wait_for_lock_wait('gcd_series')
         finally:
-            for thread in threads:
-                thread.join(90)
+            _joined(threads)
 
         assert results['approve'] is None, kind
         assert results['apply'].status_code == 302
@@ -302,8 +299,7 @@ def test_requests_at_the_same_moment(settings,
             discard.join(20)
             assert not discard.is_alive()
     finally:
-        for thread in threads:
-            thread.join(90)
+        _joined(threads)
 
     assert results['discard'] is None
     discarded.refresh_from_db()
@@ -325,8 +321,7 @@ def test_requests_at_the_same_moment(settings,
                   applying, token='flight%s' % commits)))
                 _wait_for_lock_wait('oi_revision_lock')
         finally:
-            for thread in threads:
-                thread.join(90)
+            _joined(threads)
 
         assert results['apply'].status_code == 302
         assert _open_record(reserving_indexer)['listed']['reserved'] == \
@@ -340,14 +335,16 @@ def test_requests_at_the_same_moment(settings,
     _discard_open_bulk_changes()
     applying = _logged_in(reserving_indexer,
                           approved_issues + [approved_variant], token='rows')
-    results = {}
-    with _held_row(reviewed):
-        thread = _started(results, 'apply',
-                          lambda: _apply(applying, token='rows',
-                                         data=FREQUENCY))
-        waits = _lock_waits_until_done(thread, 'gcd_issue')
-    thread.join(90)
-    assert not thread.is_alive(), 'the Apply did not end'
+    results, threads = {}, []
+    try:
+        with _held_row(reviewed):
+            thread = _started(results, 'apply',
+                              lambda: _apply(applying, token='rows',
+                                             data=FREQUENCY))
+            threads.append(thread)
+            waits = _lock_waits_until_done(thread, 'gcd_issue')
+    finally:
+        _joined(threads)
 
     assert waits == 0
     assert results['apply'].status_code == 302
@@ -370,14 +367,16 @@ def test_requests_at_the_same_moment(settings,
     # refuses nothing.
     _discard_open_bulk_changes()
     applying = _logged_in(reserving_indexer, approved_issues, token='two')
-    results = {}
-    with _held_row(first.indicia_publisher):
-        with _held_row(first.series):
-            thread = _started(results, 'apply', lambda: _apply(
-              applying, token='two', data=FREQUENCY))
-            _wait_for_lock_wait('gcd_series')
-        _wait_for_lock_wait('gcd_indicia_publisher')
-    thread.join(90)
+    results, threads = {}, []
+    try:
+        with _held_row(first.indicia_publisher):
+            with _held_row(first.series):
+                threads.append(_started(results, 'apply', lambda: _apply(
+                  applying, token='two', data=FREQUENCY)))
+                _wait_for_lock_wait('gcd_series')
+            _wait_for_lock_wait('gcd_indicia_publisher')
+    finally:
+        _joined(threads)
     assert results['apply'].status_code == 302
 
     # An approval that waits beyond the server's limit, on its series, on
@@ -426,8 +425,7 @@ def test_requests_at_the_same_moment(settings,
               {'comments': ''})))
             _wait_for_lock_wait('gcd_series')
     finally:
-        for thread in threads:
-            thread.join(90)
+        _joined(threads)
 
     assert b'This bulk change cannot be approved.' in \
         results['approve'].content
@@ -620,6 +618,14 @@ def _started(results, name, call):
     thread = threading.Thread(target=_run, args=(results, name, call))
     thread.start()
     return thread
+
+
+def _joined(threads):
+    """Wait for threads to end; fail if one runs after 90 seconds."""
+    for thread in threads:
+        thread.join(90)
+    assert not any(thread.is_alive() for thread in threads), \
+        'a request did not end in 90 seconds'
 
 
 def _approve(changeset_id):
