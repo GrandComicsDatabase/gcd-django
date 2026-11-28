@@ -524,6 +524,14 @@ ISSUE_LABELS = {
     'no_brand': "No publisher's brand emblem",
 }
 
+# a migrated text credit can bring a description such as "Editor"
+CREDIT_NAME_LABEL = (
+    'Credit description: '
+    '<button type="button" class="mx-0 btn-blue-editing inline" '
+    'onclick="const field = this.parentElement.control; '
+    'field.value = field.value.toLowerCase()">To Lower Case</button> '
+    )
+
 ISSUE_HELP_TEXTS = {
     'number':
         'The issue number (or other label) as it appears in the indicia. '
@@ -947,7 +955,7 @@ class BrandEmblemSelect(forms.Select):
         if value:
             brand = value.instance
             if brand.emblem and not settings.FAKE_IMAGES:
-                option_dict['url'] = brand.emblem.icon.url
+                option_dict['url'] = brand.emblem.icon_url
                 option_dict['image_width'] = brand.emblem.icon.width
         return option_dict
 

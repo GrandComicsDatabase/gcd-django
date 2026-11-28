@@ -1,0 +1,29 @@
+{
+  "name": "GCD development",
+  "dockerComposeFile": [
+    "../compose.yaml",
+    "compose.yaml",
+    "compose.project.yaml"
+  ],
+  "service": "web",
+  "runServices": ["db", "migrate", "web"],
+  "workspaceFolder": "/workspace",
+  "remoteUser": "gcd",
+  "updateRemoteUserUID": true,
+  "overrideCommand": false,
+  "shutdownAction": "stopCompose",
+  "initializeCommand": ["bash", ".devcontainer/initialize.sh"],
+  "postCreateCommand": ["bash", ".devcontainer/post-create.sh"],
+  "waitFor": "postCreateCommand",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {"label": "GCD", "onAutoForward": "notify"}
+  },
+  "otherPortsAttributes": {"onAutoForward": "ignore"},
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-python.vscode-pylance"],
+      "settings": {"python.defaultInterpreterPath": "/usr/local/bin/python"}
+    }
+  }
+}

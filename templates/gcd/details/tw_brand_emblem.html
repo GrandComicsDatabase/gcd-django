@@ -41,7 +41,7 @@
               {{ brand.issue_count }} (not counting variants)</li>
             <li><span class="font-bold">Publisher's Brand Emblem:</span>
               {% if brand.emblem %}
-              <img src="{{ brand.emblem.scaled_image.url }}">
+              <img src="{{ brand.emblem.scaled_image_url }}">
               {% endif %}
               {% if brand.generic %}
               generic
@@ -131,7 +131,11 @@
   {% endif %}
 {% endif %}
 <div class="mt-2"></div>
+{% if page.paginator.count %}
 {% render_table table %}
+{% else %}
+<p>No issues found.</p>
+{% endif %}
 {% endblock content %}
 
 {% block editing %}
