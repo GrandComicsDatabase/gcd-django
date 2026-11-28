@@ -151,6 +151,10 @@ def test_requests_at_the_same_moment(settings,
 
     changeset = Changeset.objects.get(change_type=CTYPES['bulk'])
     assert changeset.issuerevisions.count() == 3
+    # The change holds the lock of each issue; a lock of another model
+    # with the same id is not equal to the issue.
+    assert {lock.locked_object for lock in changeset.revision_locks.all()} \
+        == set(approved_issues)
     assert set(RevisionLock.objects.filter(
       object_id__in=[issue.id for issue in approved_issues])
       .values_list('changeset', flat=True)) == {changeset.id}
