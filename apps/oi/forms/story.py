@@ -123,13 +123,15 @@ def get_story_revision_form(revision=None, user=None,
         extra['empty_label'] = None
         if revision.issue:
             issue = revision.issue
+            series = issue.series
         else:
             # stories for variants in variant-add next to issue have issue
             if getattr(revision.my_issue_revision, 'other_issue_revision'):
                 issue = revision.my_issue_revision.other_issue_revision.issue
             else:
                 issue = revision.my_issue_revision.variant_of
-        series = issue.series
+            # as when adding the sequence, the series of the variant
+            series = revision.my_issue_revision.series
         if revision.genre:
             genres = revision.genre.split(';')
             for genre in genres:
