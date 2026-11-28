@@ -150,9 +150,10 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
     Requests that really run at once, so each commits; the cases share one
     test, since a transactional test empties the database when it ends.
 
-    Two indexers apply to the same objects: one change takes them all,
-    the other finds them reserved and makes no change, and no lock is
-    left without its change.  Then one indexer posts one selection twice
+    Two indexers apply to the same objects, the second while the first
+    holds a reservation: the first change takes them all, the other finds
+    them reserved and makes no change, and no lock is left without its
+    change.  Then one indexer posts one selection twice
     at once, as with a double click or two tabs: the second request waits
     for the first and finds the selection applied.  Then two tabs apply
     two lists at once, and the limit of active bulk changes holds; a
@@ -175,9 +176,22 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
     first = _logged_in(reserving_indexer, approved_issues)
     second = _logged_in(second_indexer, approved_issues)
 
-    results = _together(lambda: _apply(first), lambda: _apply(second))
+    # The first Apply reserves the first issue and waits for a reservation
+    # in flight of the second one; the other Apply then waits for the
+    # reservation of the first issue, which the first Apply holds.
+    results, threads = {}, []
+    try:
+        with _held_lock(approved_issues[1]):
+            threads.append(_started(results, 'first', lambda: _apply(first)))
+            _wait_for_lock_wait('oi_revision_lock')
+            threads.append(_started(results, 'second',
+                                    lambda: _apply(second)))
+            _wait_for_lock_wait('oi_revision_lock', waiting=2)
+    finally:
+        _joined(threads)
 
     changeset = Changeset.objects.get(change_type=CTYPES['bulk'])
+    assert changeset.indexer == reserving_indexer
     assert changeset.issuerevisions.count() == 3
     # The change holds the lock of each issue; a lock of another model
     # with the same id is not equal to the issue.
@@ -186,9 +200,10 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
     assert set(RevisionLock.objects.filter(
       object_id__in=[issue.id for issue in approved_issues])
       .values_list('changeset', flat=True)) == {changeset.id}
-    pages = [result.content.decode() for result in results]
-    assert sum('Nothing was changed' in page for page in pages) == 1
-    assert 'reserved 3' in ''.join(pages)
+    assert results['first'].status_code == 302
+    page = results['second'].content.decode()
+    assert 'Nothing was changed' in page
+    assert 'reserved 3' in page
 
     changeset.discard(changeset.indexer)
     settings.BULK_CHANGE_MAX_ACTIVE = 2
@@ -354,15 +369,19 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
     changeset = Changeset.objects.get(indexer=reserving_indexer,
                                       change_type=CTYPES['bulk'],
                                       state=states.OPEN)
-    with _held_change(changeset):
-        operation = _started(
-          results, 'operation',
-          lambda: author.post(reverse('edit_issues_in_bulk') +
-                              '?changeset=%d' % changeset.id, _pages('40')))
-        _wait_for_lock_wait('oi_changeset')
-        # It waits before it writes anything.
-        assert _row_locks('oi_issue_revision') == 0
-    operation.join(60)
+    results, threads = {}, []
+    try:
+        with _held_change(changeset):
+            threads.append(_started(
+              results, 'operation',
+              lambda: author.post(reverse('edit_issues_in_bulk') +
+                                  '?changeset=%d' % changeset.id,
+                                  _pages('40'))))
+            _wait_for_lock_wait('oi_changeset')
+            # It waits before it writes anything.
+            assert _row_locks('oi_issue_revision') == 0
+    finally:
+        _joined(threads)
 
     assert results['operation'].status_code == 302
     assert len(bulk.operation_records(changeset)) == 2
@@ -597,7 +616,8 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
 
     # The sweep of old reservations chose a bulk change left alone and
     # waits for its row, which a request that works on the change holds.
-    # That work counts: the change stays open.
+    # That work counts: the change stays open, also at REPEATABLE READ,
+    # where only the locked read of the change sees that work.
     applying = _logged_in(reserving_indexer, [first], token='swept')
     assert _apply(applying, token='swept',
                   data=_pages('72')).status_code == 302
@@ -609,13 +629,16 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
                                                  modified=long_ago)
     any_approver.user_permissions.add(Permission.objects.get(
       codename='change_ongoingreservation'))
-    results = {}
-    with _held_row(swept, then=lambda: Changeset.objects.filter(
-      id=swept.id).update(modified=timezone.now())):
-        thread = _started(results, 'sweep',
-                          lambda: approver.get(reverse('clear_issues')))
-        _wait_for_lock_wait('oi_changeset')
-    thread.join(90)
+    results, threads = {}, []
+    try:
+        with _held_row(swept, then=lambda: Changeset.objects.filter(
+          id=swept.id).update(modified=timezone.now())):
+            threads.append(_started(
+              results, 'sweep', lambda: _repeatable_read(
+                lambda: approver.get(reverse('clear_issues')))))
+            _wait_for_lock_wait('oi_changeset')
+    finally:
+        _joined(threads)
 
     assert results['sweep'].status_code == 200
     swept.refresh_from_db()
@@ -1074,6 +1097,18 @@ def _short_server_wait():
         with connection.cursor() as cursor:
             cursor.execute('SET SESSION innodb_lock_wait_timeout = %s',
                            [saved])
+
+
+def _repeatable_read(call):
+    """
+    Run call with the connection of this thread at REPEATABLE READ, the
+    default of MySQL, where a plain read in a transaction sees the rows
+    as its first read saw them and a locking read sees the latest ones.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute('SET SESSION TRANSACTION ISOLATION LEVEL '
+                       'REPEATABLE READ')
+    return call()
 
 
 def _started(results, name, call):

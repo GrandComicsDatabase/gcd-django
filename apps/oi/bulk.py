@@ -364,6 +364,16 @@ def exact_diff(rev_class, revision_ids):
     keywords come from .values(), with the ids of foreign keys; a
     many-to-many value is the frozenset of the linked ids.
     """
+    return _diff_and_values(rev_class, revision_ids)[0]
+
+
+def _diff_and_values(rev_class, revision_ids):
+    """
+    Return exact_diff(rev_class, revision_ids) and, read from the same
+    rows, the new values that it compared: {revision id: {field name:
+    value}} for each id whose row it read, with the values in the form
+    of the diff.
+    """
     revision_ids = list(revision_ids)
     single, multi = _compared_fields(rev_class)
     source = rev_class._meta.get_field(rev_class.source_name).attname
@@ -385,7 +395,7 @@ def exact_diff(rev_class, revision_ids):
     for field in multi:
         linked[field.name].update(_linked_ids(field, list(old_rows)))
 
-    diff = {}
+    diff, new_values = {}, {}
     for revision_id in revision_ids:
         # A revision deleted since its id was read, as when its object left
         # the change, has no row and so no changes.
@@ -405,7 +415,11 @@ def exact_diff(rev_class, revision_ids):
                 changes[field.name] = (values[old['id']],
                                        values[revision_id])
         diff[revision_id] = changes
-    return diff
+        new_values[revision_id] = dict(
+          [(field.name, new[field.attname]) for field in single] +
+          [(field.name, linked[field.name][revision_id])
+           for field in multi])
+    return diff, new_values
 
 
 def _seen_flags(revision):
@@ -577,17 +591,19 @@ def _shown_spaces(text):
 YEARS_NOTE_FIELDS = ('key_date', 'indicia_publisher', 'brand_emblem')
 
 
-def _years_notes(rev_class, revisions, diff):
+def _years_notes(rev_class, revisions, diff, new_values):
     """
     Return {(revision id, field name): [old note, new note]}, the notes
     that the compare page of one issue gives, by key_date_years_note, on
     a key date outside the years of the indicia publisher or of a brand
     emblem, for the issue revisions whose key date, indicia publisher or
-    brand emblems changed.  Each side reads its own values: the new side
-    those of the revision, the old side the old value of each of these
-    fields that changed.  A note is in the row of its own field when
-    that changed, else in the Key Date row, the indicia publisher first.
-    At most three queries, whatever the number of revisions.
+    brand emblems changed.  Each side reads its own values from the rows
+    of the diff, whose new values new_values holds, as _diff_and_values
+    gives them: the new side those values, the old side the old value of
+    each of these fields that changed.  A note is in the row of its own
+    field when that changed, else in the Key Date row, the indicia
+    publisher first.  At most two queries, whatever the number of
+    revisions.
     """
     if rev_class.source_name != 'issue':
         return {}
@@ -598,8 +614,6 @@ def _years_notes(rev_class, revisions, diff):
                  if set(YEARS_NOTE_FIELDS).intersection(diff[revision.id])]
     if not concerned:
         return {}
-    links = _linked_ids(emblem_field,
-                        [revision.id for revision in concerned])
     sides = []
     publisher_ids, emblem_ids = set(), set()
     for revision in concerned:
@@ -608,12 +622,11 @@ def _years_notes(rev_class, revisions, diff):
         rows = ('indicia_publisher' if 'indicia_publisher' in changes
                 else key_row,
                 'brand_emblem' if 'brand_emblem' in changes else key_row)
-        stored = (revision.key_date, revision.indicia_publisher_id,
-                  links[revision.id])
+        stored = new_values[revision.id]
         for side in (0, 1):
             key_date, publisher, emblems = [
-              changes[name][side] if name in changes else value
-              for name, value in zip(YEARS_NOTE_FIELDS, stored)]
+              changes[name][side] if name in changes else stored[name]
+              for name in YEARS_NOTE_FIELDS]
             sides.append((revision, side, rows, key_date, publisher,
                           emblems))
             publisher_ids.add(publisher)
@@ -623,9 +636,9 @@ def _years_notes(rev_class, revisions, diff):
     notes = defaultdict(lambda: ['', ''])
     for revision, side, rows, key_date, publisher, emblems in sides:
         publisher_row, emblem_row = rows
-        # The note reads the key date of the object it gets: for the old
-        # side, an unsaved revision that holds the old key date.
-        dated = revision if side else rev_class(key_date=key_date)
+        # The note reads the key date of the object it gets: an unsaved
+        # revision that holds the key date of the side.
+        dated = rev_class(key_date=key_date)
         if publisher_row:
             notes[revision.id, publisher_row][side] += key_date_years_note(
               dated, publishers.get(publisher), 'Indicia publisher')
@@ -649,9 +662,10 @@ def compare_rows(revisions):
     if not revisions:
         return []
     rev_class = type(revisions[0])
-    diff = exact_diff(rev_class, [revision.id for revision in revisions])
+    diff, new_values = _diff_and_values(
+      rev_class, [revision.id for revision in revisions])
     names = _related_names(rev_class, diff)
-    notes = _years_notes(rev_class, revisions, diff)
+    notes = _years_notes(rev_class, revisions, diff, new_values)
     rows = []
     for revision in revisions:
         fields = []
@@ -1897,11 +1911,13 @@ def _count_removed(changeset, removed):
 
 # Why a bulk change takes no further operation while the check of a
 # submission fails: the messages, then the way out, which is to take out
-# the objects they name or, if they name all of them, to discard it.
+# the objects they name or, if they name all of them or the change as a
+# whole, to discard it.
 FURTHER_REFUSED = 'This bulk change cannot take another operation. %s %s'
 REMOVE_OR_DISCARD = ('Please remove these %s from this change, or discard '
                      'it.')
 ONLY_DISCARD = 'Please discard this change: it holds no other %s.'
+CHANGE_DISCARD = 'Please discard this change.'
 
 
 def operation_refusal(changeset, forms=True):
@@ -1913,8 +1929,9 @@ def operation_refusal(changeset, forms=True):
     was not checked; while that check fails, as when a flag of a parent
     has turned off a field that the change holds, the way out is to
     remove the objects it names or, if it names every object of the
-    change, to discard it.  forms False leaves out the edit forms, as in
-    _submit_problems; a revert is refused either way.
+    change or the change as a whole, to discard it.  forms False leaves
+    out the edit forms, as in _submit_problems; a revert is refused
+    either way.
     """
     record = operation_record(changeset)
     if record is not None and record['operation'] == 'restore':
@@ -1928,7 +1945,10 @@ def operation_refusal(changeset, forms=True):
     # Only the objects of the change count, not the anchors beside them.
     named = {revision.id for revision, message in problems
              if isinstance(revision, revisions.model)}
-    if named and len(named) == revisions.count():
+    if any(revision is None for revision, message in problems):
+        # A problem of the whole change names no object to take out.
+        way_out = CHANGE_DISCARD
+    elif named and len(named) == revisions.count():
         way_out = ONLY_DISCARD % singular
     else:
         way_out = REMOVE_OR_DISCARD % plural
