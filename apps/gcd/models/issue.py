@@ -1119,7 +1119,7 @@ class SeriesDetailsIssueTable(PublisherIssueTable):
         super().__init__(*args, **kwargs)
         for column in exclude_columns:
             self.columns.hide(column)
-            self.columns[column].exclude_from_export = True
+            self.columns[column].column.exclude_from_export = True
 
     class Meta:
         model = Issue
