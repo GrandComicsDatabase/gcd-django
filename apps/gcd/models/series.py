@@ -42,6 +42,12 @@ class Series(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['sort_name', 'year_began']
+        indexes = [
+            models.Index(
+                fields=['deleted', 'sort_name', 'year_began', 'id'],
+                name='gcd_series_v2_browse_idx',
+            ),
+        ]
 
     # Core series fields.
     name = models.CharField(max_length=255, db_index=True)
