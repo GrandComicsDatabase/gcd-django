@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load display %}
+{% load editing %}
 {% load static %}
 
 {% block title %}
@@ -37,6 +38,15 @@ This cover upload has been successfully submitted and is awaiting approval by an
       <br>
       <a href="{{ issue.series.get_absolute_url }}">Back to the Series</a><br>
       <a href="{{ issue.get_absolute_url }}">Back to the Issue</a>
+      {% if not issue.publication_date and not issue|is_locked %}
+      <form method="POST"
+        action="{% url 'reserve_revision' model_name='issue' id=issue.id %}">
+        {% csrf_token %}
+        <button class="mx-auto btn btn-blue-editing" type="submit">
+          Add the Publication Date
+        </button>
+      </form>
+      {% endif %}
     </div>
   </div>
   <div class="ps-2">
