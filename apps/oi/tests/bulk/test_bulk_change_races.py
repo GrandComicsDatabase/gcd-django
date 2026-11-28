@@ -173,16 +173,9 @@ def test_requests_at_the_same_moment(settings,
     # The indexer row is held until both requests wait for it, so both
     # have passed the check of the page: apply refuses the second one,
     # after the first one ends.
-    results, threads = {}, []
-    try:
-        with _held(_hold_indexer, reserving_indexer):
-            threads.append(_started(results, 'first', lambda: _apply(
-              first, token='twice')))
-            threads.append(_started(results, 'twin', lambda: _apply(
-              twin, token='twice')))
-            _wait_for_lock_wait(Indexer._meta.db_table, waiting=2)
-    finally:
-        _joined(threads)
+    results = _behind_indexer(
+      reserving_indexer, first=lambda: _apply(first, token='twice'),
+      twin=lambda: _apply(twin, token='twice'))
 
     assert Changeset.objects.filter(change_type=CTYPES['bulk'],
                                     state=states.OPEN).count() == 1
@@ -192,19 +185,22 @@ def test_requests_at_the_same_moment(settings,
 
     # Two tabs of one indexer, each with its own list, apply at once: the
     # requests take turns, and the second finds the first change active.
+    # Both wait for the indexer row, so neither has counted the active
+    # changes before the other one ends.
     Changeset.objects.get(change_type=CTYPES['bulk'], state=states.OPEN) \
              .discard(reserving_indexer)
     settings.BULK_CHANGE_MAX_ACTIVE = 1
     tab_a = _logged_in(reserving_indexer, approved_issues[:2], token='a')
     tab_b = _logged_in(reserving_indexer, approved_issues[2:], token='b')
 
-    results = _together(lambda: _apply(tab_a, token='a'),
-                        lambda: _apply(tab_b, token='b'))
+    results = _behind_indexer(reserving_indexer,
+                              a=lambda: _apply(tab_a, token='a'),
+                              b=lambda: _apply(tab_b, token='b'))
 
     assert Changeset.objects.filter(change_type=CTYPES['bulk'],
                                     state=states.OPEN).count() == 1
     assert any('You already have 1 active bulk change' in
-               result.content.decode() for result in results)
+               result.content.decode() for result in results.values())
 
     # A request that waits too long for the indexer row, which another
     # request of the indexer holds, gets a message, not a server error.
@@ -581,6 +577,22 @@ def _discard(changeset_id):
         changeset = Changeset.objects.select_for_update().get(
           id=changeset_id)
         changeset.discard(changeset.indexer)
+
+
+def _behind_indexer(user, **calls):
+    """
+    Hold the indexer row of user, start calls in threads, release it once
+    each of them waits for it, and return their results by name.
+    """
+    results, threads = {}, []
+    try:
+        with _held(_hold_indexer, user):
+            for name, call in calls.items():
+                threads.append(_started(results, name, call))
+            _wait_for_lock_wait(Indexer._meta.db_table, waiting=len(calls))
+    finally:
+        _joined(threads)
+    return results
 
 
 @contextmanager
