@@ -19,7 +19,7 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision, \
                            CreatorRelationRevision, \
                            CreatorSignatureRevision, get_creator_field_list, \
                            _get_creator_sourced_fields, _check_year
-from apps.gcd.models import NameType, CreatorNameDetail, School
+from apps.gcd.models import Creator, NameType, CreatorNameDetail, School
 from apps.stddata.models import Country
 
 from .custom_layout_object import Formset, FormAsField, BaseField
@@ -57,6 +57,37 @@ def _generic_data_source_clean(form, cd, field=''):
               'Source description and source type must both be set.')
 
 
+class MoveCreatorNameForm(forms.Form):
+    """Choose the creator that a name of another creator belongs to."""
+
+    creator = forms.ModelChoiceField(
+        queryset=Creator.objects.filter(deleted=False),
+        label='New creator',
+        widget=autocomplete.ModelSelect2(url='creator_autocomplete'))
+    comments = forms.CharField(widget=forms.Textarea, required=False)
+
+    def __init__(self, *args, name, **kwargs):
+        """Keep the name that the form moves, for the checks."""
+        super().__init__(*args, **kwargs)
+        self.name = name
+
+    def clean_creator(self):
+        """Refuse the present creator, one being deleted, one with the name."""
+        creator = self.cleaned_data['creator']
+        if creator == self.name.creator:
+            raise forms.ValidationError(
+              'The name already belongs to this creator.')
+        if creator.pending_deletion():
+            raise forms.ValidationError(
+              'This creator has a pending deletion.')
+        names = [remove_diacritics(other.name)
+                 for other in creator.active_names()]
+        if remove_diacritics(self.name.name) in names:
+            raise forms.ValidationError(
+              'This creator already has this name.')
+        return creator
+
+
 class CreatorNameDetailRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorNameDetailRevision
@@ -74,6 +105,11 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
         self.fields['sort_name'].help_text = "In the Western culture usually "\
                                              " 'family name, given name'."
         if self.instance.creator_name_detail:
+            # A name on its way to another creator keeps what allowed the move.
+            if self.instance.creator_id != \
+               self.instance.creator_name_detail.creator_id:
+                self.fields['is_official_name'].disabled = True
+                self.fields['type'].disabled = True
             if self.instance.creator_name_detail.type and \
                self.instance.creator_name_detail.type.id in [1, 3, 4, 6, 9]:
                 self.fields['type'].queryset |= NameType.objects.filter(
