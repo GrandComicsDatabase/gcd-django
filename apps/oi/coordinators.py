@@ -96,7 +96,11 @@ def clear_reservations(request=None, changes=None):
         if changeset is None:
             continue
         changed = False
-        if changeset.inline():
+        if changeset.change_type == CTYPES['bulk']:
+            # A bulk change is never submitted for its indexer: an old
+            # one is discarded, which frees its locks.
+            revision = None
+        elif changeset.inline():
             revision = changeset.inline_revision()
         elif changeset.issuerevisions.count() > 0:
             revision = changeset.issuerevisions.all()[0]
@@ -104,12 +108,12 @@ def clear_reservations(request=None, changes=None):
             raise NotImplementedError
 
         # old (forgotten) cover uploads stay unchanged and get discarded
-        if changeset.change_type != CTYPES['cover']:
+        if revision and changeset.change_type != CTYPES['cover']:
             revision.compare_changes()
             if revision.is_changed:
                 changed = True
 
-        if not changed and changeset.storyrevisions.count():
+        if not changed and revision and changeset.storyrevisions.count():
             for story in changeset.storyrevisions.all():
                 story.compare_changes()
                 if story.is_changed:
@@ -139,10 +143,14 @@ def clear_reservations(request=None, changes=None):
                 changeset.submit(notes=notes)
             submitted_list.append(mark_safe(info_text))
         else:
+            if revision:
+                notes = ('This is an automatic discard of an unchanged '
+                         'edit which was reserved for 9 weeks')
+            else:
+                notes = ('This is an automatic discard of a bulk change '
+                         'which was not submitted in time.')
             if not SCRIPT_DEBUG:
-                changeset.discard(changeset.indexer, notes='This is an '
-                                  'automatic discard of an unchanged edit '
-                                  'which was reserved for 9 weeks')
+                changeset.discard(changeset.indexer, notes=notes)
             discarded_list.append(mark_safe(info_text))
     return render(request, 'oi/edit/clear_reservations.html',
                   {'submitted_list': submitted_list,

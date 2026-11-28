@@ -49,7 +49,7 @@ from apps.gcd.models import (
     Printer, IndiciaPrinter,
     CreatorSignature, Character, CharacterRelation, Group,
     GroupRelation, GroupMembership, Universe, CREDIT_TYPES, VCS_Codes)
-from apps.gcd.views import paginate_response
+from apps.gcd.views import paginate_response, ResponsePaginator
 # need this for preview-call
 from apps.gcd.views.details import (  # noqa: F401
     show_publisher, show_indicia_publisher,
@@ -74,7 +74,7 @@ from apps.oi.models import (
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, BiblioEntryRevision, CharacterOrderRevision,
     OngoingReservation, RevisionLock,
-    _get_revision_lock, _free_revision_lock, CTYPES,
+    _get_revision_lock, _free_revision_lock, CTYPES, BULK_OBJECT_NAMES,
     get_issue_field_list, set_series_first_last,
     AwardRevision, ReceivedAwardRevision, IssueCreditRevision,
     StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision,
@@ -137,7 +137,7 @@ from apps.oi.forms.support import CREATOR_HELP_LINKS
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
-from apps.oi import states
+from apps.oi import bulk, states
 from apps.oi.templatetags.editing import is_locked
 
 REVISION_CLASSES = {
@@ -700,6 +700,9 @@ def edit_revision(request, id, model_name):
 @permission_required('indexer.can_reserve')
 def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
+    if changeset.change_type == CTYPES['bulk']:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'compare', kwargs={'id': changeset.id}))
 
     if changeset.inline():
         revision = changeset.inline_revision()
@@ -1897,6 +1900,28 @@ def process_revision(request, id, model_name):
 ##############################################################################
 # Bulk Changes
 ##############################################################################
+
+
+def _bulk_compare(request, changeset):
+    """
+    Show a bulk change: one row for each changed field of each changed
+    object, 100 objects to a page, then the comments and the actions of
+    any change.
+    """
+    name, revisions = changeset.bulk_target()
+    context = {'changeset': changeset, 'states': states}
+    if name is None:
+        context['heading'] = 'no objects'
+        revisions = changeset.issuerevisions.none()
+    else:
+        context['heading'] = bulk.compare_heading(name, revisions)
+        context['object_label'] = BULK_OBJECT_NAMES[name][0]
+    page = ResponsePaginator(revisions, vars=context).paginate(request)
+    context['rows'] = bulk.compare_rows(page.object_list)
+    response = oi_render(request, 'oi/edit/compare_bulk.html', context)
+    response['Cache-Control'] = ('no-cache, no-store, max-age=0,'
+                                 ' must-revalidate')
+    return response
 
 
 def _clean_bulk_issue_change_form(form, remove_fields, items,
@@ -6877,7 +6902,8 @@ def show_queue(request, queue_name):
                                       'issuerevisions__variant_of',
                                       'issuerevisions__series',
                                       'issuerevisions__previous_revision')
-    issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
+    issue_bulks = changes.filter(change_type__in=[CTYPES['issue_bulk'],
+                                                  CTYPES['bulk']])
     covers = changes.filter(change_type=CTYPES['cover'])\
                     .prefetch_related('coverrevisions__previous_revision',
                                       'coverrevisions__cover')
@@ -7022,7 +7048,7 @@ def show_queue(request, queue_name):
               country=Max('issuerevisions__series__country__id')),
           },
           {
-            'object_name': 'Issue Bulk Changes',
+            'object_name': 'Bulk Changes',
             'object_type': 'issue',
             'changesets': issue_bulks.order_by('state', 'modified', 'id')
                                      .annotate(
@@ -7285,6 +7311,8 @@ def compare(request, id):
     changeset = get_object_or_404(Changeset.objects
                                   .prefetch_related('comments__commenter'),
                                   id=id)
+    if changeset.change_type == CTYPES['bulk']:
+        return _bulk_compare(request, changeset)
 
     if changeset.inline():
         revision = changeset.inline_revision()

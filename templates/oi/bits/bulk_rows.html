@@ -1,0 +1,22 @@
+<table class="max-w-[calc(100vw-0.5rem)] border border-gray-200 max-w-full">
+<tr class="bg-blue-100 [&>th]:px-1.5">
+  <th> {{ object_label|capfirst }} </th>
+  <th> Field </th>
+  <th> Old </th>
+  <th> New </th>
+</tr>
+{% for revision, name, fields in rows %}
+  {% for label, old, new in fields %}
+<tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
+    {% if forloop.first %}
+  <td rowspan="{{ fields|length }}">
+    <a href="{{ revision.source.get_absolute_url }}">{{ name }}</a>
+  </td>
+    {% endif %}
+  <td> {{ label }} </td>
+  <td> {{ old }} </td>
+  <td> {{ new }} </td>
+</tr>
+  {% endfor %}
+{% endfor %}
+</table>
