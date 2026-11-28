@@ -79,6 +79,19 @@ def test_update_cached_counts_subtract(f_mock):
     assert p.issue_count == ISSUE_COUNT - DELTAS['issues']
 
 
+@pytest.mark.parametrize('deltas', [{'series': -1, 'publisher series': 1},
+                                    {'series': 1, 'publisher series': -1}])
+def test_update_cached_counts_series_kind_changes(f_mock, deltas):
+    """
+    A series that stops or starts being a comics publication moves from
+    one kind of series to the other: the series count stays as it is.
+    """
+    p = Publisher()
+    p.update_cached_counts(deltas)
+
+    assert p.series_count == 0
+
+
 @pytest.fixture
 def pub_dep_mocks():
     p = '%s.Publisher' % PATH

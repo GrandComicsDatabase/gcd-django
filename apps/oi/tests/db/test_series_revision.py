@@ -3,7 +3,7 @@
 import pytest
 import mock
 
-from apps.gcd.models import Publisher
+from apps.gcd.models import Publisher, Series
 from apps.oi.models import SeriesRevision, IssueRevision
 
 
@@ -226,3 +226,26 @@ def test_create_edit_revision(any_added_series, series_add_values,
 
     assert rev.source is any_added_series
     assert rev.source_name == 'series'
+
+
+@pytest.mark.django_db
+def test_commit_series_kind_change_keeps_publisher_count(
+      any_added_series, any_editing_changeset):
+    """
+    A series that stops being a comics publication still counts once
+    for its publisher.
+    """
+    # Fresh objects, as an approval reads them: the publisher of the
+    # fixture still holds the count expression of the add.
+    series = Series.objects.get(id=any_added_series.id)
+    publisher = series.publisher
+    series_count = publisher.series_count
+    rev = SeriesRevision.clone(data_object=series,
+                               changeset=any_editing_changeset)
+    rev.is_comics_publication = False
+    rev.save()
+
+    rev.commit_to_display()
+
+    assert Publisher.objects.get(id=publisher.id).series_count == \
+        series_count
