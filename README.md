@@ -59,7 +59,7 @@ via [gcd-tech](https://groups.google.com/group/gcd-tech/)
 ### `beta`
 
 This is the general-purpose development branch.  It is often deployed to
-[the beta site](http://beta.comics.org/), and most work should be done here.
+[the beta site](https://beta.comics.org/), and most work should be done here.
 Special-purpose development branches are based from `beta` unless otherwise
 noted.
 
