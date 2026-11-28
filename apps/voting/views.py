@@ -171,6 +171,17 @@ def _calculate_results(unresolved):
                     vote.save()
                 ballot = {'ballot': ordered_votes}
                 ballots.append(ballot)
+            if not ballots:
+                # No ranking has a voter: nobody voted, or the ballot is
+                # secret and its rankings are stored without their voter,
+                # so they cannot be put together into ballots.  As for a
+                # tie, there is no valid result, and the result mail asks
+                # the vote administrators to follow up.
+                topic.invalid = True
+                topic.result_calculated = True
+                topic.save()
+                _send_result_email(topic)
+                continue
             result = SchulzeMethod(
               ballots,
               ballot_notation=CondorcetHelper.BALLOT_NOTATION_GROUPING)
