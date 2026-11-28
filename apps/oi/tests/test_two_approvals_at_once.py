@@ -19,7 +19,17 @@ from apps.oi import states
 from apps.oi.models import (
     Changeset, IssueRevision, PublisherRevision, SeriesRevision, CTYPES,
     _get_revision_lock)
+from apps.oi.tests.lock_waits import wait_for_lock_waits
 from apps.stats.models import CountStats
+
+# MariaDB has no processlist table in its Performance Schema.
+MYSQL_OTHER_CONNECTIONS = (
+  'SELECT ID FROM performance_schema.processlist '
+  'WHERE DB = DATABASE() AND ID <> CONNECTION_ID()')
+
+MARIADB_OTHER_CONNECTIONS = (
+  'SELECT ID FROM information_schema.PROCESSLIST '
+  'WHERE DB = DATABASE() AND ID <> CONNECTION_ID()')
 
 
 @pytest.fixture
@@ -57,30 +67,6 @@ def _approve(client, changeset):
     """Post the approval of changeset; return the response."""
     return client.post(reverse('process', kwargs={'id': changeset.id}),
                        {'approve': 'Approve', 'comments': ''})
-
-
-def _lock_waits(cursor, table):
-    """Return how many transactions wait for a lock on a row of table."""
-    cursor.execute(
-      'SELECT COUNT(*) FROM performance_schema.data_lock_waits w '
-      'JOIN performance_schema.data_locks l '
-      'ON l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID '
-      'WHERE l.OBJECT_SCHEMA = DATABASE() AND l.OBJECT_NAME = %s', [table])
-    return cursor.fetchone()[0]
-
-
-def _wait_for_lock_wait(table, timeout=30):
-    """
-    Wait until a transaction waits for a lock on a row of table, as the
-    server shows it.
-    """
-    end = time.monotonic() + timeout
-    with connection.cursor() as cursor:
-        while time.monotonic() < end:
-            if _lock_waits(cursor, table):
-                return
-            time.sleep(0.05)
-    raise AssertionError('no transaction waits for %s' % table)
 
 
 def _started(target, name):
@@ -121,13 +107,15 @@ def _stop(thread):
     if not thread.is_alive():
         return
     thread.stopped.set()
+    if connection.mysql_is_mariadb:
+        other_connections = MARIADB_OTHER_CONNECTIONS
+    else:
+        other_connections = MYSQL_OTHER_CONNECTIONS
     end = time.monotonic() + 30
     with connection.cursor() as cursor:
         while True:
             alive = thread.is_alive()
-            cursor.execute(
-              'SELECT ID FROM performance_schema.processlist '
-              'WHERE DB = DATABASE() AND ID <> CONNECTION_ID()')
+            cursor.execute(other_connections)
             ids = [row[0] for row in cursor.fetchall()]
             if not (alive or ids) or time.monotonic() > end:
                 break
@@ -247,7 +235,7 @@ def test_an_edit_approved_during_an_add_keeps_the_new_last_issue(
     try:
         with _held(lambda: _commit(added)):
             thread, result = _approval_started(approver, edit)
-            _wait_for_lock_wait('gcd_series')
+            wait_for_lock_waits('gcd_series')
     finally:
         if thread is not None:
             _stop(thread)
@@ -285,7 +273,7 @@ def test_an_edit_of_a_parent_approved_during_an_add_keeps_its_counts(
     try:
         with _held(lambda: _commit(added)):
             thread, result = _approval_started(approver, edit)
-            _wait_for_lock_wait('gcd_%s' % parent)
+            wait_for_lock_waits('gcd_%s' % parent)
     finally:
         if thread is not None:
             _stop(thread)
