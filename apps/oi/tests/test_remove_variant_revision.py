@@ -6,7 +6,6 @@ from django.urls import reverse
 from apps.gcd.models import (
     CodeNumberType, Creator, CreatorNameDetail, CreditType, ExternalSite,
     Issue, Story, StoryType)
-from apps.indexer.models import Error
 from apps.oi import states
 from apps.oi.models import (
     Changeset, ChangesetComment, CoverRevision, CTYPES, ExternalLinkRevision,
@@ -150,8 +149,9 @@ def _contents(changeset):
 def _assert_refused(response, message):
     """Check that the response redirects to the given error message."""
     assert response.status_code == 302
-    key = response['Location'].split('error_key=')[1]
-    assert message in Error.objects.get(error_key=key).error_text
+    assert response['Location'] == reverse('error')
+    page = response.client.get(response['Location'])
+    assert message in page.content.decode()
 
 
 @pytest.mark.django_db
