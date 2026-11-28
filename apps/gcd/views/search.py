@@ -149,7 +149,8 @@ def generic_by_name(request, name, q_obj, sort,
                 table_format = IndiciaPublisherSearchTable
             elif class_ is Series:
                 table_format = SeriesPublisherTable
-                if things:
+                # Check for filter choices without fetching every Series row.
+                if things.exists():
                     filter = filter_series(request, things)
                     things = filter.qs
                     context['filter_form'] = filter.form
@@ -1081,16 +1082,32 @@ def series_search_hx(request):
     return series_by_name(request, series_name, table_inline=True)
 
 
+_SERIES_SEARCH_ID_BATCH_SIZE = 500
+
+
+def _series_search_ids(series_name):
+    """Read matching IDs in batches; SQL still filters and sorts the table."""
+    matches = SearchQuerySet().filter(name=GcdNameQuery(series_name)) \
+                              .models(Series).values_list('pk', flat=True)
+    batch_size = _SERIES_SEARCH_ID_BATCH_SIZE
+    ids = matches[0:batch_size]
+    # The first slice also loads the backend's hit count. Bound the last
+    # slice by it rather than asking Elasticsearch past its result window.
+    total = matches.count()
+    for start in range(batch_size, total, batch_size):
+        ids.extend(matches[start:min(start + batch_size, total)])
+    return ids
+
+
 def series_by_name(request, series_name='', sort=ORDER_ALPHA,
                    template='gcd/search/series_list.html', table_inline=False):
-    if settings.USE_ELASTICSEARCH and not series_name == '':
-        sqs = SearchQuerySet().filter(name=GcdNameQuery(series_name)) \
-                              .models(Series)
-        series_ids = sqs.values_list('pk', flat=True)
-        things = Series.objects.filter(id__in=series_ids)
-        return generic_by_name(request, series_name, None, sort, Series,
-                               things=things, template=template,
-                               table_inline=table_inline)
+    table_relations = ('publisher__country', 'publication_type',
+                       'first_issue', 'last_issue')
+    if settings.USE_ELASTICSEARCH and series_name:
+        # Do not add joins to the paginated SELECT: they can reorder rows
+        # that tie on the table's existing sort keys.
+        things = Series.objects.filter(id__in=_series_search_ids(series_name)) \
+                               .prefetch_related(*table_relations)
     else:
         things = Series.objects.exclude(deleted=True)
         if series_name:
@@ -1105,13 +1122,10 @@ def series_by_name(request, series_name='', sort=ORDER_ALPHA,
                                        .distinct()
             matching_ids = set(series_ids_by_name) | set(series_ids_by_issue)
             things = things.filter(pk__in=matching_ids)
-        things = things.select_related('publisher__country',
-                                       'publication_type',
-                                       'first_issue',
-                                       'last_issue')
-        return generic_by_name(request, series_name, None, sort,
-                               Series, template, things=things,
-                               table_inline=table_inline)
+        things = things.select_related(*table_relations)
+    return generic_by_name(request, series_name, None, sort, Series,
+                           template=template, things=things,
+                           table_inline=table_inline)
 
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
