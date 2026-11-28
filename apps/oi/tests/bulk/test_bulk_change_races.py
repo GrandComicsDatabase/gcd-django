@@ -485,7 +485,8 @@ def test_requests_at_the_same_moment(settings,
 
     # The sweep of old reservations chose a bulk change left alone and
     # waits for its row, which a request that works on the change holds.
-    # That work counts: the change stays open.
+    # That work counts: the change stays open, also at REPEATABLE READ,
+    # where only the locked read of the change sees that work.
     applying = _logged_in(reserving_indexer, [first], token='swept')
     assert _apply(applying, token='swept',
                   data=_pages('72')).status_code == 302
@@ -500,8 +501,8 @@ def test_requests_at_the_same_moment(settings,
     results = {}
     with _held_row(swept, then=lambda: Changeset.objects.filter(
       id=swept.id).update(modified=timezone.now())):
-        thread = _started(results, 'sweep',
-                          lambda: approver.get(reverse('clear_issues')))
+        thread = _started(results, 'sweep', lambda: _repeatable_read(
+          lambda: approver.get(reverse('clear_issues'))))
         _wait_for_lock_wait('oi_changeset')
     thread.join(90)
 
@@ -719,6 +720,18 @@ def _short_server_wait():
         with connection.cursor() as cursor:
             cursor.execute('SET SESSION innodb_lock_wait_timeout = %s',
                            [saved])
+
+
+def _repeatable_read(call):
+    """
+    Run call with the connection of this thread at REPEATABLE READ, the
+    default of MySQL, where a plain read in a transaction sees the rows
+    as its first read saw them and a locking read sees the latest ones.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute('SET SESSION TRANSACTION ISOLATION LEVEL '
+                       'REPEATABLE READ')
+    return call()
 
 
 def _started(results, name, call):

@@ -101,11 +101,11 @@ def clear_reservations(request=None, changes=None):
         changed = False
         if changeset.change_type == CTYPES['bulk']:
             # The list was made before this loop, and a bulk change counts
-            # from its last work: leave one worked on since then.
+            # from its last work: leave one worked on since then, as the
+            # locked row shows it at any isolation level.
             clearing_date = timezone.now() - timedelta(
                 weeks=settings.RESERVE_ISSUE_WEEKS)
-            if Changeset.objects.filter(id=changeset.id,
-                                        modified__gte=clearing_date).exists():
+            if changeset.modified >= clearing_date:
                 continue
             # A bulk change is never submitted for its indexer: an old
             # one is discarded, which frees its locks.
