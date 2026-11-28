@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gcd', '0071_feature_description'),
+        ('gcd', '0075_merge_feature_names_api_v2'),
     ]
 
     operations = [
