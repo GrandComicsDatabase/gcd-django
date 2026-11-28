@@ -1,15 +1,16 @@
+{% load i18n %}
 {% load display %}
 {% load gcdtable %}
 
 <div>
 <table class="status">
   <tr class="flex flex-wrap font-bold [&_td]:px-3 [&_td]:border-t-2 [&_td]:border-b-2">
-    <td class="bg-green-600 border-s-2"> Indexed </td>
-    <td class="bg-green-400"> Partially Indexed </td>
-    <td class="bg-green-200"> Some Data </td>
-    <td class=""> Skeleton Data Only </td>
-    <td class="bg-yellow-400"> Pending Approval </td>
-    <td class="bg-red-400 border-e-2"> Reserved </td>
+    <td class="bg-green-600 border-s-2"> {% trans "Indexed" %} </td>
+    <td class="bg-green-400"> {% trans "Partially Indexed" %} </td>
+    <td class="bg-green-200"> {% trans "Some Data" %} </td>
+    <td class=""> {% trans "Skeleton Data Only" %} </td>
+    <td class="bg-yellow-400"> {% trans "Pending Approval" %} </td>
+    <td class="bg-red-400 border-e-2"> {% trans "Reserved" %} </td>
   </tr>
 </table>
   <div class="flex flex-wrap">
