@@ -1,3 +1,4 @@
+{% load i18n %}
 {% load static %}
 <nav class="flex items-center justify-between flex-wrap {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} px-2 sm:px-4">
   <div class="flex-1 ">
@@ -12,10 +13,11 @@
         <span class="max-sm:hidden flex">
   {% include "gcd/bits/search_for.html" %}
         </span>
-        <input type="search" name="query" value="{{ search_term|default:'' }}" placeholder="Search..."
-          aria-label="Search"
+        <input type="search" name="query" value="{{ search_term|default:'' }}"
+          placeholder="{% trans 'Search...' %}"
+          aria-label="{% trans 'Search' %}"
           class="w-full bg-white text-gray-600 px-1" />
-        <button type='submit' aria-label="Search"
+        <button type='submit' aria-label="{% trans 'Search' %}"
           class="flex items-center justify-center bg-white px-2 my-[0.5px]">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192.904 192.904" width="16px" class="fill-black">
           <path
@@ -33,19 +35,29 @@
   <div class="flex flex-1 justify-end">
     <!-- Mobile Menu Button Medium -->
     <div class="lg:hidden items-center">
-      <button class="mobile-menu-button-gcd-md" aria-label="Menu">
+      <button class="mobile-menu-button-gcd-md" aria-label="{% trans 'Menu' %}">
         {% include "gcd/bits/tw_three_bars.html" %}
       </button>
       <div class="navigation-menu hidden absolute right-0 {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} text-white rounded-b-lg pb-2 z-50 w-48">
-        <a class="block px-3 py-1 text-white visited:text-white {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline" href="{% url "advanced_search" %}">Advanced Query</a>
+        <a class="block px-3 py-1 text-white visited:text-white
+          {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700
+          {% endif %} hover:no-underline"
+          href="{% url "advanced_search" %}">{% trans "Advanced Query" %}</a>
         {% if user.is_authenticated %}
           {% if MYCOMICS %}
-        <a class="block px-3 py-1 text-white visited:text-white hover:bg-red-900 hover:no-underline" href="{% url "collections_list" %}">Collections</a>
+        <a class="block px-3 py-1 text-white visited:text-white
+          hover:bg-red-900 hover:no-underline"
+          href="{% url "collections_list" %}">{% trans "Collections" %}</a>
           {% else %}
-        <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-700 hover:no-underline" href="{% url "editing" %}">Editing</a>
+        <a class="block px-3 py-1 text-white visited:text-white
+          hover:bg-blue-700 hover:no-underline"
+          href="{% url "editing" %}">{% trans "Editing" %}</a>
           {% endif %}
         {% else %}
-        <a class="block px-3 py-1 text-white visited:text-white {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline" href="{% url "donate" %}">Donate</a>
+        <a class="block px-3 py-1 text-white visited:text-white
+          {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700
+          {% endif %} hover:no-underline"
+          href="{% url "donate" %}">{% trans "Donate" %}</a>
         {% endif %}
         {% include "gcd/bits/user_menu.html" %}
       </div>
@@ -54,27 +66,27 @@
     <div class="max-md:right-0 hidden flex-col lg:flex lg:flex-row md:flex-col justify-end text-white items-center">
       <a class="text-white visited:text-white hover:no-underline" href="{% url 'advanced_search' %}">
         <button class="btn {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %}">
-          Advanced Query
+          {% trans "Advanced Query" %}
         </button>
       </a>
       {% if user.is_authenticated %}
         {% if MYCOMICS %}
       <a class="text-white visited:text-white hover:no-underline" href="{% url 'collections_list' %}">
         <button class="btn hover:bg-red-900">
-          Collections
+          {% trans "Collections" %}
         </button>
       </a>
         {% else %}
       <a class="text-white visited:text-white hover:no-underline" href="{% url "editing" %}">
         <button class="btn hover:bg-blue-700">
-          Editing
+          {% trans "Editing" %}
         </button>
       </a>
     {% endif %}
       {% else %}
       <a class="text-white visited:text-white hover:no-underline" href="{% url "donate" %}">
         <button class="btn {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %}">
-          Donate
+          {% trans "Donate" %}
         </button>
       </a>
       {% endif %}

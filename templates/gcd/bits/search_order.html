@@ -1,6 +1,13 @@
+{% load i18n %}
 <select name="sort" class="{% if MYCOMICS %} bg-red-200 {% else %} bg-blue-100 {% endif %}" size="1">
-    <option value="alpha" {% if not 'chrono' in request.path %}selected{% endif %}> Name</option>
-    <option value="chrono" {% if 'chrono' in request.path %}selected{% endif %}> Date</option>
+    <option value="alpha"
+      {% if not 'chrono' in request.path %}selected{% endif %}>
+      {% trans "Name" %}
+    </option>
+    <option value="chrono"
+      {% if 'chrono' in request.path %}selected{% endif %}>
+      {% trans "Date" %}
+    </option>
 </select>
 <script>
     function updateSortSelect(event) {
