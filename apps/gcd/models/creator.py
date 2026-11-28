@@ -1113,7 +1113,12 @@ class CreatorBaseTable(tables.Table):
         from apps.gcd.templatetags.credits import show_country_info
         display_country = "<img class='pe-1 inline' %s>" % (
           show_country_info(record.birth_country))
-        return mark_safe(display_country) + absolute_url(record)
+        return mark_safe(display_country) + absolute_url(
+          record, descriptor=self.creator_descriptor(record))
+
+    def creator_descriptor(self, record):
+        """Return the escaped text of the link to the creator."""
+        return esc(record)
 
     def render_first_credit(self, value):
         return value
@@ -1139,6 +1144,10 @@ class CreatorSearchTable(CreatorBaseTable):
         model = Creator
         fields = ('creator', 'date_of_birth', 'place_of_birth', 'first_credit',
                   'issue_count',)
+
+    def creator_descriptor(self, record):
+        """Add the disambiguation, as the other creator searches do."""
+        return esc(record.search_result_name())
 
     def order_date_of_birth(self, query_set, is_descending):
         direction = '-' if is_descending else ''
