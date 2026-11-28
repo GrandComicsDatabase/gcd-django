@@ -224,10 +224,11 @@ def validated_isbn(entered_isbn):
 def remove_leading_article(name):
     '''
     returns the name with the leading article (separated by "'"
-    or whitespace) removed
+    or whitespace) removed; a name with nothing after the article
+    has no leading article and is returned unchanged
     '''
     article_match = re.match(r"\S?\w+['\s]\s*(.*)$", name, re.UNICODE)
-    if article_match:
+    if article_match and article_match.group(1):
         return article_match.group(1)
     else:
         return name
