@@ -42,12 +42,23 @@ from apps.oi.models import (
     CTYPES,
     Changeset,
     ChangesetComment,
+    CharacterNameDetailRevision,
+    CharacterRevision,
+    CreatorNameDetailRevision,
+    CreatorRevision,
+    FeatureNameDetailRevision,
+    FeatureRevision,
+    GroupNameDetailRevision,
+    GroupRevision,
     IssueRevision,
+    PublisherRevision,
+    ReprintRevision,
     SeriesRevision,
     StoryCharacterRevision,
     StoryCreditRevision,
     StoryGroupRevision,
     StoryRevision,
+    UniverseRevision,
 )
 from apps.stddata.models import Country, Date, Language, Script
 from apps.stats.models import CountStats
@@ -329,6 +340,7 @@ class Command(BaseCommand):
                 'birth_city': '',
                 'death_province': '',
                 'death_city': '',
+                'whos_who': '',
             },
         )
         # A creator saved through the site always has birth and death dates,
@@ -337,6 +349,10 @@ class Command(BaseCommand):
             creator.birth_date = creator.birth_date or Date.objects.create()
             creator.death_date = creator.death_date or Date.objects.create()
             creator.save(update_fields=['birth_date', 'death_date'])
+        # As on the site its whos_who is empty: a revision cannot store NULL.
+        if creator.whos_who is None:
+            creator.whos_who = ''
+            creator.save(update_fields=['whos_who'])
         script = Script.objects.filter(number=37).first()
         if script is None:
             script = Script.objects.filter(code='latn').first()
@@ -470,7 +486,7 @@ class Command(BaseCommand):
         publisher.save(update_fields=['issue_count', 'series_count'])
 
     def _seed_change_history(self):
-        """Create one approved series revision with a sample comment."""
+        """Create the approved changes of the sample objects."""
         admin = User.objects.get(username='admin')
         comment = ChangesetComment.objects.filter(
             text=SAMPLE_COMMENT
@@ -500,6 +516,7 @@ class Command(BaseCommand):
             self._approved_revision(SeriesRevision, series, changeset)
         for issue in series.active_issues():
             self._seed_issue_history(issue, admin)
+        self._seed_object_history(series, admin)
 
     def _seed_issue_history(self, issue, admin):
         """Give an issue the approved revisions of an issue saved on the site.
@@ -507,14 +524,9 @@ class Command(BaseCommand):
         Editing an issue starts from the latest approved revision of the
         issue and of each of its sequences, credits, characters and groups.
         """
-        if issue.revisions.filter(changeset__state=states.APPROVED).exists():
+        changeset = self._approved_changeset(issue, admin)
+        if changeset is None:
             return
-        changeset = Changeset.objects.create(
-            state=states.APPROVED,
-            indexer=admin,
-            approver=admin,
-            change_type=CTYPES['issue'],
-        )
         self._approved_revision(IssueRevision, issue, changeset)
         for story in issue.active_stories():
             story_revision = self._approved_revision(StoryRevision, story,
@@ -526,6 +538,62 @@ class Command(BaseCommand):
                 for link in links:
                     self._approved_revision(revision_class, link, changeset,
                                             story_revision=story_revision)
+
+    def _seed_object_history(self, series, admin):
+        """Give the other sample objects the approved revisions of objects
+        saved on the site, with those of the names that editing reserves.
+        """
+        sample = Q(name__startswith=SAMPLE_PREFIX)
+        for revision_class, name_class, data_objects in (
+                (PublisherRevision, None, [series.publisher]),
+                (CreatorRevision, CreatorNameDetailRevision,
+                 Creator.objects.filter(
+                     gcd_official_name__startswith=SAMPLE_PREFIX)),
+                (FeatureRevision, FeatureNameDetailRevision,
+                 Feature.objects.filter(sample)),
+                (UniverseRevision, None, Universe.objects.filter(sample)),
+                (CharacterRevision, CharacterNameDetailRevision,
+                 Character.objects.filter(sample)),
+                (GroupRevision, GroupNameDetailRevision,
+                 Group.objects.filter(sample))):
+            for data_object in data_objects:
+                changeset = self._approved_changeset(data_object, admin)
+                if changeset is None:
+                    continue
+                revision = self._approved_revision(revision_class,
+                                                   data_object, changeset)
+                if name_class is None:
+                    continue
+                link = {f'{revision.source_name}_revision': revision}
+                for name in data_object.active_names():
+                    name_revision = self._approved_revision(
+                        name_class, name, changeset)
+                    name_revision.save_added_revision(changeset, **link)
+        for reprint in Reprint.objects.filter(
+                origin_issue__in=series.active_issues()):
+            if reprint.revisions.filter(
+                    changeset__state=states.APPROVED).exists():
+                continue
+            # The site saves a reprint link in the change of an issue.
+            issue_revision = reprint.origin_issue.revisions.filter(
+                changeset__state=states.APPROVED).first()
+            self._approved_revision(ReprintRevision, reprint,
+                                    issue_revision.changeset)
+
+    def _approved_changeset(self, data_object, admin):
+        """Return a new approved changeset of the type of data_object.
+
+        Return None if data_object already has an approved revision.
+        """
+        if data_object.revisions.filter(
+                changeset__state=states.APPROVED).exists():
+            return None
+        return Changeset.objects.create(
+            state=states.APPROVED,
+            indexer=admin,
+            approver=admin,
+            change_type=CTYPES[data_object._meta.model_name],
+        )
 
     def _approved_revision(self, revision_class, data_object, changeset,
                            **kwargs):
