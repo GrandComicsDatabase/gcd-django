@@ -1962,6 +1962,14 @@ class Revision(models.Model):
         """
         pass
 
+    def edit_heading(self):
+        """
+        Return the heading that the tabbed edit form shows above its tabs.
+
+        Empty by default; a revision whose form needs one overrides it.
+        """
+        return ''
+
     # #####################################################################
     # Methods for saving the Revision back to the data object, including
     # hook methods for customizing that process.
@@ -6931,6 +6939,13 @@ class StoryRevision(Revision):
 
     def show_title(self, use_first_line=False):
         return show_title(self, use_first_line)
+
+    def edit_heading(self):
+        """
+        Name the sequence above the tabs of its edit form, which do not
+        show its number and title together.
+        """
+        return 'Sequence %s: %s' % (self.sequence_number, self.show_title())
 
     def __str__(self):
         """

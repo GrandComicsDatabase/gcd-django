@@ -22,6 +22,9 @@
 <h1>
   {{ changeset|header_link }}
 </h1>
+{% if request.user.indexer.use_tabs and revision.edit_heading %}
+<h2>{{ revision.edit_heading }}</h2>
+{% endif %}
 
 <div class="edit">
   <form action="{% url 'process_revision' model_name=revision.source_name id=revision.id %}" method="POST">
