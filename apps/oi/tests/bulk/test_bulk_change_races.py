@@ -732,7 +732,7 @@ def test_series_requests_at_the_same_moment(statistics, settings,
     with _held_row(first.publisher):
         thread = _started(results, 'apply', lambda: _apply(
           applying, token='parent', data=BINDING))
-        _wait_for_lock_wait('gcd_publisher')
+        wait_for_lock_waits('gcd_publisher')
         # It waits before it writes anything.
         assert _row_locks('oi_series_revision') == 0
     thread.join(90)
@@ -766,7 +766,7 @@ def test_series_requests_at_the_same_moment(statistics, settings,
             with _held_lock(second, commit=commits):
                 threads.append(_started(results, 'apply', lambda: _apply(
                   applying, token=token, data=BINDING)))
-                _wait_for_lock_wait('oi_revision_lock')
+                wait_for_lock_waits('oi_revision_lock')
         finally:
             for thread in threads:
                 thread.join(90)
@@ -823,10 +823,10 @@ def test_series_approval_waits_for_an_apply_of_its_issues(
         with _held_lock(held_issue):
             threads.append(_started(results, 'apply', lambda: _apply(
               applying, token='issues')))
-            _wait_for_lock_wait('oi_revision_lock')
+            wait_for_lock_waits('oi_revision_lock')
             threads.append(_started(results, 'approve', lambda: _approve(
               reviewing.id)))
-            _wait_for_lock_wait('gcd_series')
+            wait_for_lock_waits('gcd_series')
             # It waits before it writes anything.
             assert _tables_of_the_waiter('gcd_series') <= \
                 {'oi_changeset', 'gcd_series'}
@@ -864,11 +864,11 @@ def test_series_approval_keeps_a_count_written_meanwhile(
         with _held_row(first_lock), _held_row(second_lock):
             threads.append(_started(results, 'approve', lambda: _approve(
               reviewing.id)))
-            _wait_for_lock_wait('oi_revision_lock')
+            wait_for_lock_waits('oi_revision_lock')
             threads.append(_started(results, 'count', lambda: Series.objects
                                     .filter(id=counted.id).update(
                                       issue_count=F('issue_count') + 1)))
-            _wait_for_lock_wait('gcd_series')
+            wait_for_lock_waits('gcd_series')
     finally:
         for thread in threads:
             thread.join(90)
