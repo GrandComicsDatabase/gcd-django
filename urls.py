@@ -9,8 +9,11 @@ from django.views.generic.base import TemplateView
 from django.views.i18n import JavaScriptCatalog
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from django.views import defaults
 
 from django_contact_form.views import ContactFormView
+from rest_framework.exceptions import NotFound
 
 from apps.indexer.views import error_view
 from apps.gcd.views import read_only
@@ -20,6 +23,17 @@ from apps.api.urls import router as api_router
 from apps.gcd.forms.contact import CustomContactForm
 
 admin.autodiscover()
+
+
+def handler404(request, exception):
+    """
+    Answer a path under /api/ that no route matches with the short JSON
+    body of the API for "Not found."; any other path gets the page of the
+    site.
+    """
+    if request.path_info.startswith('/api/'):
+        return JsonResponse({'detail': NotFound.default_detail}, status=404)
+    return defaults.page_not_found(request, exception)
 
 
 # Note that the structure of the various pattern lists is to facilitate
