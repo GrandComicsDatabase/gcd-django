@@ -10,6 +10,7 @@ requests, responses and errors.
 from datetime import datetime
 
 from django.conf import settings
+from django.core.cache import cache
 from django.shortcuts import render
 from django.db.models import Count, Q
 
@@ -56,10 +57,15 @@ def index(request):
         template_vars[template] = '%s/%s.html' % (base_path, template)
 
     creators = []
-    end_listed = 0
     # The timeline is only rendered when USE_TEMPLATESADMIN is enabled.
+    # Its list changes with the date: it is kept in the cache under the
+    # date, and the cache gives None when the list of the day is missing.
+    # The timeout of an hour lets edits of the creators show up.
+    today = datetime.today()
+    cache_key = 'front_page_creators_%s' % today.strftime('%Y-%m-%d')
     if settings.USE_TEMPLATESADMIN:
-        today = datetime.today()
+        creators = cache.get(cache_key)
+    if creators is None:
         day = '%0.2d' % (today).day
         month = '%0.2d' % (today).month
         creators = Creator.objects.filter(birth_date__day__lte=day,
@@ -99,12 +105,14 @@ def index(request):
                 creators[i].birth_date.day != creator_last.birth_date.day:
                     end_listed = i
                     break
+        creators = creators[:end_listed]
+        cache.set(cache_key, creators, 3600)
 
     template_vars.update({
         'stats': stats,
         'language': language,
         'stats_for_language': stats_for_language,
-        'creators': creators[:end_listed],
+        'creators': creators,
     })
     return render(request, 'gcd/tw_index.html', template_vars)
 
