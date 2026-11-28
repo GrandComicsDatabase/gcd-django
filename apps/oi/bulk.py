@@ -1651,11 +1651,13 @@ def _count_removed(changeset, removed):
 
 # Why a bulk change takes no further operation while the check of a
 # submission fails: the messages, then the way out, which is to take out
-# the objects they name or, if they name all of them, to discard it.
+# the objects they name or, if they name all of them or the change as a
+# whole, to discard it.
 FURTHER_REFUSED = 'This bulk change cannot take another operation. %s %s'
 REMOVE_OR_DISCARD = ('Please remove these %s from this change, or discard '
                      'it.')
 ONLY_DISCARD = 'Please discard this change: it holds no other %s.'
+CHANGE_DISCARD = 'Please discard this change.'
 
 
 def operation_refusal(changeset, forms=True):
@@ -1665,9 +1667,9 @@ def operation_refusal(changeset, forms=True):
     submission, so that its checkpoint hides no revision that was not
     checked; while that check fails, as when a flag of a parent has
     turned off a field that the change holds, the way out is to remove
-    the objects it names or, if it names every object of the change, to
-    discard it.  forms False leaves out the edit forms, as in
-    _submit_problems.
+    the objects it names or, if it names every object of the change or
+    the change as a whole, to discard it.  forms False leaves out the
+    edit forms, as in _submit_problems.
     """
     problems = _submit_problems(changeset, forms)
     if not problems:
@@ -1677,7 +1679,10 @@ def operation_refusal(changeset, forms=True):
     # Only the objects of the change count, not the anchors beside them.
     named = {revision.id for revision, message in problems
              if isinstance(revision, revisions.model)}
-    if named and len(named) == revisions.count():
+    if any(revision is None for revision, message in problems):
+        # A problem of the whole change names no object to take out.
+        way_out = CHANGE_DISCARD
+    elif named and len(named) == revisions.count():
         way_out = ONLY_DISCARD % singular
     else:
         way_out = REMOVE_OR_DISCARD % plural

@@ -17,8 +17,8 @@ from django.utils import timezone as django_timezone
 from apps.gcd.models import Series
 from apps.oi import bulk, coordinators, states
 from apps.oi.models import (
-    Changeset, ChangesetComment, CoverRevision, IssueRevision, RevisionLock,
-    CTYPES, _get_revision_lock)
+    Changeset, ChangesetComment, CoverRevision, IssueRevision,
+    ReprintRevision, RevisionLock, CTYPES, _get_revision_lock)
 from apps.oi.templatetags.editing import is_overdue
 from apps.oi.tests.bulk.invariants import check_invariants
 from apps.oi.tests.bulk.page_forms import PageForms
@@ -1051,6 +1051,33 @@ def test_way_out_counts_no_anchor(sequence_change, approved_stories,
     assert 'Sequence message. Issue message.' in refusal
     assert refusal.endswith('Please remove these sequences from this '
                             'change, or discard it.')
+
+
+@pytest.mark.django_db
+def test_way_out_of_a_problem_of_the_whole_change(change, approved_issues,
+                                                  monkeypatch):
+    """
+    A problem of the change as a whole, such as a revision of a kind
+    that bulk changes do not make, names no object, so taking objects
+    out cannot solve it: Discard is the way out, also beside a problem
+    of one object.
+    """
+    reprint = ReprintRevision.objects.create(
+      changeset=change, origin_issue=approved_issues[0],
+      target_issue=approved_issues[1])
+
+    alone = bulk.operation_refusal(change)
+    kept = _revisions(change)[0]
+    monkeypatch.setattr(bulk, '_turned_off', lambda changeset: [
+      (kept, 'Object message.')])
+    beside = bulk.operation_refusal(change)
+    reprint.delete()
+
+    for refusal in (alone, beside):
+        assert 'It holds revisions that a bulk change does not make: ' \
+               'reprintrevisions.' in refusal
+        assert refusal.endswith(' Please discard this change.')
+    assert 'Object message.' in beside
 
 
 @pytest.mark.django_db
