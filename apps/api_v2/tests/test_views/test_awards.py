@@ -3,10 +3,15 @@
 
 """Tests for Award and paginated recipient endpoints."""
 
+import json
+import re
+from datetime import UTC, datetime
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
+from apps.api_v2.filters.common import TIMESTAMP_FILTER_FIELDS
 from apps.api_v2.serializers.awards import AwardRecipientSerializer
 from apps.gcd.models import Award, Creator, ReceivedAward
 
@@ -47,6 +52,19 @@ def _create_received_award(
         notes='',
         deleted=deleted,
     )
+
+
+def _filter_form(response):
+    """Return the body and the field names of the Filters modal form."""
+    content = response.content.decode()
+    modal = content.split('id="filtersModal"', 1)[1]
+    body = modal.split('<form', 1)[1].split('</form>', 1)[0]
+    names = [
+        name
+        for name in re.findall(r'name="([^"]*)"', body)
+        if name and name != 'csrfmiddlewaretoken'
+    ]
+    return body, names
 
 
 def test_award_list_and_detail_return_expected_contract(api_client):
@@ -278,3 +296,105 @@ def test_empty_award_recipient_page_supports_etag(api_client):
     )
 
     assert cached_response.status_code == 304
+
+
+def test_award_recipient_page_offers_the_recipient_filters(api_client):
+    """The Filters form of a recipient page lists the recipient filters."""
+    award = Award.objects.create(name='Test Award', notes='')
+    url = reverse('api-v2-award-recipients', kwargs={'pk': award.pk})
+
+    response = api_client.get(url, HTTP_ACCEPT='text/html')
+
+    assert response.status_code == 200
+    body, names = _filter_form(response)
+    assert set(names) == {
+        'recipient_type',
+        'award_year',
+        *TIMESTAMP_FILTER_FIELDS,
+    }
+    assert '[invalid name]' not in body
+
+    submitted = api_client.get(
+        url,
+        dict.fromkeys(names, ''),
+        HTTP_ACCEPT='text/html',
+    )
+
+    assert submitted.status_code == 200
+
+
+@pytest.mark.parametrize(
+    'query',
+    [
+        {'modified__gt': '2021-01-01T00:00:00Z'},
+        {'name': 'Another'},
+    ],
+)
+def test_award_recipients_ignore_the_award_list_filters(api_client, query):
+    """Award list filters do not hide the Award of a recipient page."""
+    award = Award.objects.create(name='Test Award', notes='')
+    Award.objects.filter(pk=award.pk).update(
+        modified=datetime(2020, 1, 1, tzinfo=UTC),
+    )
+    recipient = _create_received_award(
+        award=award,
+        recipient=_create_creator('Some Creator'),
+    )
+
+    response = api_client.get(
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
+        query,
+    )
+
+    assert response.status_code == 200
+    assert response.data['count'] == 1
+    assert response.data['results'][0]['id'] == recipient.pk
+
+
+@pytest.mark.parametrize('pk_offset', [0, 1])
+def test_award_recipients_of_a_hidden_award_are_not_found(
+    api_client,
+    pk_offset,
+):
+    """Recipient pages of deleted or missing Awards answer 404."""
+    deleted = Award.objects.create(
+        name='Deleted Award',
+        notes='',
+        deleted=True,
+    )
+    _create_received_award(
+        award=deleted,
+        recipient=_create_creator('Some Creator'),
+    )
+
+    response = api_client.get(
+        reverse(
+            'api-v2-award-recipients',
+            kwargs={'pk': deleted.pk + pk_offset},
+        ),
+    )
+
+    assert response.status_code == 404
+    assert response.data == {'detail': 'No Award matches the given query.'}
+
+
+def test_award_recipient_schema_lists_the_recipient_filters(api_client):
+    """The schema documents the recipient filters and the Award id."""
+    response = api_client.get(reverse('api-v2-schema'), {'format': 'json'})
+
+    assert response.status_code == 200
+    schema = json.loads(response.content)
+    parameters = {
+        parameter['name']: parameter
+        for parameter in schema['paths']['/api/v2/awards/{id}/recipients/'][
+            'get'
+        ]['parameters']
+    }
+    assert set(parameters) - {'id', 'page', 'page_size', 'format'} == {
+        'recipient_type',
+        'award_year',
+        *TIMESTAMP_FILTER_FIELDS,
+    }
+    assert parameters['id']['description'] == (
+        'A unique integer value identifying this award.'
+    )
