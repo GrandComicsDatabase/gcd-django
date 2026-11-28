@@ -9561,7 +9561,8 @@ def reserve_data_sources(data_sources, changeset, sourced_revision,
 def _get_creator_sourced_fields():
     return {'birth_place': 'birth_city_uncertain',
             'death_place': 'death_city_uncertain',
-            'bio': 'bio'}
+            'bio': 'bio',
+            'portrait': 'notes'}
 
 
 def get_creator_field_list():

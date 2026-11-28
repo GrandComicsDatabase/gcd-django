@@ -7372,7 +7372,8 @@ def compare(request, id):
         sourced_fields['birth_date'] = 'birth_date'
         sourced_fields['death_date'] = 'death_date'
         group_sourced_fields = {'birth_city_uncertain': 'birth_place',
-                                'death_city_uncertain': 'death_place'}
+                                'death_city_uncertain': 'death_place',
+                                'notes': 'portrait'}
         creator_name_revisions = changeset.creatornamedetailrevisions.all()
         for creator_name_revision in creator_name_revisions:
             revisions_before.append(creator_name_revision)
