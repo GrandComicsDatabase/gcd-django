@@ -1707,7 +1707,7 @@ def process_advanced(request, export_csv=False):
                                     template_name=TW_SORT_TABLE_TEMPLATE)
         context['item_name'] = 'issue'
         if request.user.has_perm('indexer.can_reserve') and \
-           not settings.MYCOMICS:
+           not settings.MYCOMICS and not settings.BULK_CHANGE_ENABLED:
             context['bulk_edit'] = urlresolvers.reverse('edit_issues_in_bulk')
 
     if target == 'series':

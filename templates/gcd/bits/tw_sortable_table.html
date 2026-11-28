@@ -2,6 +2,13 @@
 {% load i18n %}
 
 <div class="sm:justify-center"> 
+  {% if table.bulk_change %}
+  <div>
+    <a class="btn-blue-editing inline-block visited:text-black"
+       href="{% export_url "bulk" %}">
+      Use all objects of this list for a bulk change</a>
+  </div>
+  {% endif %}
     {% block table %}
   <table class="border" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %} >
     {% block table.thead %}

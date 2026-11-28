@@ -19,6 +19,10 @@ DOC_URL = 'https://docs.comics.org/wiki/'
 
 @register.filter
 def header_link(changeset):
+    if changeset.change_type == CTYPES['bulk']:
+        # A bulk change names no single object; as for an issue bulk
+        # change, its page carries no header link.
+        return ''
     if changeset.inline():
         revision = changeset.inline_revision()
     else:
