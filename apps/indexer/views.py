@@ -382,7 +382,7 @@ Mentor this indexer: %s
                ', '.join([lang.name for lang in indexer.languages.all()]),
                indexer.interests,
                indexer.from_where,
-               'http://' + request.get_host() +
+               'https://' + request.get_host() +
                urlresolvers.reverse('mentor',
                                     kwargs={'user_id': indexer.user.id}))
 
@@ -642,16 +642,11 @@ def mentor(request, user_id):
 
     user = get_object_or_404(User, id=user_id)
     indexer = user.indexer
-    if request.method == 'POST' and indexer.mentor is None:
-        indexer.mentor = request.user
-        indexer.save()
+    # One statement, so that of two editors only one becomes the mentor.
+    if request.method == 'POST' and Indexer.objects.filter(
+      id=indexer.id, mentor__isnull=True).update(mentor=request.user):
         pending = user.changesets.filter(state=states.PENDING)
-        for changeset in pending.all():
-            try:
-                changeset.assign(approver=request.user, notes='')
-            except ValueError:
-                # Someone is already mentoring. Unlikely, and just let it go.
-                pass
+        indexer.assign_pending_changes(request.user)
 
         if pending.count():
             return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
@@ -660,6 +655,7 @@ def mentor(request, user_id):
         if 'HTTP_REFERER' in request.META:
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
+    indexer.refresh_from_db()
     return render(request, 'indexer/mentor.html', {'user': user,
                                                    'indexer': indexer})
 
