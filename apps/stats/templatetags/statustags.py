@@ -41,16 +41,19 @@ class LastUpdatedNode(template.Node):
         self.language_code = language_code
 
     def render(self, context):
+        # A local name: the requests that use a cached template share
+        # its nodes, also those served at the same time.
+        language_code = self.language_code
         if self.language_in_context:
             try:
-                self.language_code = self.language_in_context.resolve(context)
+                language_code = self.language_in_context.resolve(context)
             except: # render in templates should fail silently
                 return ''
 
         recents = RecentIndexedIssue.objects.select_related(
           'language', 'issue__series__publisher').order_by('-created')
-        if self.language_code:
-            recents = recents.filter(language__code=self.language_code)
+        if language_code:
+            recents = recents.filter(language__code=language_code)
         else:
             recents = recents.filter(language__isnull=True)
 
