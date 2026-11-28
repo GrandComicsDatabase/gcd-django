@@ -68,10 +68,19 @@ def test_series_bulk_change_has_a_name_and_no_header_link(
     assert header_link(changeset) == ''
 
 
+def _kept(credit):
+    """The values of credit as stored, to compare after an approval."""
+    return type(credit).objects.filter(id=credit.id).values(
+      'creator', 'credit_type', 'deleted').get()
+
+
 @pytest.mark.django_db
 def test_linked_credits_stay_unchanged(sequence_change, approved_stories,
-                                       any_adding_changeset):
-    """A bulk change clones no credits, and removes none."""
+                                       any_adding_changeset, approve_change):
+    """
+    A bulk change clones no credits, and removes none: its approval keeps
+    the credit of the sequence as it was.
+    """
     story = approved_stories[0]
     name = CreatorNameDetail.objects.create(
       name='Test Creator', creator=Creator.objects.create(
@@ -87,6 +96,7 @@ def test_linked_credits_stay_unchanged(sequence_change, approved_stories,
       changeset=any_adding_changeset, story_credit=credit, creator=name,
       credit_type=script,
       story_revision=story.revisions.get(committed=True))
+    kept = _kept(credit)
     changeset = sequence_change([story], title='New')
     revision = changeset.storyrevisions.get()
 
@@ -94,6 +104,10 @@ def test_linked_credits_stay_unchanged(sequence_change, approved_stories,
 
     assert [field for field, changed in revision.changed.items()
             if changed] == ['title']
+    assert not changeset.storycreditrevisions.exists()
+    approve_change(changeset)
+    assert list(story.active_credits) == [credit]
+    assert _kept(credit) == kept
 
 
 @pytest.mark.django_db
@@ -252,8 +266,11 @@ def _test_creator():
 
 @pytest.mark.django_db
 def test_issue_credits_stay_unchanged(bulk_change, approved_issues,
-                                      any_adding_changeset):
-    """A bulk change of issues keeps their credits, unchanged."""
+                                      any_adding_changeset, approve_change):
+    """
+    A bulk change of issues keeps their credits, unchanged: it clones
+    none, and its approval keeps the credit of the issue as it was.
+    """
     issue = approved_issues[0]
     name = _test_creator()
     editing = CreditType.objects.get_or_create(
@@ -265,6 +282,7 @@ def test_issue_credits_stay_unchanged(bulk_change, approved_issues,
       changeset=any_adding_changeset, issue_credit=credit, creator=name,
       credit_type=editing,
       issue_revision=issue.revisions.get(committed=True))
+    kept = _kept(credit)
     changeset = bulk_change([issue], IssueRevision, price='0.25 USD')
     revision = changeset.issuerevisions.get()
 
@@ -272,6 +290,10 @@ def test_issue_credits_stay_unchanged(bulk_change, approved_issues,
 
     assert [field for field, changed in revision.changed.items()
             if changed] == ['price']
+    assert not changeset.issuecreditrevisions.exists()
+    approve_change(changeset)
+    assert list(issue.active_credits) == [credit]
+    assert _kept(credit) == kept
 
 
 @pytest.mark.django_db

@@ -257,6 +257,15 @@ def exact_diff(rev_class, revision_ids):
     keywords come from .values(), with the ids of foreign keys; a
     many-to-many value is the frozenset of the linked ids.
     """
+    return _diff_and_values(rev_class, revision_ids)[0]
+
+
+def _diff_and_values(rev_class, revision_ids):
+    """
+    Return exact_diff(rev_class, revision_ids) and, read from the same
+    rows, the new values that it compared: {revision id: {field name:
+    value}} for each id, with the values in the form of the diff.
+    """
     revision_ids = list(revision_ids)
     single, multi = _compared_fields(rev_class)
     source = rev_class._meta.get_field(rev_class.source_name).attname
@@ -272,7 +281,7 @@ def exact_diff(rev_class, revision_ids):
     linked = {field.name: _linked_ids(field, list(rows) + list(old_rows))
               for field in multi}
 
-    diff = {}
+    diff, new_values = {}, {}
     for revision_id in revision_ids:
         new = rows[revision_id]
         old = old_rows[previous[revision_id]]
@@ -287,7 +296,11 @@ def exact_diff(rev_class, revision_ids):
                 changes[field.name] = (values[old['id']],
                                        values[revision_id])
         diff[revision_id] = changes
-    return diff
+        new_values[revision_id] = dict(
+          [(field.name, new[field.attname]) for field in single] +
+          [(field.name, linked[field.name][revision_id])
+           for field in multi])
+    return diff, new_values
 
 
 def _seen_flags(revision):
@@ -459,17 +472,19 @@ def _shown_spaces(text):
 YEARS_NOTE_FIELDS = ('key_date', 'indicia_publisher', 'brand_emblem')
 
 
-def _years_notes(rev_class, revisions, diff):
+def _years_notes(rev_class, revisions, diff, new_values):
     """
     Return {(revision id, field name): [old note, new note]}, the notes
     that the compare page of one issue gives, by key_date_years_note, on
     a key date outside the years of the indicia publisher or of a brand
     emblem, for the issue revisions whose key date, indicia publisher or
-    brand emblems changed.  Each side reads its own values: the new side
-    those of the revision, the old side the old value of each of these
-    fields that changed.  A note is in the row of its own field when
-    that changed, else in the Key Date row, the indicia publisher first.
-    At most three queries, whatever the number of revisions.
+    brand emblems changed.  Each side reads its own values from the rows
+    of the diff, whose new values new_values holds, as _diff_and_values
+    gives them: the new side those values, the old side the old value of
+    each of these fields that changed.  A note is in the row of its own
+    field when that changed, else in the Key Date row, the indicia
+    publisher first.  At most two queries, whatever the number of
+    revisions.
     """
     if rev_class.source_name != 'issue':
         return {}
@@ -480,8 +495,6 @@ def _years_notes(rev_class, revisions, diff):
                  if set(YEARS_NOTE_FIELDS).intersection(diff[revision.id])]
     if not concerned:
         return {}
-    links = _linked_ids(emblem_field,
-                        [revision.id for revision in concerned])
     sides = []
     publisher_ids, emblem_ids = set(), set()
     for revision in concerned:
@@ -490,12 +503,11 @@ def _years_notes(rev_class, revisions, diff):
         rows = ('indicia_publisher' if 'indicia_publisher' in changes
                 else key_row,
                 'brand_emblem' if 'brand_emblem' in changes else key_row)
-        stored = (revision.key_date, revision.indicia_publisher_id,
-                  links[revision.id])
+        stored = new_values[revision.id]
         for side in (0, 1):
             key_date, publisher, emblems = [
-              changes[name][side] if name in changes else value
-              for name, value in zip(YEARS_NOTE_FIELDS, stored)]
+              changes[name][side] if name in changes else stored[name]
+              for name in YEARS_NOTE_FIELDS]
             sides.append((revision, side, rows, key_date, publisher,
                           emblems))
             publisher_ids.add(publisher)
@@ -505,9 +517,9 @@ def _years_notes(rev_class, revisions, diff):
     notes = defaultdict(lambda: ['', ''])
     for revision, side, rows, key_date, publisher, emblems in sides:
         publisher_row, emblem_row = rows
-        # The note reads the key date of the object it gets: for the old
-        # side, an unsaved revision that holds the old key date.
-        dated = revision if side else rev_class(key_date=key_date)
+        # The note reads the key date of the object it gets: an unsaved
+        # revision that holds the key date of the side.
+        dated = rev_class(key_date=key_date)
         if publisher_row:
             notes[revision.id, publisher_row][side] += key_date_years_note(
               dated, publishers.get(publisher), 'Indicia publisher')
@@ -531,9 +543,10 @@ def compare_rows(revisions):
     if not revisions:
         return []
     rev_class = type(revisions[0])
-    diff = exact_diff(rev_class, [revision.id for revision in revisions])
+    diff, new_values = _diff_and_values(
+      rev_class, [revision.id for revision in revisions])
     names = _related_names(rev_class, diff)
-    notes = _years_notes(rev_class, revisions, diff)
+    notes = _years_notes(rev_class, revisions, diff, new_values)
     rows = []
     for revision in revisions:
         fields = []
