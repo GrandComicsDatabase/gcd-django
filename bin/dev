@@ -349,6 +349,9 @@ copy_dump_catalog() {
     esac
   done <<< "$bond_missing_timestamps"
 
+  # A dump made before publishers had a sort name has no such column. The
+  # target is already migrated, so the copy does what the migration did:
+  # the sort name is the name.
   catalog_copy_sql="$(mysql_root_query "
     SET SESSION group_concat_max_len = 1000000;
     SELECT CONCAT(
@@ -359,10 +362,14 @@ copy_dump_catalog() {
       GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96))
                    ORDER BY ordinal_position SEPARATOR ','),
       IF(table_name = 'gcd_series_bond', '${bond_columns}', ''),
+      IF(table_name = 'gcd_publisher' AND SUM(column_name = 'sort_name') = 0,
+         CONCAT(',', CHAR(96), 'sort_name', CHAR(96)), ''),
       ') SELECT ',
       GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96))
                    ORDER BY ordinal_position SEPARATOR ','),
       IF(table_name = 'gcd_series_bond', '${bond_values}', ''),
+      IF(table_name = 'gcd_publisher' AND SUM(column_name = 'sort_name') = 0,
+         CONCAT(',', CHAR(96), 'name', CHAR(96)), ''),
       ' FROM ', CHAR(96), 'gcd_dev_import_stage', CHAR(96), '.',
       CHAR(96), table_name, CHAR(96), ';'
     )
