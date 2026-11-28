@@ -237,7 +237,7 @@ def edit_collection(request, collection_id=None):
 
     return render(request, GENERIC_FORM_TEMPLATE, {'form': form,
                                                    'heading':
-                                                   'Editing Collection'})
+                                                   _('Editing Collection')})
 
 
 @login_required
@@ -351,7 +351,7 @@ def get_collection_for_owner(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     if collection.collector.user != request.user:
         return None, render_error(
-          request, 'Only the owner of a collection can add issues to it.',
+          request, _('Only the owner of a collection can add issues to it.'),
           redirect=False)
     return collection, None
 
@@ -694,19 +694,20 @@ def edit_collection_items(request, collection_id):
         edit_form = CollectionItemsForm(collector, collection=collection,
                                         items=items)
 
-    help_text = '<h3>This is new functionality being <b>TESTED</b>.</h3>' \
-                'You can edit the selected %d items from the collection %s. ' \
-                'You can change the values of the fields and save them. ' \
-                '</p><p>Values already set for an item will not be changed. ' \
-                '<br><b>Only</b> if all items have the <b>same value</b> ' \
-                'for a field, the value of that field is pre-filled, and ' \
-                'changing it will <b>override</b> the value for all ' \
-                'selected items.' % (items.count(), collection.name)
+    help_text = _('<h3>This is new functionality being <b>TESTED</b>.</h3>'
+                  'You can edit the selected %(count)d items from the '
+                  'collection %(collection)s. '
+                  'You can change the values of the fields and save them. '
+                  '</p><p>Values already set for an item will not be changed. '
+                  '<br><b>Only</b> if all items have the <b>same value</b> '
+                  'for a field, the value of that field is pre-filled, and '
+                  'changing it will <b>override</b> the value for all '
+                  'selected items.') % {'count': items.count(),
+                                        'collection': collection.name}
 
-    return render(request, GENERIC_FORM_TEMPLATE, {'form': edit_form,
-                                                   'help_text': help_text,
-                                                   'heading':
-                                                   'Editing Collection Items'})
+    return render(request, GENERIC_FORM_TEMPLATE,
+                  {'form': edit_form, 'help_text': help_text,
+                   'heading': _('Editing Collection Items')})
 
 
 def create_collection_item(issue, collection):
@@ -751,10 +752,12 @@ def add_single_issue_to_collection(request, issue_id):
     link = collected.get_absolute_url(collection)
     if not settings.MYCOMICS:
         link = 'https://my.comics.org' + link
+    text = _("Issue <a href='%(link)s'>%(issue)s</a> was added to your "
+             "<b>%(collection)s</b> collection.")
     messages.success(
       request,
-      mark_safe("Issue <a href='%s'>%s</a> was added to your <b>%s</b> "
-                "collection." % (link, esc(issue), esc(collection.name))))
+      mark_safe(text % {'link': link, 'issue': esc(issue),
+                        'collection': esc(collection.name)}))
     request.session['collection_id'] = collection.id
     return HttpResponseRedirect(urlresolvers.reverse('show_issue',
                                 kwargs={'issue_id': issue_id}))
@@ -790,7 +793,7 @@ def add_selected_issues_to_collection(request, data):
                 'item_name': 'issue',
                 'plural_suffix': 's',
                 'no_bulk_edit': True,
-                'heading': 'Issues',
+                'heading': _('Issues'),
                 'confirm_selection': True,
                 'collection_list': collection_list
             }
@@ -821,7 +824,8 @@ def select_issues_from_preselection(request, issues, cancel,
                'plural_suffix': 's',
                'no_bulk_edit': True,
                'all_pre_selected': True,
-               'heading': 'found that can be selected for import.',
+               # Translators: it follows "N issues" in the list header.
+               'heading': _('found that can be selected for import.'),
                'not_found': not_found
                }
     return paginate_response(request, issues,
@@ -843,7 +847,7 @@ def select_from_on_sale_weekly(request, year=None, week=None):
                     'plural_suffix': 's',
                     'no_bulk_edit': True,
                     'all_pre_selected': True,
-                    'heading': 'Issues'
+                    'heading': _('Issues')
                     })
     return paginate_response(request, issues_on_sale,
                              'gcd/status/issues_on_sale.html', context,
@@ -971,13 +975,15 @@ def add_series_issues_to_collection(request, series_id):
                                  get_default_per_page(request) + 1)
         else:
             page = ""
+        link = collection.get_absolute_url() + page
+        if not settings.MYCOMICS:
+            link = 'https://my.comics.org' + link
+        text = _("All issues added to your <a href='%(link)s'>"
+                 "%(collection)s</a> collection.")
         messages.success(
           request,
-          mark_safe("All issues added to your <a href='%s%s%s'>%s</a> "
-                    "collection." % ('' if settings.MYCOMICS else
-                                     'https://my.comics.org',
-                                     collection.get_absolute_url(), page,
-                                     esc(collection.name))))
+          mark_safe(text % {'link': link,
+                            'collection': esc(collection.name)}))
         return add_issues_to_collection(
           request, collection_id, issues,
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
@@ -1011,7 +1017,7 @@ def add_series_issues_to_collection(request, series_id):
         if issues:
             return select_issues_from_preselection(request, issues, return_url)
         else:
-            messages.warning(request, 'no corresponding issues found')
+            messages.warning(request, _('no corresponding issues found'))
             return HttpResponseRedirect(return_url)
 
 
@@ -1058,7 +1064,8 @@ def subscribed_into_collection(request, collection_id):
           post_process_selection='post_process_subscription',
           collection_id_list=[collection.id])
     else:
-        messages.warning(request, 'No new issues for subscribed series found.')
+        messages.warning(request,
+                         _('No new issues for subscribed series found.'))
         return HttpResponseRedirect(return_url)
 
 
@@ -1097,7 +1104,7 @@ def unsubscribe_series(request, subscription_id):
     subscription = get_object_or_404(Subscription, id=subscription_id)
     if subscription.collection.collector.user != request.user:
         return render_error(
-          request, 'Only the owner of a collection can unsubscribe series.',
+          request, _('Only the owner of a collection can unsubscribe series.'),
           redirect=False)
     subscription.delete()
     return HttpResponseRedirect(
@@ -1175,7 +1182,8 @@ def edit_reading_order(request, reading_order_id=None):
     return render(request, TW_GENERIC_FORM_TEMPLATE,
                   {'form': form,
                    'reading_order': reading_order,
-                   'heading': 'Editing Reading List: %s' % reading_order.name})
+                   'heading': _('Editing Reading List: %(name)s') % {
+                     'name': reading_order.name}})
 
 
 @login_required
@@ -1232,7 +1240,8 @@ def get_reading_order_for_owner(request, reading_order_id):
     reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
     if reading_order.collector.user != request.user:
         return None, render_error(
-          request, 'Only the owner of a reading order can add issues to it.',
+          request,
+          _('Only the owner of a reading order can add issues to it.'),
           redirect=False)
     return reading_order, None
 
@@ -1272,12 +1281,13 @@ def copy_reading_order(request, reading_order_id):
     if not settings.MYCOMICS:
         link = 'https://my.comics.org' + link
         link_new = 'https://my.comics.org' + link_new
+    text = _("Copy of Reading List <a href='%(link)s'>%(name)s</a> was "
+             "added as <a href='%(link_new)s'>%(name_new)s</a> reading order.")
     messages.success(
       request,
-      mark_safe("Copy of Reading List <a href='%s'>%s</a> was added as "
-                "<a href='%s'>%s</a> "
-                "reading order." % (link, esc(reading_order),
-                                    link_new, esc(new_reading_order.name))))
+      mark_safe(text % {'link': link, 'name': esc(reading_order),
+                        'link_new': link_new,
+                        'name_new': esc(new_reading_order.name)}))
     request.session['reading_order_id'] = new_reading_order.id
     return HttpResponseRedirect(urlresolvers.reverse('view_reading_order',
                                 kwargs={'reading_order_id':
@@ -1287,7 +1297,7 @@ def copy_reading_order(request, reading_order_id):
 @login_required
 def add_story_arc_to_reading_order(request, story_arc_id):
     story_arc = get_object_or_404(StoryArc, id=story_arc_id)
-    stories, _ = story_arc.stories()
+    stories = story_arc.stories()[0]
     if not stories.count():
         raise ErrorWithMessage("No stories in this story arc.")
     reading_order, error_return = get_reading_order_for_owner(
@@ -1307,13 +1317,13 @@ def add_story_arc_to_reading_order(request, story_arc_id):
     link = story_arc.get_absolute_url()
     if not settings.MYCOMICS:
         link = 'https://my.comics.org' + link
+    text = _("Story Arc <a href='%(link)s'>%(story_arc)s</a> was added to "
+             "your <a href='%(list_link)s'>%(list)s</a> reading order.")
     messages.success(
       request,
-      mark_safe("Story Arc <a href='%s'>%s</a> was added to your "
-                "<a href='%s'>%s</a> "
-                "reading order." % (link, esc(story_arc),
-                                    reading_order.get_absolute_url(),
-                                    esc(reading_order.name))))
+      mark_safe(text % {'link': link, 'story_arc': esc(story_arc),
+                        'list_link': reading_order.get_absolute_url(),
+                        'list': esc(reading_order.name)}))
     request.session['reading_order_id'] = reading_order.id
     return HttpResponseRedirect(urlresolvers.reverse('show_story_arc',
                                 kwargs={'story_arc_id': story_arc_id}))
@@ -1340,13 +1350,13 @@ def add_single_issue_to_reading_order(request, issue_id):
     link = ro_item.get_absolute_url(reading_order)
     if not settings.MYCOMICS:
         link = 'https://my.comics.org' + link
+    text = _("Issue <a href='%(link)s'>%(issue)s</a> was added to your "
+             "<a href='%(list_link)s'>%(list)s</a> reading order.")
     messages.success(
       request,
-      mark_safe("Issue <a href='%s'>%s</a> was added to your "
-                "<a href='%s'>%s</a> "
-                "reading order." % (link, esc(issue),
-                                    reading_order.get_absolute_url(),
-                                    esc(reading_order.name))))
+      mark_safe(text % {'link': link, 'issue': esc(issue),
+                        'list_link': reading_order.get_absolute_url(),
+                        'list': esc(reading_order.name)}))
     request.session['reading_order_id'] = reading_order.id
     return HttpResponseRedirect(urlresolvers.reverse('show_issue',
                                 kwargs={'issue_id': issue_id}))
@@ -1431,8 +1441,8 @@ def save_reading_order_item(request, item_id, reading_order_id):
     else:
         return render(request, TW_GENERIC_FORM_TEMPLATE,
                       {'form': item_form,
-                       'heading': 'Editing Reading List Item: %s' %
-                                  item.issue.full_name()})
+                       'heading': _('Editing Reading List Item: %(issue)s') % {
+                         'issue': item.issue.full_name()}})
 
 
 @login_required

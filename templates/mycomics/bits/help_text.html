@@ -1,31 +1,71 @@
 {% load i18n %}
-  
+  {% with have=request.user.collector.default_have_collection.id|default:1 %}
 <ul class="list-disc list-outside ps-4">
-  <li>Comics are organized in collections. Initally two collections exist, but more can be created using the "Add new"-button on the main page.</li>
-  <li>To add comics to a collection search inside the database using the regular search options or the <a href="{% url "advanced_search" %}">advanced search</a>. You can select and add comics from search results, from the series page, and from the issue pages. </li>
-  <li>Ongoing series can be <a href="{% url "subscriptions_collection" request.user.collector.default_have_collection.id|default:1 %}">subscribed</a> to a collection. You can pull issues added to the database since the last time you did such a pull.</li>
-  <li>You can add a comic several times to a collection, e.g. if you have several copies, or if you want a second copy.</li>
-  <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store the following information
+  <li>{% blocktrans trimmed %}
+    Comics are organized in collections. Initally two collections exist, but
+    more can be created using the "Add new"-button on the main page.
+    {% endblocktrans %}</li>
+  <li>{% url "advanced_search" as search_url %}{% blocktrans trimmed %}
+    To add comics to a collection search inside the database using the
+    regular search options or the <a href="{{ search_url }}">advanced
+    search</a>. You can select and add comics from search results, from the
+    series page, and from the issue pages.
+    {% endblocktrans %} </li>
+  <li>{% url "subscriptions_collection" have as url %}{% blocktrans trimmed %}
+    Ongoing series can be <a href="{{ url }}">subscribed</a> to a collection.
+    You can pull issues added to the database since the last time you did
+    such a pull.
+    {% endblocktrans %}</li>
+  <li>{% blocktrans trimmed %}
+    You can add a comic several times to a collection, e.g. if you have
+    several copies, or if you want a second copy.
+    {% endblocktrans %}</li>
+  <li>{% blocktrans trimmed %}
+    A collection has several settings which control what additional
+    information can be stored about a comic in that collection. You can store
+    the following information
+    {% endblocktrans %}
   <ul class="object-page-link-list">
-    <li>condition, where several grade systems are available</li>
-    <li>date of acquistion or sale</li>
-    <li>is owned vs. is wanted</li>
-    <li>location of storage or purchase</li>
-    <li>was read, is for sale, or is signed</li>
-    <li>purchase price, market value, or sell price.</li>
-		<li>is in digital form</li>
-		<li>quality rating from 1 (poor) to 5 (excellent)</li>
+    <li>{% trans "condition, where several grade systems are available" %}</li>
+    <li>{% trans "date of acquistion or sale" %}</li>
+    <li>{% trans "is owned vs. is wanted" %}</li>
+    <li>{% trans "location of storage or purchase" %}</li>
+    <li>{% trans "was read, is for sale, or is signed" %}</li>
+    <li>{% trans "purchase price, market value, or sell price." %}</li>
+    <li>{% trans "is in digital form" %}</li>
+    <li>{% trans "quality rating from 1 (poor) to 5 (excellent)" %}</li>
   </ul>
   </li>
-  <li>Items in the default have collection will get the 'own' status per default, and all items in the default want collection will have the 'want' status. For other collections these will not be set automatically, but the defaults can be changed accordingly.</li>
-  <li>One can import existing collection data in two ways
+  <li>{% blocktrans trimmed %}
+    Items in the default have collection will get the 'own' status per
+    default, and all items in the default want collection will have the
+    'want' status. For other collections these will not be set
+    automatically, but the defaults can be changed accordingly.
+    {% endblocktrans %}</li>
+  <li>{% trans "One can import existing collection data in two ways" %}
   <ul class="list-disc list-outside ps-4">
-    <li>a list of issue numbers per series, one number per line
-    <li>a cvs-file where each line consists of series name, issue number, publisher name (optional), language code (optional)
+    <li>{% trans "a list of issue numbers per series, one number per line" %}
+    <li>{% blocktrans trimmed %}
+      a cvs-file where each line consists of series name, issue number,
+      publisher name (optional), language code (optional)
+      {% endblocktrans %}
   </ul>
-  <li>You can download the information of each collection as a csv-file, use the download button <span class="glyphicon glyphicon-download"></span>.</li>
-  <li>If a collection is set as public, indicated by <span class="glyphicon glyphicon-eye-open"></span>, others can view that collection under the same URL you use, i.e. my.comics.org/collection/&lt;number&gt;/.
+  <li>{% blocktrans trimmed %}
+    You can download the information of each collection as a csv-file, use
+    the download button <span class="glyphicon glyphicon-download"></span>.
+    {% endblocktrans %}</li>
+  <li>{% blocktrans trimmed %}
+    If a collection is set as public, indicated by
+    <span class="glyphicon glyphicon-eye-open"></span>, others can view that
+    collection under the same URL you use, i.e.
+    my.comics.org/collection/&lt;number&gt;/.
+    {% endblocktrans %}
 </ul>
 <p>
-Discussion about functionality and bug reports takes mainly place on the <a href="http://groups.google.com/group/gcd-main">gcd-main</a> mailing list, via our <a href="https://www.facebook.com/GrandComicsDatabase/">facebook page and group</a>, or send us an <a href="mailto:contact@comics.org">e-mail</a>.
-</p>
+{% blocktrans trimmed %}
+Discussion about functionality and bug reports takes mainly place on the
+<a href="http://groups.google.com/group/gcd-main">gcd-main</a> mailing list,
+via our <a href="https://www.facebook.com/GrandComicsDatabase/">facebook page
+and group</a>, or send us an <a href="mailto:contact@comics.org">e-mail</a>.
+{% endblocktrans %}
+</p>{% endwith %}

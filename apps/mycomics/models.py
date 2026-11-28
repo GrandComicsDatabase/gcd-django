@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 import django.urls as urlresolvers
+from django.utils.translation import gettext_lazy as _
 
 import django_filters
 
@@ -100,57 +101,59 @@ class Collection(models.Model):
 
     public = models.BooleanField(
       default=False,
-      verbose_name="collection is public and can be viewed by all")
+      verbose_name=_("collection is public and can be viewed by all"))
 
     # Configuration of fields used - notes and keywords are assumed to be
     # always 'on'.
     condition_used = models.BooleanField(default=False,
-                                         verbose_name="show condition")
+                                         verbose_name=_("show condition"))
     acquisition_date_used = models.BooleanField(
       default=False,
-      verbose_name="show acquisition date")
+      verbose_name=_("show acquisition date"))
     sell_date_used = models.BooleanField(default=False,
-                                         verbose_name="show sell data")
+                                         verbose_name=_("show sell data"))
     location_used = models.BooleanField(default=False,
-                                        verbose_name="show location")
+                                        verbose_name=_("show location"))
     location_default = models.ForeignKey(
       'Location', on_delete=models.CASCADE, related_name='+',
-      null=True, blank=True, verbose_name="default location when "
-      "adding items to this collection")
+      null=True, blank=True,
+      verbose_name=_("default location when adding items to this collection"))
     purchase_location_used = models.BooleanField(
       default=False,
-      verbose_name="show purchase location")
+      verbose_name=_("show purchase location"))
     purchase_location_default = models.ForeignKey(
       'PurchaseLocation', on_delete=models.CASCADE, related_name='+',
-      null=True, blank=True, verbose_name="default purchase location when "
-      "adding items to this collection")
+      null=True, blank=True,
+      verbose_name=_("default purchase location when "
+                     "adding items to this collection"))
     own_used = models.BooleanField(default=False,
-                                   verbose_name="show own/want status")
+                                   verbose_name=_("show own/want status"))
     own_default = models.BooleanField(
       default=None, null=True,
-      verbose_name="default ownership status when "
-                   "adding items to this collection")
+      verbose_name=_("default ownership status when "
+                     "adding items to this collection"))
     was_read_used = models.BooleanField(default=False,
-                                        verbose_name="show read status")
+                                        verbose_name=_("show read status"))
     for_sale_used = models.BooleanField(default=False,
-                                        verbose_name="show for sale status")
+                                        verbose_name=_("show for sale status"))
     for_sale_default = models.BooleanField(
       default=False,
-      verbose_name="default for sale status when "
-                   "adding items to this collection")
+      verbose_name=_("default for sale status when "
+                     "adding items to this collection"))
     signed_used = models.BooleanField(default=False,
-                                      verbose_name="show signed status")
+                                      verbose_name=_("show signed status"))
     price_paid_used = models.BooleanField(default=False,
-                                          verbose_name="show price paid")
+                                          verbose_name=_("show price paid"))
     market_value_used = models.BooleanField(
       default=False,
-      verbose_name="show entered market value")
+      verbose_name=_("show entered market value"))
     sell_price_used = models.BooleanField(default=False,
-                                          verbose_name="show sell price")
-    digital_used = models.BooleanField(default=False,
-                                       verbose_name="track digital versions")
+                                          verbose_name=_("show sell price"))
+    digital_used = models.BooleanField(
+      default=False,
+      verbose_name=_("track digital versions"))
     rating_used = models.BooleanField(default=False,
-                                      verbose_name="rate comics")
+                                      verbose_name=_("rate comics"))
 
     def get_absolute_url(self):
         return urlresolvers.reverse('view_collection',
@@ -206,11 +209,11 @@ class CollectionItem(models.Model):
                     'issue__series__id', 'issue__sort_code', 'id']
 
     RATINGS = Choices(
-        (1, 'poor', '1 - Poor'),
-        (2, 'fair', '2 - Fair'),
-        (3, 'good', '3 - Good'),
-        (4, 'very_good ', '4 - Very Good'),
-        (5, 'excellent', '5 - Excellent'),
+        (1, 'poor', _('1 - Poor')),
+        (2, 'fair', _('2 - Fair')),
+        (3, 'good', _('3 - Good')),
+        (4, 'very_good ', _('4 - Very Good')),
+        (5, 'excellent', _('5 - Excellent')),
     )
 
     collections = models.ManyToManyField(
@@ -240,7 +243,7 @@ class CollectionItem(models.Model):
                                   related_name='+', null=True, blank=True)
 
     own = models.BooleanField(default=None, null=True,
-                              verbose_name="ownership")
+                              verbose_name=_("ownership"))
     was_read = models.BooleanField(default=None, null=True)
     for_sale = models.BooleanField(default=False)
     signed = models.BooleanField(default=False)
@@ -290,12 +293,12 @@ class ReadingOrder(models.Model):
 
     public = models.BooleanField(
       default=False,
-      verbose_name="reading list is public",
-      help_text="If checked, other users will be able to view "
-                "this reading list.")
+      verbose_name=_("reading list is public"),
+      help_text=_("If checked, other users will be able to view "
+                  "this reading list."))
 
     was_read_used = models.BooleanField(default=False,
-                                        verbose_name="show read status")
+                                        verbose_name=_("show read status"))
 
     def get_absolute_url(self):
         link = urlresolvers.reverse('view_reading_order',
@@ -332,13 +335,13 @@ class ReadingOrderItem(models.Model):
 
 
 OWN_CHOICES = (
-    (True, 'I own'),
-    (False, 'I want'),
+    (True, _('I own')),
+    (False, _('I want')),
 )
 
 YES_NO_CHOICES = (
-    (True, 'Yes'),
-    (False, 'No'),
+    (True, _('Yes')),
+    (False, _('No')),
 )
 
 
@@ -353,10 +356,10 @@ class CollectionItemFilter(django_filters.FilterSet):
       queryset=PurchaseLocation.objects.all())
     year_acquired = django_filters.RangeFilter(
       field_name='acquisition_date__year',
-      label="Year Acquired")
+      label=_("Year Acquired"))
     publication_date = django_filters.DateTimeFromToRangeFilter(
       field_name='issue__key_date',
-      label="Publication Date")
+      label=_("Publication Date"))
     own = django_filters.ChoiceFilter(choices=OWN_CHOICES)
     signed = django_filters.ChoiceFilter(choices=YES_NO_CHOICES)
     is_digital = django_filters.ChoiceFilter(choices=YES_NO_CHOICES)
@@ -364,11 +367,11 @@ class CollectionItemFilter(django_filters.FilterSet):
     was_read = django_filters.ChoiceFilter(choices=YES_NO_CHOICES)
     publisher = django_filters.ModelChoiceFilter(
       field_name='issue__series__publisher',
-      label='Publisher',
+      label=_('Publisher'),
       queryset=Publisher.objects.all())
     series = django_filters.ModelChoiceFilter(
       field_name='issue__series',
-      label='Series',
+      label=_('Series'),
       queryset=Series.objects.all())
 
     def __init__(self, *args, **kwargs):

@@ -64,7 +64,10 @@
         <form action="{% url "move_item" item.id collection.id %}" method="POST">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
-            <h4 class="modal-title">{{ blocktrans }} Move {{ item.issue }} To Another Collection {{ endblocktrans }}</h4>
+            <h4 class="modal-title"
+            > {% blocktrans trimmed with issue=item.issue %}
+              Move {{ issue }} To Another Collection
+              {% endblocktrans %} </h4>
           </div>
           <div class="modal-body">
           {% bootstrap_form collection_form %}
@@ -94,7 +97,9 @@
     <a href="{% url 'view_item' item_id=item_before.id collection_id=collection.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-left"></span></button></a>
     {% endif %}
     </h1>
-    <h4>In: <a href="{% url "view_collection" collection.id %}?page={{ page }}">{{ collection.name }}</a>
+    <h4>{% trans "In:" %} <a
+      href="{% url "view_collection" collection.id %}?page={{ page }}"
+      >{{ collection.name }}</a>
     {% if request.user.collector == collection.collector %}
       {% if other_collections %}
         {% trans "Also in:" %}
@@ -133,7 +138,9 @@
     </div>
     <div class="col-md-8">
       {% if collection.own_used and request.user.collector == collection.collector %}
-        {{ item.own|yesno:"I own this comic.<br>,I want this comic.<br>,"|safe }}
+        {% if item.own %}{% trans "I own this comic." %}<br>
+        {% elif item.own is False %}{% trans "I want this comic." %}<br>
+        {% endif %}
       {% endif %}
       {% if collection.digital_used and item.is_digital %}
         {% trans "Issue is in digital form." %}<br>

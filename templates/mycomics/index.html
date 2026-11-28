@@ -37,7 +37,10 @@
 
 {% block content %}
   <p class="text-center">
-  Backed by the largest comic database on the planet, my.comics.org allows you to track your comic collection.
+  {% blocktrans trimmed %}
+  Backed by the largest comic database on the planet, my.comics.org allows
+  you to track your comic collection.
+  {% endblocktrans %}
   </p>
   {% if form.errors %}
     <div class="alert alert-danger">
@@ -62,10 +65,25 @@
   </p>
 
   <p>
-    Just search inside the GCD database using the my.comics.org site, marked by the top bar in red, and select comics from search results to add to your collection, which includes a possible separation into have and want lists. Additionally, ongoing series can be subscribed to a collection, so you can pull new issues into a collection once they are added to the database. There are some (limited) ways to import existing collection data, and you will always be able to export your collection data. Note that you can mark a collection as public and provide view access to others by giving out the link, for example to distribute your want or for sale lists.
+    {% blocktrans trimmed %}
+    Just search inside the GCD database using the my.comics.org site, marked
+    by the top bar in red, and select comics from search results to add to
+    your collection, which includes a possible separation into have and want
+    lists. Additionally, ongoing series can be subscribed to a collection, so
+    you can pull new issues into a collection once they are added to the
+    database. There are some (limited) ways to import existing collection
+    data, and you will always be able to export your collection data. Note
+    that you can mark a collection as public and provide view access to
+    others by giving out the link, for example to distribute your want or for
+    sale lists.
+    {% endblocktrans %}
   </p>
 
   <p>
-    Click on <i>help</i> above for more details on the capabilities, including how to store information such as condition, location, or was read.
+    {% blocktrans trimmed %}
+    Click on <i>help</i> above for more details on the capabilities,
+    including how to store information such as condition, location, or was
+    read.
+    {% endblocktrans %}
   </p>
 {% endblock %}

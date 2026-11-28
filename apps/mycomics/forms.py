@@ -1,5 +1,6 @@
 from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect, \
                          ValidationError
+from django.utils.translation import gettext_lazy as _
 from apps.mycomics.models import Collector, Collection, CollectionItem, \
                                  Location, PurchaseLocation, ConditionGrade, \
                                  ReadingOrder, ReadingOrderItem
@@ -25,11 +26,11 @@ class CollectionForm(ModelForm):
         exclude = ('collector',)
         widgets = {'own_default': RadioSelect(
           choices=((None, "---"),
-                   (True, "I own this comic."),
-                   (False, "I want this comic."))),
+                   (True, _("I own this comic.")),
+                   (False, _("I want this comic.")))),
                    'for_sale_default': RadioSelect(
-          choices=((True, "comic is for sale"),
-                   (False, "comic is not for sale"))), }
+          choices=((True, _("comic is for sale")),
+                   (False, _("comic is not for sale")))), }
 
     def __init__(self, *args, **kwargs):
         super(CollectionForm, self).__init__(*args, **kwargs)
@@ -42,25 +43,25 @@ class CollectionForm(ModelForm):
     def clean(self):
         cd = self.cleaned_data
         if cd['own_default'] is not None and cd['own_used'] is False:
-            raise ValidationError('To use "Default ownership status" the '
-                                  '"Show own/want status" needs to be '
-                                  'activated.')
+            raise ValidationError(_('To use "Default ownership status" the '
+                                    '"Show own/want status" needs to be '
+                                    'activated.'))
 
         if cd['for_sale_default'] is True and cd['for_sale_used'] is False:
-            raise ValidationError('To use "Default for sale status" the '
-                                  '"Show for sale status" needs to be '
-                                  'activated.')
+            raise ValidationError(_('To use "Default for sale status" the '
+                                    '"Show for sale status" needs to be '
+                                    'activated.'))
 
         if cd['location_default'] is not None and cd['location_used'] is False:
-            raise ValidationError('To use "Default location" the '
-                                  '"Show location" needs to be '
-                                  'activated.')
+            raise ValidationError(_('To use "Default location" the '
+                                    '"Show location" needs to be '
+                                    'activated.'))
 
         if cd['purchase_location_default'] is not None and \
            cd['purchase_location_used'] is False:
-            raise ValidationError('To use "Default purchase location" the '
-                                  '"Show purchase location" needs to be '
-                                  'activated.')
+            raise ValidationError(_('To use "Default purchase location" the '
+                                    '"Show purchase location" needs to be '
+                                    'activated.'))
 
 
 class LocationForm(ModelForm):
@@ -80,8 +81,8 @@ class CollectionItemForm(ModelForm):
         model = CollectionItem
         exclude = ('collections', 'issue', 'acquisition_date', 'sell_date')
         widgets = {'own': Select(choices=((None, "---"),
-                                          (True, "I own this comic."),
-                                          (False, "I want this comic."))), }
+                                          (True, _("I own this comic.")),
+                                          (False, _("I want this comic.")))), }
 
     def __init__(self, user, *args, **kwargs):
         super(CollectionItemForm, self).__init__(*args, **kwargs)
@@ -132,8 +133,8 @@ class CollectionItemsForm(ModelForm):
         model = CollectionItem
         exclude = ('collections', 'issue', 'acquisition_date', 'sell_date')
         widgets = {'own': Select(choices=((None, "---"),
-                                          (True, "I own this comic."),
-                                          (False, "I want this comic."))), }
+                                          (True, _("I own this comic.")),
+                                          (False, _("I want this comic.")))), }
 
     def set_initial_field_if_common(self, items, field_name):
         values = set(items.values_list(field_name, flat=True))

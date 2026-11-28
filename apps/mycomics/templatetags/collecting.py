@@ -1,7 +1,7 @@
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext as _, ngettext
 
 from django import template
-from django.template.defaultfilters import pluralize
 from apps.gcd.views.covers import get_image_tags_per_issue
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM
 
@@ -23,16 +23,16 @@ def show_have_want(issue, user):
       collections__collector__user=user).distinct().count()
 
     if have_count:
-        text = 'I own {} cop{} of this comic.'.format(have_count,
-                                                      pluralize(have_count,
-                                                                "y,ies"))
+        text = ngettext('I own %(count)d copy of this comic.',
+                        'I own %(count)d copies of this comic.',
+                        have_count) % {'count': have_count}
     else:
         text = ''
 
     if want_count:
         if text != '':
             text += '<br>'
-        text += 'This comic is on my want list.'
+        text += _('This comic is on my want list.')
 
     return mark_safe(text)
 
