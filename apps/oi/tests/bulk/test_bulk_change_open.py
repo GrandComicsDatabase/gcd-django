@@ -18,7 +18,8 @@ from apps.gcd.models import Series
 from apps.oi import bulk, coordinators, states
 from apps.oi.models import (
     Changeset, ChangesetComment, CoverRevision, IssueRevision,
-    ReprintRevision, RevisionLock, CTYPES, _get_revision_lock)
+    ReprintRevision, RevisionLock, CTYPES, _get_revision_lock,
+    bulk_object_name)
 from apps.oi.templatetags.editing import is_overdue
 from apps.oi.tests.bulk.invariants import check_invariants
 from apps.oi.tests.bulk.page_forms import PageForms
@@ -316,13 +317,19 @@ def test_operation_takes_objects_back(client, change, approved_issues):
 def test_operation_cannot_leave_the_change_empty(client, change):
     """
     Taking every object back is refused, and nothing is written; the
-    preview says so and offers no Apply.
+    preview says so and has no form that posts the operation.
     """
-    preview = _preview(client, change, BACK)
+    shown = client.get(reverse('edit_issues_in_bulk'),
+                       dict(BACK, changeset=change.id))
+    preview = ' '.join(_text(shown).split())
     response = _operate(client, change, BACK)
 
     assert bulk.LEFT_EMPTY in preview
     assert 'Changes these' not in preview
+    assert ('POST', _page(change)) not in [
+      (form['method'], form['action'])
+      for form in PageForms(shown.content.decode()).forms]
+    assert 'Apply</button>' not in shown.content.decode()
     assert bulk.LEFT_EMPTY in _text(response)
     assert _prices(change) == ['0.12 USD'] * 3
     assert change.revision_locks.count() == 3
@@ -542,7 +549,7 @@ def test_remove_selected_frees_the_objects(client, change, approved_issues):
 def test_remove_form_as_rendered(client, change):
     """
     The check boxes and the button are in one form of the page, which
-    removes the chosen object.
+    removes the object whose box is chosen, by the value of that box.
     """
     first = _revisions(change)[0]
     html = client.get(_compare(change)).content.decode()
@@ -550,13 +557,18 @@ def test_remove_form_as_rendered(client, change):
     remove_form = html[start:html.index('</form>', start)]
     assert remove_form.count('name="selected"') == 3
     assert 'name="bulk_remove"' in remove_form
+    boxes = {unescape(label): value for value, label in re.findall(
+      r'name="selected" value="([^"]*)"\s+aria-label="Remove ([^"]*)"',
+      remove_form)}
+    value = boxes[bulk_object_name(first)]
+    assert value == str(first.id)
     page = PageForms(html)
     forms = [form for form in page.forms
              if (form['method'], form['action']) ==
              ('POST', _process(change))]
 
     client.post(forms[0]['action'], page.data(
-      forms[0], selected=str(first.id), bulk_remove='Remove selected'))
+      forms[0], selected=value, bulk_remove='Remove selected'))
 
     assert first.id not in [revision.id for revision in _revisions(change)]
     assert change.issuerevisions.count() == 2
