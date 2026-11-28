@@ -103,7 +103,7 @@
       <li>{{ story|show_credit_tw_inline:"feature_logo" }}</li>
       <li>{{ story|show_credit_tw_inline:"first_line" }}</li>
       <li>{{ story|show_credit_tw_inline:"keywords" }}</li>
-    {% if story.universe.exists %}
+    {% if story.active_universes.exists %}
     {{ story.show_universe }}
     {% endif %}
     </ul>

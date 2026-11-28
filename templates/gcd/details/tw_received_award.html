@@ -31,7 +31,7 @@
             <li><span class="font-bold">Notes:</span>
             {{ received_award.notes|urlizetrunc:75|linebreaksbr }}</li>
   {% endif %}
-  {% with received_award.data_source.all as data_sources %}
+  {% with received_award.active_data_sources as data_sources %}
     {% include "gcd/bits/show_sources.html" %}
   {% endwith %}
           </ul>

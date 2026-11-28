@@ -919,7 +919,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
             if issue.no_brand:
                 export_data.append('None')
             else:
-                brands = issue.brand_emblem.all()
+                brands = issue.active_brand_emblems()
                 brand_names = ''
                 for brand in brands:
                     brand_names += brand.name + '; '

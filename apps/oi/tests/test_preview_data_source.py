@@ -15,9 +15,9 @@ from apps.oi import states
 from apps.oi.models import (
     Changeset, DataSourceRevision, CTYPES,
     CreatorArtInfluenceRevision, CreatorDegreeRevision,
-    CreatorMembershipRevision, CreatorNonComicWorkRevision, CreatorRevision,
+    CreatorMembershipRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, ReceivedAwardRevision,
-    PreviewCreator, PreviewCreatorArtInfluence, PreviewCreatorDegree,
+    PreviewCreatorArtInfluence, PreviewCreatorDegree,
     PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, PreviewReceivedAward)
 from apps.stddata.models import Date
@@ -105,7 +105,6 @@ def test_preview_does_not_show_removed_data_source(
 @pytest.mark.django_db
 @pytest.mark.parametrize('preview_class, revision_class', [
     (PreviewReceivedAward, ReceivedAwardRevision),
-    (PreviewCreator, CreatorRevision),
     (PreviewCreatorSchool, CreatorSchoolRevision),
     (PreviewCreatorDegree, CreatorDegreeRevision),
     (PreviewCreatorMembership, CreatorMembershipRevision),
@@ -127,4 +126,4 @@ def test_preview_data_source_excludes_deleted(
     preview = preview_class()
     preview.revision = revision_class(id=1234)
 
-    assert list(preview.data_source) == [kept]
+    assert list(preview.active_data_sources()) == [kept]
