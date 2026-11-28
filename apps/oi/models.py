@@ -5004,6 +5004,7 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('indicia_printer')
             fields.remove('indicia_printer_not_printed')
+            fields.remove('indicia_printer_sourced_by')
         if not self.series.has_isbn and \
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('isbn')
@@ -5012,6 +5013,10 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('title')
             fields.remove('no_title')
+        if not self.series.has_rating and \
+           self.changeset.change_type != CTYPES['issue_bulk']:
+            fields.remove('rating')
+            fields.remove('no_rating')
         if not self.series.has_volume and \
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('volume')
