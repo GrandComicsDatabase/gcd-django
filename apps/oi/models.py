@@ -7108,13 +7108,29 @@ class StoryRevision(Revision):
 
                 # Just putting in a question mark isn't worth an IMP.
                 # Note that the input data is already whitespace-stripped.
-                # Changed StoryCredits give also positive is_changed and
-                # therefore corresponding IMP here.
+                # Changed StoryCredits of this type give also positive
+                # is_changed and therefore corresponding IMP here.
                 if field_name == name and getattr(self, field_name) == '?':
-                    if self.story_credit_revisions.exists() == 0:
+                    if not self._credits_changed(name):
                         return 0
                 return 1
         return 0
+
+    def _credits_changed(self, credit_type):
+        """Return whether a StoryCredit of the credit type changed.
+
+        A credit that had the type in its previous revision counts too,
+        so one given another type is a change of the type it had.
+        """
+        type_id = CREDIT_TYPES[credit_type]
+        for credit in self.story_credit_revisions.all():
+            previous = credit.previous()
+            if type_id in (credit.credit_type_id,
+                           previous and previous.credit_type_id):
+                credit.compare_changes()
+                if credit.is_changed:
+                    return True
+        return False
 
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue
