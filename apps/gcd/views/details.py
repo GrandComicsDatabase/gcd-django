@@ -37,6 +37,7 @@ from apps.indexer.models import Indexer
 
 from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
+from apps.mycomics.models import Collection, CollectionItem
 
 from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             IndiciaPublisher, Brand, BrandGroup, BrandUse, \
@@ -1167,6 +1168,8 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
     if feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator=creator,
+                               story__credits__credit_type__id__lt=6,
+                               story__credits__deleted=False,
                                story__feature_name__feature=feature)
         heading_addon = 'on feature %s' % (feature)
     if series_id:
@@ -2511,15 +2514,17 @@ def publisher_creators(request, publisher_id, creator_names=False):
         creators = creators.filter(
           storycredit__story__issue__series__publisher=publisher,
           storycredit__story__type__id__in=CORE_TYPES,
-          storycredit__deleted=False).distinct()\
-                                     .select_related('creator')
+          storycredit__deleted=False,
+          storycredit__credit_type__id__lt=6).distinct()\
+                                             .select_related('creator')
         creators = _annotate_creator_name_detail_list(creators)
     else:
         creators = Creator.objects.all()
         creators = creators.filter(
           creator_names__storycredit__story__issue__series__publisher=publisher,  # noqa: E501
           creator_names__storycredit__story__type__id__in=CORE_TYPES,
-          creator_names__storycredit__deleted=False).distinct()
+          creator_names__storycredit__deleted=False,
+          creator_names__storycredit__credit_type__id__lt=6).distinct()
         creators = _annotate_creator_list(creators)
 
     context = {
@@ -2549,15 +2554,17 @@ def series_creators(request, series_id, creator_names=False):
         creators = CreatorNameDetail.objects.all()
         creators = creators.filter(storycredit__story__issue__series=series,
                                    storycredit__story__type__id__in=CORE_TYPES,
-                                   storycredit__deleted=False).distinct()\
-                           .select_related('creator')
+                                   storycredit__deleted=False,
+                                   storycredit__credit_type__id__lt=6)\
+                           .distinct().select_related('creator')
         creators = _annotate_creator_name_detail_list(creators)
     else:
         creators = Creator.objects.all()
         creators = creators.filter(
           creator_names__storycredit__story__issue__series=series,
           creator_names__storycredit__story__type__id__in=CORE_TYPES,
-          creator_names__storycredit__deleted=False).distinct()
+          creator_names__storycredit__deleted=False,
+          creator_names__storycredit__credit_type__id__lt=6).distinct()
         creators = _annotate_creator_list(creators)
     context = {
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
@@ -2636,6 +2643,15 @@ class KeywordsTable(tables.Table):
                                                   record.name))
 
 
+def _private_content_types():
+    """
+    Return the content types of the collections of my.comics.org and of
+    their items, whose keywords are not shown on the keyword pages.
+    """
+    return list(ContentType.objects.get_for_models(
+      Collection, CollectionItem).values())
+
+
 def keywords(request, keyword=''):
     """
     List all keywords
@@ -2644,10 +2660,11 @@ def keywords(request, keyword=''):
         keywords = Tag.objects.filter(name__icontains=keyword)
     else:
         keywords = Tag.objects.all()
+    private_types = _private_content_types()
     keywords = keywords.annotate(
       objects_count=Count(
         'taggit_taggeditem_items',
-        filter=~Q(taggit_taggeditem_items__content_type__id__in=[72, 75])))\
+        filter=~Q(taggit_taggeditem_items__content_type__in=private_types)))\
         .order_by('-objects_count').filter(objects_count__gt=0)
     template = 'gcd/search/tw_list_sortable.html'
     context = {
@@ -2682,18 +2699,11 @@ def keyword(request, keyword, model_name=''):
     Display the objects associated to a keyword.
     """
     if 'content_type' in request.GET:
-        if request.GET['content_type'] == '11':
-            model_name = 'series'
-        elif request.GET['content_type'] == '13':
-            model_name = 'story'
-        elif request.GET['content_type'] == '12':
-            model_name = 'issue'
-        elif request.GET['content_type'] == '127':
-            model_name = 'feature'
-        elif request.GET['content_type'] == '147':
-            model_name = 'character'
-        elif request.GET['content_type'] == '149':
-            model_name = 'group'
+        table_types = ContentType.objects.get_for_models(
+          Series, Story, Issue, Feature, Character, Group)
+        for model, content_type in table_types.items():
+            if request.GET['content_type'] == str(content_type.id):
+                model_name = model._meta.model_name
 
     if model_name:
         from apps.oi.views import DISPLAY_CLASSES
@@ -2735,7 +2745,7 @@ def keyword(request, keyword, model_name=''):
         object_type = 'feature'
     else:
         objs = TaggedItem.objects.filter(tag__name=keyword).exclude(
-          content_type__id__in=[72, 75])
+          content_type__in=_private_content_types())
         content_types = set(objs.values_list('content_type', flat=True))
         filter = KeywordUsedFilter(request.GET,
                                    queryset=objs,
@@ -3828,12 +3838,16 @@ def feature_creators(request, feature_id, creator_names=False):
             creators = creators.filter(
               storycredit__story__feature_name__feature=feature,
               storycredit__story__type__id__in=CORE_TYPES,
-              storycredit__deleted=False).distinct().select_related('creator')
+              storycredit__deleted=False,
+              storycredit__credit_type__id__lt=6)\
+              .distinct().select_related('creator')
             result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
         else:
             creators = creators.filter(
               storycredit__story__feature_name__feature=feature,
-              storycredit__deleted=False).distinct().select_related('creator')
+              storycredit__deleted=False,
+              storycredit__credit_type__id__lt=6)\
+              .distinct().select_related('creator')
             result_disclaimer = MIGRATE_DISCLAIMER
         creators = _annotate_creator_name_detail_list(creators)
     else:
@@ -3842,12 +3856,14 @@ def feature_creators(request, feature_id, creator_names=False):
             creators = creators.filter(
               creator_names__storycredit__story__feature_name__feature=feature,
               creator_names__storycredit__story__type__id__in=CORE_TYPES,
-              creator_names__storycredit__deleted=False).distinct()
+              creator_names__storycredit__deleted=False,
+              creator_names__storycredit__credit_type__id__lt=6).distinct()
             result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
         else:
             creators = creators.filter(
               creator_names__storycredit__story__feature_name__feature=feature,
-              creator_names__storycredit__deleted=False).distinct()
+              creator_names__storycredit__deleted=False,
+              creator_names__storycredit__credit_type__id__lt=6).distinct()
             result_disclaimer = MIGRATE_DISCLAIMER
         creators = _annotate_creator_list(creators)
 

@@ -53,6 +53,10 @@ queries return empty sets, and all queries succeeded. An existing account at
 any host is a reason to stop and review. Do not drop it, change its password,
 or use `IF NOT EXISTS` to skip these checks.
 
+MariaDB has no `partial_revokes` variable: on a MariaDB server leave
+`@@GLOBAL.partial_revokes` out of the first query and use the escaped
+database grants below.
+
 For a fresh server with `partial_revokes=0`, run:
 
 ```sql
@@ -60,16 +64,31 @@ CREATE DATABASE gcd_dev CHARACTER SET utf8mb4;
 CREATE USER 'gcd_dev'@'127.0.0.1' IDENTIFIED BY 'gcd_dev_password';
 GRANT ALL PRIVILEGES ON `gcd\_dev`.* TO 'gcd_dev'@'127.0.0.1';
 GRANT ALL PRIVILEGES ON `test\_gcd\_dev`.* TO 'gcd_dev'@'127.0.0.1';
+GRANT SELECT ON performance_schema.data_locks TO 'gcd_dev'@'127.0.0.1';
+GRANT SELECT ON performance_schema.data_lock_waits TO 'gcd_dev'@'127.0.0.1';
 SHOW GRANTS FOR 'gcd_dev'@'127.0.0.1';
 EXIT;
 ```
 
 The escaped underscores make these exact database grants under MySQL's default
 rules, not wildcard patterns. If `partial_revokes=1`, use `gcd_dev` and
-`test_gcd_dev` without backslashes in the two grants. Do not change the server's
+`test_gcd_dev` unescaped in the two database grants. Do not change the server's
 setting to follow the guide. See [MySQL database-level grants](https://dev.mysql.com/doc/refman/8.4/en/grant.html).
 
-There are no global privileges, grant option, or remote-host account. Django
+The tests of concurrent changes read the two Performance Schema tables, so
+the last two grants give `SELECT` on those tables only.
+
+MariaDB has no such tables. There the tests read
+`information_schema.INNODB_LOCK_WAITS` and `INNODB_LOCKS`, which need the
+global `PROCESS` privilege, so on a MariaDB server replace the last two grants
+with:
+
+```sql
+GRANT PROCESS ON *.* TO 'gcd_dev'@'127.0.0.1';
+```
+
+Apart from that one on MariaDB, there are no global privileges, grant option,
+or remote-host account. Django
 creates and removes `test_gcd_dev` when running database tests; never store
 valuable data there. Run tests without parallel workers, which require additional
 database names not covered by these grants.

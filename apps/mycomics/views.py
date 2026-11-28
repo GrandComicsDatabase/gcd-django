@@ -129,6 +129,8 @@ def view_collection(request, collection_id):
     vars = {'collection': collection,
             'collection_list': collection_list,
             'base_url': base_url,
+            'deleted_items': items.filter(issue__deleted=True)
+                                  .select_related('issue__series__publisher'),
             'needed_covers_url': needed_covers_url,
             'unindexed_issues_url': unindexed_issues_url}
     data = set(items.values_list('issue__series__publisher'))
@@ -1278,7 +1280,8 @@ def copy_reading_order(request, reading_order_id):
                                     link_new, esc(new_reading_order.name))))
     request.session['reading_order_id'] = new_reading_order.id
     return HttpResponseRedirect(urlresolvers.reverse('view_reading_order',
-                                kwargs={'reading_order_id': new_reading_order.id}))
+                                kwargs={'reading_order_id':
+                                        new_reading_order.id}))
 
 
 @login_required

@@ -4336,6 +4336,7 @@ class IssueRevision(Revision):
         has_volume = ('series', 'has_volume')
         has_ind_freq = ('series', 'has_indicia_frequency')
         has_ind_print = ('series', 'has_indicia_printer')
+        has_rating = ('series', 'has_rating')
         return {
             'title': has_title,
             'no_title': has_title,
@@ -4346,11 +4347,15 @@ class IssueRevision(Revision):
             'valid_isbn': has_isbn,
             'volume': has_volume,
             'no_volume': has_volume,
+            'volume_not_printed': has_volume,
             'display_volume_with_number': has_volume,
             'indicia_frequency': has_ind_freq,
             'no_indicia_frequency': has_ind_freq,
             'indicia_printer': has_ind_print,
             'indicia_printer_not_printed': has_ind_print,
+            'indicia_printer_sourced_by': has_ind_print,
+            'rating': has_rating,
+            'no_rating': has_rating,
         }
 
     @classmethod
@@ -5116,6 +5121,7 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('indicia_printer')
             fields.remove('indicia_printer_not_printed')
+            fields.remove('indicia_printer_sourced_by')
         if not self.series.has_isbn and \
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('isbn')
@@ -5124,6 +5130,10 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('title')
             fields.remove('no_title')
+        if not self.series.has_rating and \
+           self.changeset.change_type != CTYPES['issue_bulk']:
+            fields.remove('rating')
+            fields.remove('no_rating')
         if not self.series.has_volume and \
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('volume')
@@ -9166,11 +9176,11 @@ class ReprintRevision(Revision):
             elif self.previous_revision.target and \
                     self.previous_revision.target.issue == base_issue:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.target)
             else:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.origin)
         return mark_safe(reprint)
 
@@ -9512,9 +9522,11 @@ class PreviewReceivedAward(ReceivedAward):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class DataSourceRevisionManager(RevisionManager):
@@ -9745,13 +9757,14 @@ class CreatorRevision(Revision):
 
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
-        # clone date instances
-        birth_date = self.creator.birth_date
+        # clone date instances; a fork has no creator yet
+        creator = fork_source if fork else self.creator
+        birth_date = creator.birth_date
         birth_date.pk = None
         birth_date.save()
         self.birth_date = birth_date
 
-        death_date = self.creator.death_date
+        death_date = creator.death_date
         death_date.pk = None
         death_date.save()
         self.death_date = death_date
@@ -10059,9 +10072,11 @@ class PreviewCreator(Creator):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorRelationRevision(Revision):
@@ -10427,9 +10442,11 @@ class PreviewCreatorSchool(CreatorSchool):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorDegreeRevision(Revision):
@@ -10522,9 +10539,11 @@ class PreviewCreatorDegree(CreatorDegree):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorMembershipRevision(Revision):
@@ -10635,9 +10654,11 @@ class PreviewCreatorMembership(CreatorMembership):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class CreatorArtInfluenceRevision(Revision):
@@ -10725,9 +10746,11 @@ class PreviewCreatorArtInfluence(CreatorArtInfluence):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)
 
 
 class MultiURLValidator(URLValidator):
@@ -10890,6 +10913,8 @@ class PreviewCreatorNonComicWork(CreatorNonComicWork):
 
     @property
     def data_source(self):
+        # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
+          content_type=ContentType.objects.get_for_model(self.revision),
+          deleted=False)

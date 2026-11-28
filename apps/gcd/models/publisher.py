@@ -622,7 +622,7 @@ class BrandEmblemSearchTable(PublisherBaseTable):
         if not settings.FAKE_IMAGES and value:
             return mark_safe(
               f'<a href="{record.get_absolute_url()}">'
-              f'<img src="{value.thumbnail.url}"></a>')
+              f'<img src="{value.thumbnail_url}"></a>')
         return ''
 
     def render_issue_count(self, value, record):

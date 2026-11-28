@@ -8,6 +8,7 @@ from django.core.management import call_command
 from apps.gcd.models import Publisher
 from apps.oi.models import PublisherRevision
 from apps.stats.models import CountStats
+from apps.stddata.models import Country
 
 
 @pytest.mark.django_db
@@ -118,3 +119,16 @@ def test_commit_after_a_flush(request):
     for country in (None, rev.publisher.country):
         assert CountStats.objects.get(name='publishers', language=None,
                                       country=country).count == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_flush_leaves_the_countries_empty():
+    """
+    What the oi tests make again after a flush adds no country: a test of
+    another app that flushes, such as the native reset, then finds the
+    country table empty and loads the countries.
+    """
+    call_command('flush', verbosity=0, interactive=False,
+                 reset_sequences=False)
+
+    assert list(Country.objects.values_list('code', flat=True)) == []
