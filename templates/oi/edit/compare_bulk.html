@@ -1,0 +1,28 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+GCD :: Compare :: Bulk Change :: {{ heading }}
+{% endblock %}
+
+{% block view_body %}
+<h1>
+Bulk change: {{ heading }}
+</h1>
+<p>
+Each row is one changed field.  Highlighted parts represent
+<span class="added border border-gray-400 p-1">added</span> and
+<span class="deleted border border-gray-400 p-1">deleted</span> data;
+spaces and case count.
+</p>
+{% include 'oi/bits/bulk_rows.html' %}
+{% if page.has_other_pages %}
+  {% include 'gcd/bits/tw_pagination_bar.html' %}
+{% endif %}
+
+<h3> Comments </h3>
+{% with changeset.comments as comments %}
+{% include 'oi/bits/comments.html' %}
+{% endwith %}
+
+{% include 'oi/bits/compare_actions.html' %}
+{% endblock %}
