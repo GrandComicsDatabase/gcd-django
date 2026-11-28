@@ -26,6 +26,7 @@ from apps.api_v2.utils.conditional import (
     condition,
     make_etag,
     make_last_modified,
+    pk_is_valid,
 )
 from apps.api_v2.views import GCDBaseViewSet
 from apps.gcd.models import (
@@ -106,7 +107,7 @@ award_etag = make_etag(
 def _award_recipient_conditional_state(request, *, pk=None, **kwargs):
     """Return cached parent existence and recipient modification state."""
     del kwargs
-    if pk is None:
+    if pk is None or not pk_is_valid(Award, pk):
         return None
     cache = getattr(request, '_gcd_v2_award_recipient_condition', None)
     cache_key = (request.get_full_path(), pk)
