@@ -51,7 +51,10 @@
                 {{ field.label_tag }}{% if field.field.required %}<span class="text-gray-500"> (required)</span>{% endif %}
                 {{ field }}
                 {{ field.errors }}
-                {% if field.help_text %}<p class="mt-0.5 text-gray-500">{{ field.help_text }}</p>{% endif %}
+                {% if field.help_text %}
+                  <p id="{{ field.auto_id }}_helptext"
+                     class="mt-0.5 text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
               </div>
             {% endfor %}
           </div>
