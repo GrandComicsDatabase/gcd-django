@@ -70,7 +70,9 @@ def _together(*calls):
     """
     Run calls in threads that start together and return their results.
     Fail if one of them is still running after its join, and raise the
-    exception that one of them raised.
+    exception that one of them raised.  If a thread cannot start, the
+    barrier is broken, so that the started ones end, and the error of the
+    start is raised once they have ended.
     """
     barrier = threading.Barrier(len(calls))
     results = [None] * len(calls)
@@ -86,8 +88,15 @@ def _together(*calls):
 
     threads = [threading.Thread(target=run, args=(index, call))
                for index, call in enumerate(calls)]
-    for thread in threads:
-        thread.start()
+    started = []
+    try:
+        for thread in threads:
+            thread.start()
+            started.append(thread)
+    except BaseException:
+        barrier.abort()
+        _joined(started)
+        raise
     for thread in threads:
         thread.join(60)
     assert not any(thread.is_alive() for thread in threads), \
@@ -146,6 +155,10 @@ def test_requests_at_the_same_moment(settings,
 
     changeset = Changeset.objects.get(change_type=CTYPES['bulk'])
     assert changeset.issuerevisions.count() == 3
+    # The change holds the lock of each issue; a lock of another model
+    # with the same id is not equal to the issue.
+    assert {lock.locked_object for lock in changeset.revision_locks.all()} \
+        == set(approved_issues)
     assert set(RevisionLock.objects.filter(
       object_id__in=[issue.id for issue in approved_issues])
       .values_list('changeset', flat=True)) == {changeset.id}
@@ -164,17 +177,9 @@ def test_requests_at_the_same_moment(settings,
     # The indexer row is held until both requests wait for it, so both
     # have passed the check of the page: apply refuses the second one,
     # after the first one ends.
-    results, threads = {}, []
-    try:
-        with _held(_hold_indexer, reserving_indexer):
-            threads.append(_started(results, 'first', lambda: _apply(
-              first, token='twice')))
-            threads.append(_started(results, 'twin', lambda: _apply(
-              twin, token='twice')))
-            _wait_for_lock_wait(Indexer._meta.db_table, waiting=2)
-    finally:
-        for thread in threads:
-            thread.join(90)
+    results = _behind_indexer(
+      reserving_indexer, first=lambda: _apply(first, token='twice'),
+      twin=lambda: _apply(twin, token='twice'))
 
     assert Changeset.objects.filter(change_type=CTYPES['bulk'],
                                     state=states.OPEN).count() == 1
@@ -184,19 +189,22 @@ def test_requests_at_the_same_moment(settings,
 
     # Two tabs of one indexer, each with its own list, apply at once: the
     # requests take turns, and the second finds the first change active.
+    # Both wait for the indexer row, so neither has counted the active
+    # changes before the other one ends.
     Changeset.objects.get(change_type=CTYPES['bulk'], state=states.OPEN) \
              .discard(reserving_indexer)
     settings.BULK_CHANGE_MAX_ACTIVE = 1
     tab_a = _logged_in(reserving_indexer, approved_issues[:2], token='a')
     tab_b = _logged_in(reserving_indexer, approved_issues[2:], token='b')
 
-    results = _together(lambda: _apply(tab_a, token='a'),
-                        lambda: _apply(tab_b, token='b'))
+    results = _behind_indexer(reserving_indexer,
+                              a=lambda: _apply(tab_a, token='a'),
+                              b=lambda: _apply(tab_b, token='b'))
 
     assert Changeset.objects.filter(change_type=CTYPES['bulk'],
                                     state=states.OPEN).count() == 1
     assert any('You already have 1 active bulk change' in
-               result.content.decode() for result in results)
+               result.content.decode() for result in results.values())
 
     # A request that waits too long for the indexer row, which another
     # request of the indexer holds, gets a message, not a server error.
@@ -232,8 +240,7 @@ def test_requests_at_the_same_moment(settings,
               reverse('approve', kwargs={'id': adding.id}), {'comments': ''})))
             _wait_for_lock_wait('gcd_series')
     finally:
-        for thread in threads:
-            thread.join(90)
+        _joined(threads)
 
     assert not isinstance(results['approve'], Exception), results['approve']
     assert results['approve'].status_code == 302
@@ -268,8 +275,7 @@ def test_requests_at_the_same_moment(settings,
                   reviewing.id)))
                 _wait_for_lock_wait('gcd_series')
         finally:
-            for thread in threads:
-                thread.join(90)
+            _joined(threads)
 
         assert results['approve'] is None, kind
         assert results['apply'].status_code == 302
@@ -306,8 +312,7 @@ def test_requests_at_the_same_moment(settings,
             discard.join(20)
             assert not discard.is_alive()
     finally:
-        for thread in threads:
-            thread.join(90)
+        _joined(threads)
 
     assert results['discard'] is None
     discarded.refresh_from_db()
@@ -351,8 +356,7 @@ def test_requests_at_the_same_moment(settings,
                   applying, token='flight%s' % commits)))
                 _wait_for_lock_wait('oi_revision_lock')
         finally:
-            for thread in threads:
-                thread.join(90)
+            _joined(threads)
 
         assert results['apply'].status_code == 302
         assert _open_record(reserving_indexer)['listed']['reserved'] == \
@@ -366,14 +370,16 @@ def test_requests_at_the_same_moment(settings,
     _discard_open_bulk_changes()
     applying = _logged_in(reserving_indexer,
                           approved_issues + [approved_variant], token='rows')
-    results = {}
-    with _held_row(reviewed):
-        thread = _started(results, 'apply',
-                          lambda: _apply(applying, token='rows',
-                                         data=FREQUENCY))
-        waits = _lock_waits_until_done(thread, 'gcd_issue')
-    thread.join(90)
-    assert not thread.is_alive(), 'the Apply did not end'
+    results, threads = {}, []
+    try:
+        with _held_row(reviewed):
+            thread = _started(results, 'apply',
+                              lambda: _apply(applying, token='rows',
+                                             data=FREQUENCY))
+            threads.append(thread)
+            waits = _lock_waits_until_done(thread, 'gcd_issue')
+    finally:
+        _joined(threads)
 
     assert waits == 0
     assert results['apply'].status_code == 302
@@ -396,14 +402,16 @@ def test_requests_at_the_same_moment(settings,
     # refuses nothing.
     _discard_open_bulk_changes()
     applying = _logged_in(reserving_indexer, approved_issues, token='two')
-    results = {}
-    with _held_row(first.indicia_publisher):
-        with _held_row(first.series):
-            thread = _started(results, 'apply', lambda: _apply(
-              applying, token='two', data=FREQUENCY))
-            _wait_for_lock_wait('gcd_series')
-        _wait_for_lock_wait('gcd_indicia_publisher')
-    thread.join(90)
+    results, threads = {}, []
+    try:
+        with _held_row(first.indicia_publisher):
+            with _held_row(first.series):
+                threads.append(_started(results, 'apply', lambda: _apply(
+                  applying, token='two', data=FREQUENCY)))
+                _wait_for_lock_wait('gcd_series')
+            _wait_for_lock_wait('gcd_indicia_publisher')
+    finally:
+        _joined(threads)
     assert results['apply'].status_code == 302
 
     # An approval that waits beyond the server's limit, on its series, on
@@ -452,8 +460,7 @@ def test_requests_at_the_same_moment(settings,
               {'comments': ''})))
             _wait_for_lock_wait('gcd_series')
     finally:
-        for thread in threads:
-            thread.join(90)
+        _joined(threads)
 
     assert b'This bulk change cannot be approved.' in \
         results['approve'].content
@@ -630,9 +637,30 @@ def _discard(changeset_id):
         changeset.discard(changeset.indexer)
 
 
+def _behind_indexer(user, **calls):
+    """
+    Hold the indexer row of user, start calls in threads, release it once
+    each of them waits for it, and return their results by name.
+    """
+    results, threads = {}, []
+    try:
+        with _held(_hold_indexer, user):
+            for name, call in calls.items():
+                threads.append(_started(results, name, call))
+            _wait_for_lock_wait(Indexer._meta.db_table, waiting=len(calls))
+    finally:
+        _joined(threads)
+    return results
+
+
 @contextmanager
 def _held(target, *args):
-    """Keep target running in a thread, holding what it holds, in the block."""
+    """
+    Keep target running in a thread, holding what it holds, in the block.
+    The block releases it as it ends, on every path, so the holder waits
+    for that without a limit of its own: a limit could end it while the
+    block still waits for a request to queue behind it.
+    """
     held, release = threading.Event(), threading.Event()
     holder = threading.Thread(target=target, args=(*args, held, release))
     holder.start()
@@ -683,6 +711,14 @@ def _started(results, name, call):
     thread = threading.Thread(target=_run, args=(results, name, call))
     thread.start()
     return thread
+
+
+def _joined(threads):
+    """Wait for threads to end; fail if one runs after 90 seconds."""
+    for thread in threads:
+        thread.join(90)
+    assert not any(thread.is_alive() for thread in threads), \
+        'a request did not end in 90 seconds'
 
 
 def _approve(changeset_id):
@@ -762,7 +798,7 @@ def _hold_row(row, then, held, release):
         with transaction.atomic():
             type(row).objects.select_for_update().get(id=row.id)
             held.set()
-            release.wait(60)
+            release.wait()
             if then:
                 then()
     finally:
@@ -792,7 +828,7 @@ def _hold_indexer(user, held, release):
         with transaction.atomic():
             Indexer.objects.select_for_update().get(user=user)
             held.set()
-            release.wait(60)
+            release.wait()
     finally:
         connections.close_all()
 
@@ -806,7 +842,7 @@ def _hold_lock(data_object, commit, held, release):
         with transaction.atomic():
             RevisionLock.objects.create(locked_object=data_object)
             held.set()
-            release.wait(90)
+            release.wait()
             if not commit:
                 transaction.set_rollback(True)
     finally:
