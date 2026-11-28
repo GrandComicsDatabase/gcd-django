@@ -282,6 +282,10 @@ class Issue(GcdData):
     def active_code_numbers(self):
         return self.code_number.all()
 
+    def active_brand_emblems(self):
+        """Brand emblems shown on the page, overridden by the preview."""
+        return self.brand_emblem.all()
+
     def get_cover_sequence(self):
         if not self.variant_of or self.variant_cover_status == 3:
             cover = self.active_stories().filter(type=STORY_TYPES['cover'])\

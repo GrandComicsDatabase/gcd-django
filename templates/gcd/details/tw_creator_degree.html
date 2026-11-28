@@ -30,7 +30,7 @@
             <li><span class="font-bold">Notes:</span>
             {{ creator_degree.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
-  {% with creator_degree.data_source.all as data_sources %}
+  {% with creator_degree.active_data_sources as data_sources %}
             {% include "gcd/bits/show_sources.html" %}
   {% endwith %}
           </ul>

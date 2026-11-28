@@ -56,8 +56,7 @@ if USE_ELASTICSEARCH:
         'haystack_rqueue.signals.RQueueSignalProcessor'
     )
 
+# The contact and registration forms use Google's reCAPTCHA test keys here.
 SILENCED_SYSTEM_CHECKS = [
     'django_recaptcha.recaptcha_test_key_error',
-    'fields.W903',
-    'models.E025',
 ]

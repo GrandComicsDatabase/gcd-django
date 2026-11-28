@@ -752,6 +752,10 @@ class CreatorSchool(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
+    def active_data_sources(self):
+        """Data sources shown on the page, overridden by the preview."""
+        return self.data_source.all()
+
     def has_dependents(self):
         return self.creator.pending_deletion()
 
@@ -825,6 +829,10 @@ class CreatorDegree(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
+    def active_data_sources(self):
+        """Data sources shown on the page, overridden by the preview."""
+        return self.data_source.all()
+
     def has_dependents(self):
         return self.creator.pending_deletion()
 
@@ -861,6 +869,10 @@ class CreatorArtInfluence(GcdData):
                                        related_name='influenced_creators')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    def active_data_sources(self):
+        """Data sources shown on the page, overridden by the preview."""
+        return self.data_source.all()
 
     # only one of the two will be set
     def influence(self):
@@ -926,6 +938,10 @@ class CreatorMembership(GcdData):
     membership_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    def active_data_sources(self):
+        """Data sources shown on the page, overridden by the preview."""
+        return self.data_source.all()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -1015,6 +1031,10 @@ class CreatorNonComicWork(GcdData):
     work_urls = models.TextField()
     data_source = models.ManyToManyField(DataSource)
     notes = models.TextField()
+
+    def active_data_sources(self):
+        """Data sources shown on the page, overridden by the preview."""
+        return self.data_source.all()
 
     def has_dependents(self):
         return self.creator.pending_deletion()

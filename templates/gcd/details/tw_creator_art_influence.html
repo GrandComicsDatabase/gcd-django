@@ -28,7 +28,7 @@
             <li><span class="font-bold">Notes:</span>
             {{ creator_art_influence.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
-  {% with creator_art_influence.data_source.all as data_sources %}
+  {% with creator_art_influence.active_data_sources as data_sources %}
             {% include "gcd/bits/show_sources.html" %}
   {% endwith %}
           </ul>

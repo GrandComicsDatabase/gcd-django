@@ -60,6 +60,10 @@ class ReceivedAward(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
+    def active_data_sources(self):
+        """Data sources shown on the page, overridden by the preview."""
+        return self.data_source.all()
+
     def has_dependents(self):
         return self.recipient.pending_deletion()
 

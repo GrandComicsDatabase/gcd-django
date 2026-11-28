@@ -179,7 +179,7 @@ def show_credit(story, credit, tailwind=False, bare_value=False):
         return formatted_credit
     elif credit == 'genre':
         genres = story.genre.lower()
-        for feature in story.feature_name.all():
+        for feature in story.active_feature_names():
             for genre in feature.feature.genre.split(';'):
                 genre = genre.strip()
                 if genre not in genres:

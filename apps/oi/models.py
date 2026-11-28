@@ -5253,8 +5253,8 @@ class PreviewIssue(Issue):
                 return self.variant_of.active_covers()
         return Cover.objects.none()
 
-    @property
-    def brand_emblem(self):
+    def active_brand_emblems(self):
+        """The brand emblems of the issue revision."""
         return self.revision.brand_emblem.all()
 
     @property
@@ -6919,6 +6919,14 @@ class StoryRevision(Revision):
     def active_groups(self):
         return self.story_group_revisions.exclude(deleted=True)
 
+    def active_feature_names(self):
+        """Feature names for show_feature, as on the story."""
+        return self.feature_name.all()
+
+    def active_universes(self):
+        """Universes for show_characters, as on the story."""
+        return self.universe.all()
+
     def show_characters(self, url=True, css_style=True, compare=False):
         return show_characters(self, url=url, css_style=css_style,
                                compare=compare)
@@ -7333,12 +7341,12 @@ class PreviewStory(Story):
         preview_story.id = story_revision.id
         return preview_story
 
-    @property
-    def feature_name(self):
+    def active_feature_names(self):
+        """The feature names of the story revision."""
         return self.revision.feature_name.exclude(deleted=True)
 
-    @property
-    def story_arc(self):
+    def active_story_arcs(self):
+        """The story arcs of the story revision."""
         return self.revision.story_arc.all()
 
     @property
@@ -7384,7 +7392,7 @@ class PreviewStory(Story):
             self.synopsis or \
             self.has_keywords() or \
             self.has_reprints() or \
-            self.feature_name.exclude(feature__genre='')\
+            self.active_feature_names().exclude(feature__genre='')\
                 .values('feature__genre').exists() or \
             self.revision.feature_logo.count() or \
             self.active_awards().count()
@@ -7427,8 +7435,8 @@ class PreviewStory(Story):
     def show_characters(self):
         return self._show_characters(self)
 
-    @property
-    def universe(self):
+    def active_universes(self):
+        """The universes of the story revision."""
         return self.revision.universe.all()
 
     def has_feature(self):
@@ -9398,8 +9406,8 @@ class PreviewReceivedAward(ReceivedAward):
     class Meta:
         proxy = True
 
-    @property
-    def data_source(self):
+    def active_data_sources(self):
+        """The data sources of the revision, without the removed ones."""
         # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
@@ -9948,14 +9956,6 @@ class PreviewCreator(Creator):
         return self.revision.changeset.creatornamedetailrevisions\
                                       .filter(deleted=False)
 
-    @property
-    def data_source(self):
-        # sources removed in this changeset are deleted on approval
-        return DataSourceRevision.objects.filter(
-          revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision),
-          deleted=False)
-
 
 class CreatorRelationRevision(Revision):
     """
@@ -10318,8 +10318,8 @@ class PreviewCreatorSchool(CreatorSchool):
     class Meta:
         proxy = True
 
-    @property
-    def data_source(self):
+    def active_data_sources(self):
+        """The data sources of the revision, without the removed ones."""
         # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
@@ -10415,8 +10415,8 @@ class PreviewCreatorDegree(CreatorDegree):
     class Meta:
         proxy = True
 
-    @property
-    def data_source(self):
+    def active_data_sources(self):
+        """The data sources of the revision, without the removed ones."""
         # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
@@ -10530,8 +10530,8 @@ class PreviewCreatorMembership(CreatorMembership):
     class Meta:
         proxy = True
 
-    @property
-    def data_source(self):
+    def active_data_sources(self):
+        """The data sources of the revision, without the removed ones."""
         # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
@@ -10622,8 +10622,8 @@ class PreviewCreatorArtInfluence(CreatorArtInfluence):
     class Meta:
         proxy = True
 
-    @property
-    def data_source(self):
+    def active_data_sources(self):
+        """The data sources of the revision, without the removed ones."""
         # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,
@@ -10789,8 +10789,8 @@ class PreviewCreatorNonComicWork(CreatorNonComicWork):
     def display_years(self):
         return self.revision.work_years
 
-    @property
-    def data_source(self):
+    def active_data_sources(self):
+        """The data sources of the revision, without the removed ones."""
         # sources removed in this changeset are deleted on approval
         return DataSourceRevision.objects.filter(
           revision_id=self.revision.id,

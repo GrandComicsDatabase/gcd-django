@@ -31,7 +31,7 @@
             <li><span class="font-bold">Notes:</span>
             {{ creator_school.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
-  {% with creator_school.data_source.all as data_sources %}
+  {% with creator_school.active_data_sources as data_sources %}
             {% include "gcd/bits/show_sources.html" %}
   {% endwith %}
           </ul>

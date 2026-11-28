@@ -47,7 +47,7 @@
             <li><span class="font-bold">Notes:</span>
             {{ creator_non_comic_work.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
-  {% with creator_non_comic_work.data_source.all as data_sources %}
+  {% with creator_non_comic_work.active_data_sources as data_sources %}
             {% include "gcd/bits/show_sources.html" %}
   {% endwith %}
           </ul>

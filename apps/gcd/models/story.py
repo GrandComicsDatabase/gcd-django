@@ -68,7 +68,7 @@ DEPRECATED_TYPES = [3, 4, 23]
 def show_feature(story, url=True):
     first = True
     features = ''
-    for feature in story.feature_name.all():
+    for feature in story.active_feature_names():
         if first:
             first = False
         else:
@@ -182,9 +182,10 @@ def get_civilian_identity(character, appearing_characters, url=True,
 
 def _get_reference_universe(story):
     reference_universe_id = None
-    if story.universe.count() == 1:
-        reference_universe_id = story.universe.get().id
-    elif story.universe.count() == 2:
+    universes = story.active_universes()
+    if universes.count() == 1:
+        reference_universe_id = universes.get().id
+    elif universes.count() == 2:
         reference_universe_id = -1
     else:
         if len(set(story.appearing_characters.exclude(universe__verse=None)
@@ -1182,6 +1183,18 @@ class Story(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
+    def active_feature_names(self):
+        """Feature names shown on the page, overridden by the preview."""
+        return self.feature_name.all()
+
+    def active_story_arcs(self):
+        """Story arcs shown on the page, overridden by the preview."""
+        return self.story_arc.all()
+
+    def active_universes(self):
+        """Universes shown on the page, overridden by the preview."""
+        return self.universe.all()
+
     def process_appearing_characters(self):
         return process_appearing_characters(self)
 
@@ -1226,7 +1239,7 @@ class Story(GcdData):
     def show_story_arc(self, url=True):
         first = True
         story_arcs = ''
-        for story_arc in self.story_arc.all():
+        for story_arc in self.active_story_arcs():
             if first:
                 first = False
             else:
@@ -1247,7 +1260,7 @@ class Story(GcdData):
     def show_universe(self):
         from apps.gcd.templatetags.display import absolute_url
         universes = ''
-        for universe in self.universe.all():
+        for universe in self.active_universes():
             universes += absolute_url(universe) + '; '
         if universes:
             universes = universes[:-2]
