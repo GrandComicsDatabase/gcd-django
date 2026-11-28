@@ -420,21 +420,16 @@ class Issue(GcdData):
         Find the issues immediately before and after the given issue.
         """
 
-        prev_issue = None
-        next_issue = None
-
         earlier_issues = self.series.active_base_issues()\
                              .filter(sort_code__lt=self.sort_code)\
                              .exclude(id=self.variant_of_id)
         earlier_issues = earlier_issues.order_by('-sort_code')
-        if earlier_issues:
-            prev_issue = earlier_issues[0]
+        prev_issue = earlier_issues.first()
 
         later_issues = self.series.active_base_issues()\
                            .filter(sort_code__gt=self.sort_code)
         later_issues = later_issues.order_by('sort_code')
-        if later_issues:
-            next_issue = later_issues[0]
+        next_issue = later_issues.first()
 
         return [prev_issue, next_issue]
 

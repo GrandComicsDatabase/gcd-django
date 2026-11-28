@@ -5,7 +5,11 @@
 import mock
 import pytest
 
+from django.core.management import call_command
+from django.db import connection
 from django.db.models import QuerySet
+from django.db.models.signals import post_init
+from django.test.utils import CaptureQueriesContext
 
 from apps.gcd.models import Series, Issue, Cover
 from apps.gcd.models.issue import INDEXED
@@ -570,3 +574,86 @@ def test_stat_counts_deleted(any_series):
     i = Issue(number='1', series=any_series)
     i.deleted = True
     assert i.stat_counts() == {}
+
+
+@pytest.fixture
+def seeded_series(db):
+    """ The series of the development sample, with #1 and its variant. """
+    call_command('seed_development_data')
+    return Series.objects.get(name='[GCD DEV] Adventures')
+
+
+def _add_issue(series, sort_code, **fields):
+    """ A new issue of the series at the sort code. """
+    return Issue.objects.create(series=series, sort_code=sort_code,
+                                number=str(sort_code), **fields)
+
+
+@pytest.fixture
+def neighbour_issues(seeded_series):
+    """
+    The issues of the seeded series by name: base issues added out of sort
+    code order, a deleted issue, a variant of a base issue in the series
+    and a variant of an issue of another series.
+    """
+    series = seeded_series
+    other_series = Series.objects.create(
+      name='Other Series', sort_name='Other Series', year_began=2024,
+      publisher=series.publisher, country=series.country,
+      language=series.language, is_comics_publication=True)
+    issues = {'first': Issue.objects.get(series=series, sort_code=1),
+              'first variant': Issue.objects.get(series=series,
+                                                 sort_code=2)}
+    issues['last'] = _add_issue(series, 50)
+    issues['fourth'] = _add_issue(series, 30)
+    issues['second'] = _add_issue(series, 10)
+    issues['deleted'] = _add_issue(series, 20, deleted=True)
+    issues['fourth variant'] = _add_issue(series, 31,
+                                          variant_of=issues['fourth'])
+    issues['variant of other series'] = _add_issue(
+      series, 40, variant_of=_add_issue(other_series, 1))
+    return issues
+
+
+@pytest.mark.parametrize('name, prev_name, next_name', [
+  ('first', None, 'second'),
+  ('first variant', None, 'second'),
+  ('second', 'first', 'fourth'),
+  ('deleted', 'second', 'fourth'),
+  ('fourth', 'second', 'variant of other series'),
+  ('fourth variant', 'second', 'variant of other series'),
+  ('variant of other series', 'fourth', 'last'),
+  ('last', 'variant of other series', None),
+])
+def test_prev_next_issue(neighbour_issues, name, prev_name, next_name):
+    """ The nearest base issues by sort code that are not deleted. """
+    issues = neighbour_issues
+
+    prev_issue, next_issue = issues[name].get_prev_next_issue()
+
+    assert prev_issue == issues.get(prev_name)
+    assert next_issue == issues.get(next_name)
+
+
+def test_prev_next_issue_reads_only_the_two_neighbours(seeded_series):
+    """ The rows read do not grow with the issues of the series. """
+    for sort_code in range(100, 140):
+        _add_issue(seeded_series, sort_code)
+    issue = Issue.objects.select_related('series').get(series=seeded_series,
+                                                       sort_code=120)
+    built = []
+
+    def count_issue(sender, instance, **kwargs):
+        """ Note each issue built from a database row. """
+        built.append(instance)
+
+    post_init.connect(count_issue, sender=Issue)
+    try:
+        with CaptureQueriesContext(connection) as queries:
+            prev_issue, next_issue = issue.get_prev_next_issue()
+    finally:
+        post_init.disconnect(count_issue, sender=Issue)
+
+    assert (prev_issue.sort_code, next_issue.sort_code) == (119, 121)
+    assert len(queries) == 2
+    assert len(built) == 2
