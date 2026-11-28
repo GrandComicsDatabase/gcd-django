@@ -10,7 +10,7 @@ from django.db.models import Q, Subquery
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 
 from apps.api_v2.filters.awards import (
     AWARD_RECIPIENT_TYPES,
@@ -173,6 +173,12 @@ AWARD_RECIPIENT_PREFETCH = GenericPrefetch(
 
 AWARD_RECIPIENT_SCHEMA_PARAMETERS = [
     OpenApiParameter(
+        name='id',
+        type=int,
+        location=OpenApiParameter.PATH,
+        description='A unique integer value identifying this award.',
+    ),
+    OpenApiParameter(
         name='recipient_type',
         type=str,
         location=OpenApiParameter.QUERY,
@@ -223,28 +229,32 @@ class AwardViewSet(GCDBaseViewSet):
         parameters=AWARD_RECIPIENT_SCHEMA_PARAMETERS,
         responses=AwardRecipientSerializer(many=True),
     )
-    @action(detail=True, methods=('get',))
+    # The action lists recipient rows: with its own queryset and filter
+    # set, the filter backend, the browsable API and the schema use the
+    # recipient filters here instead of the Award list ones.
+    @action(
+        detail=True,
+        methods=('get',),
+        queryset=ReceivedAward.objects.all(),
+        filterset_class=AwardRecipientFilterSet,
+    )
     @condition(
         etag_func=award_recipient_etag,
         last_modified_func=award_recipient_last_modified,
     )
     def recipients(self, request, *args, **kwargs):
         """Return a filtered, paginated page of typed Award recipients."""
-        award = self.get_object()
-        queryset = (
+        award = get_object_or_404(
+            Award.objects.filter(deleted=False),
+            pk=kwargs['pk'],
+        )
+        self.check_object_permissions(request, award)
+        queryset = self.filter_queryset(
             _award_recipient_queryset(award.pk)
             .select_related('content_type')
             .prefetch_related(AWARD_RECIPIENT_PREFETCH)
             .order_by('award_year', 'award_name', 'id')
         )
-        filterset = AwardRecipientFilterSet(
-            request.query_params,
-            queryset=queryset,
-            request=request,
-        )
-        if not filterset.is_valid():
-            raise ValidationError(filterset.errors)
-
-        page = self.paginate_queryset(filterset.qs)
+        page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)

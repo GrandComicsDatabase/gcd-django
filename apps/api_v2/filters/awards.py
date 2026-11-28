@@ -40,6 +40,7 @@ class AwardRecipientFilterSet(TimestampFilterSet):
     recipient_type = django_filters.ChoiceFilter(
         choices=AWARD_RECIPIENT_TYPES,
         method='filter_recipient_type',
+        label='Recipient type',
     )
 
     def filter_recipient_type(self, queryset, name, value):
