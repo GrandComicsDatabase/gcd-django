@@ -218,7 +218,10 @@ def generic_by_name(request, name, q_obj, sort,
         if related:
             things = things.select_related(*related)
         things = things.distinct()
+        # the search loads the languages, types, birth dates and countries
+        # that the rows show
         if class_ == Feature:
+            things = things.select_related('language', 'feature_type')
             things = things.annotate(issue_count=Count(
                     'story__issue',
                     filter=Q(story__deleted=False),
@@ -236,6 +239,7 @@ def generic_by_name(request, name, q_obj, sort,
                 template_name='gcd/bits/tw_sortable_table.html',
                 order_by=(order_by))
         elif class_ == Character:
+            things = things.select_related('language')
             order_by = 'name'
             if (sort == ORDER_CHRONO):
                 order_by = 'year_first_published'
@@ -253,6 +257,7 @@ def generic_by_name(request, name, q_obj, sort,
                 template_name='gcd/bits/tw_sortable_table.html',
                 order_by=(order_by))
         elif class_ == Group:
+            things = things.select_related('language')
             order_by = 'name'
             if (sort == ORDER_CHRONO):
                 order_by = 'year_first_published'
@@ -270,6 +275,7 @@ def generic_by_name(request, name, q_obj, sort,
                 order_by=(order_by),
                 group=True)
         elif class_ == Creator:
+            things = things.select_related('birth_date', 'birth_country')
             order_by = 'creator'
             if (sort == ORDER_CHRONO):
                 order_by = 'date_of_birth'
