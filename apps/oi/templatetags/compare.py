@@ -71,6 +71,28 @@ def key_date_years_note(revision, item, label):
     return ''
 
 
+def publisher_years_note(revision, field):
+    '''
+    Note when a year of an indicia publisher or brand group revision is
+    outside the years of its publisher. The year is compared with both
+    years of the publisher. A missing or uncertain year cannot show a
+    problem, so that side is not compared.
+    '''
+    year = getattr(revision, field)
+    publisher = revision.parent
+    if not year or not publisher or getattr(revision, field + '_uncertain'):
+        return ''
+    if publisher.year_began and not publisher.year_began_uncertain \
+       and year < publisher.year_began:
+        return ' (note: before the first year %d of the publisher)' % \
+               publisher.year_began
+    if publisher.year_ended and not publisher.year_ended_uncertain \
+       and year > publisher.year_ended:
+        return ' (note: after the last year %d of the publisher)' % \
+               publisher.year_ended
+    return ''
+
+
 # check to return True for yellow css compare highlighting
 @register.filter
 def check_changed(changed, field):
@@ -136,6 +158,11 @@ def field_value(revision, field):
                                      (res_holder.first_name,
                                       res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
+    elif field in ['year_began', 'year_ended'] and \
+            revision.source_name in ['indicia_publisher', 'brand_group']:
+        note = publisher_years_note(revision, field)
+        if note:
+            return '%d%s' % (value, note)
     elif field == 'indicia_publisher':
         return mark_safe(absolute_url(value) + key_date_years_note(
           revision, value, 'Indicia publisher'))
@@ -151,8 +178,8 @@ def field_value(revision, field):
             if settings.FAKE_IMAGES:
                 return absolute_url(value)
             else:
-                return mark_safe('<img class="inline"src="' +
-                                 value.emblem.icon.url + '"> '
+                return mark_safe('<img class="inline" src="' +
+                                 value.emblem.icon_url + '"> '
                                  + absolute_url(value))
         return absolute_url(value)
     elif field == 'brand_emblem':
@@ -165,7 +192,7 @@ def field_value(revision, field):
                 brand_emblems += absolute_url(brand_emblem) + '; '
             else:
                 brand_emblems += mark_safe('<img class="inline" src="' +
-                                           brand_emblem.emblem.icon.url + '"> '
+                                           brand_emblem.emblem.icon_url + '"> '
                                            + absolute_url(brand_emblem)) + '; '
         if brand_emblems:
             brand_emblems = brand_emblems[:-2]

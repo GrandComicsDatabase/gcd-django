@@ -11,11 +11,13 @@
     </div>
   {% if error_link %}
     <div class="px-2">
-    {% blocktrans with request.build_absolute_uri as uri and error_subject|urlencode as error_sub %}
+    {% with page=request.build_absolute_uri|urlencode %}
+    {% blocktrans with page as uri and error_subject|urlencode as error_sub %}
     If you believe any of this data to be incorrect, please
       <a class="new_window" href="https://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ uri }}&amp;short_desc={{ error_sub }}"
          target="_blank">let us know</a>.
     {% endblocktrans %}
+    {% endwith %}
     </div>
   {% endif %}
   </div>
@@ -28,7 +30,7 @@
       <img class='inline w-48 pe-1' alt="Creative Commons License" src="{% static 'img/cc_sa_license88x31.png' %}"></a>
     <div>
     {% blocktrans %}
-All portions of <a href="http://www.comics.org/" rel="cc:attributionURL">the {{ site_name }}</a>&trade;, except where noted otherwise, are
+All portions of <a href="https://www.comics.org/" rel="cc:attributionURL">the {{ site_name }}</a>&trade;, except where noted otherwise, are
 copyrighted by the GCD and are licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. This includes but is not necessarily limited to our database schema and data distribution format.
     {% endblocktrans %}
     </div>

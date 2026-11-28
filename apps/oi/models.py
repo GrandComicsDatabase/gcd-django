@@ -2780,6 +2780,22 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     def _do_complete_added_revision(self, parent):
         self.parent = parent
 
+    def _pre_commit_check(self):
+        """
+        Refuse to delete an indicia publisher that issues, or changes of
+        issues, use now: they may have come since the deletion was asked
+        for.  The row is locked first, so that a change writing a link to
+        it ends before it is read again.
+        """
+        if self.deleted:
+            indicia_publisher = IndiciaPublisher.objects \
+              .select_for_update().get(id=self.indicia_publisher_id)
+            if indicia_publisher.has_dependents():
+                raise ErrorWithMessage(
+                  'This indicia publisher cannot be deleted while issues, '
+                  'or changes of issues, use it; please discard this '
+                  'change.')
+
     def get_absolute_url(self):
         if self.indicia_publisher is None:
             return "/indicia_publisher/revision/%i/preview" % self.id
@@ -4282,7 +4298,9 @@ class IssueRevision(Revision):
         return self.changeset.issuerevisions.filter(series=self.series)
 
     def _same_series_open_with_after(self):
-        return self._same_series_revisions().filter(after__isnull=False,
+        # an 'after' in another series, e.g. of a new issue moved to another
+        # series, does not place the issue
+        return self._same_series_revisions().filter(after__series=self.series,
                                                     committed=None)
 
     def _open_prereq_revisions(self):
@@ -4412,6 +4430,8 @@ class IssueRevision(Revision):
         #       committing the variant_of_rev if necessary.
         #       Idea may be good for other new dependent object situations.
         if self.added or self.series_changed:
+            if self.after and self.after.series_id != self.series_id:
+                self.after = None
             if not self.after:
                 # If we're handling a run of issues, this is the
                 # previous issue in the run, if any.
@@ -4655,6 +4675,13 @@ class IssueRevision(Revision):
                                                 remainder_note.find(']')]
                             else:
                                 note = remainder_note
+                    elif (note.startswith('credited as ')
+                          and end_note != -1
+                          and '(' not in note):
+                        # "(credited as X)" is how the site shows a credit
+                        is_credited = True
+                        credited_as = note[len('credited as '):].strip()
+                        note = remainder_note
                     else:
                         note = with_note[with_note.find('('):].strip()
                 else:
@@ -4694,6 +4721,9 @@ class IssueRevision(Revision):
                         note = note[1:-1]
                     if note == '':
                         note = 'editor'
+                    if credited_as == creator.name:
+                        # the credit form refuses the creator name here
+                        credited_as = ''
                     credit_revision = IssueCreditRevision(
                         changeset=self.changeset,
                         issue_revision_id=self.id,
@@ -6674,6 +6704,13 @@ class StoryRevision(Revision):
                                                   remainder_note.find(']')]
                                 else:
                                     note = remainder_note
+                        elif (note.startswith('credited as ')
+                              and end_note != -1
+                              and '(' not in note):
+                            # "(credited as X)" is how the site shows a credit
+                            is_credited = True
+                            credited_as = note[len('credited as '):].strip()
+                            note = remainder_note
                         elif note in ['signed', 'signert', 'signiert']:
                             is_signed = True
                             note = ''
@@ -6684,6 +6721,15 @@ class StoryRevision(Revision):
                                                 remainder_note.find(']')]
                                 else:
                                     note = remainder_note
+                        elif (note.startswith('signed as ')
+                              and end_note != -1
+                              and '(' not in note
+                              and '[' not in credit):
+                            # "(signed as X)" is how the site shows a
+                            # signature; a name in [as ...] would replace X
+                            is_signed = True
+                            signed_as = note[len('signed as '):].strip()
+                            note = remainder_note
                         elif note == 'painted':
                             note = 'painting'
                         elif (note == 'signed, credited' or
@@ -6739,6 +6785,9 @@ class StoryRevision(Revision):
                                                   is_official_name=True)
                         if note and note[0] == '(' and note[-1] == ')':
                             note = note[1:-1]
+                        if credited_as == creator.name:
+                            # the credit form refuses the creator name here
+                            credited_as = ''
                         credit_revision = StoryCreditRevision(
                           changeset=self.changeset,
                           story_revision_id=self.id,
@@ -8995,11 +9044,11 @@ class ReprintRevision(Revision):
             elif self.previous_revision.target and \
                     self.previous_revision.target.issue == base_issue:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.target)
             else:
                 reprint += \
-                    '<br>reprint link was moved from %s]' % \
+                    '<br>reprint link was moved from %s' % \
                     show_story_short(self.previous_revision.origin)
         return mark_safe(reprint)
 
@@ -9574,13 +9623,14 @@ class CreatorRevision(Revision):
 
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
-        # clone date instances
-        birth_date = self.creator.birth_date
+        # clone date instances; a fork has no creator yet
+        creator = fork_source if fork else self.creator
+        birth_date = creator.birth_date
         birth_date.pk = None
         birth_date.save()
         self.birth_date = birth_date
 
-        death_date = self.creator.death_date
+        death_date = creator.death_date
         death_date.pk = None
         death_date.save()
         self.death_date = death_date

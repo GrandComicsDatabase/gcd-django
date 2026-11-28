@@ -125,6 +125,20 @@ class IssueCredit(GcdData):
 class Issue(GcdData):
     class Meta:
         app_label = 'gcd'
+        indexes = [
+            models.Index(
+                fields=['deleted', 'series', 'sort_code', 'id'],
+                name='gcd_issue_v2_browse_idx',
+            ),
+            models.Index(
+                fields=['deleted', 'modified', 'id'],
+                name='gcd_issue_v2_modified_idx',
+            ),
+            models.Index(
+                fields=['deleted', 'variant_of', 'sort_code', 'id'],
+                name='gcd_issue_v2_variant_idx',
+            ),
+        ]
         ordering = ['series', 'sort_code']
         unique_together = ('series', 'sort_code')
 
@@ -657,11 +671,19 @@ class Issue(GcdData):
             number = ' ' + number
         return '%s%s' % (self.series.full_name(), number)
 
-    def full_name_with_link(self, publisher=False):
+    def full_name_with_link(self, publisher=False, variant_name=False):
         name_link = self.series.full_name_with_link(publisher)
+        if variant_name:
+            number = self.display_full_descriptor
+        else:
+            number = self.display_number
         return mark_safe('%s <a href="%s">%s</a>' % (name_link,
                                                      self.get_absolute_url(),
-                                                     esc(self.display_number)))
+                                                     esc(number)))
+
+    @property
+    def full_name_with_variant_link(self):
+        return self.full_name_with_link(variant_name=True)
 
     def show_series_and_issue_link(self):
         issue_number = self.display_full_descriptor
