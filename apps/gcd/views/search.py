@@ -332,6 +332,7 @@ def generic_by_name(request, name, q_obj, sort,
                 sort_name = "organization_name"
             elif class_ is ReceivedAward:
                 sort_name = "award_name"
+                sort_year = "award_year"
             elif class_ is CreatorArtInfluence:
                 sort_name = "influence_name"
             elif class_ is CreatorNonComicWork:
@@ -346,7 +347,7 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.order_by(sort_name, sort_year)
             things = things.distinct()
         else:
-            sort_name = "name"
+            sort_name = "sort_name"
             things = sqs
             if class_ != ReceivedAward:
                 things = things.order_by('sort_name')
@@ -363,7 +364,10 @@ def generic_by_name(request, name, q_obj, sort,
         base_name = display_name.lower()
         item_name = display_name.lower()
 
-        heading = '%s Search Results' % display_name
+        if class_ is ReceivedAward:
+            item_name = 'received award'
+        else:
+            heading = '%s Search Results' % display_name
         # query_string for the link to the advanced search
         query_val['target'] = base_name
         query_val[base_name] = name
@@ -726,13 +730,13 @@ def received_award_by_name(request, received_award_name, sort=ORDER_ALPHA):
             .models(ReceivedAward)
         return generic_by_name(request, received_award_name, None, sort,
                                ReceivedAward,
-                               'gcd/search/received_award_list.html',
+                               'gcd/search/creator_award_list.html',
                                sqs=sqs)
     else:
         q_obj = Q(award_name__icontains=received_award_name)
         return generic_by_name(request, received_award_name, q_obj, sort,
                                ReceivedAward,
-                               'gcd/search/received_award_list.html')
+                               'gcd/search/creator_award_list.html')
 
 
 def creator_art_influence_by_name(request, creator_art_influence_name,
