@@ -597,7 +597,12 @@ def _behind_indexer(user, **calls):
 
 @contextmanager
 def _held(target, *args):
-    """Keep target running in a thread, holding what it holds, in the block."""
+    """
+    Keep target running in a thread, holding what it holds, in the block.
+    The block releases it as it ends, on every path, so the holder waits
+    for that without a limit of its own: a limit could end it while the
+    block still waits for a request to queue behind it.
+    """
     held, release = threading.Event(), threading.Event()
     holder = threading.Thread(target=target, args=(*args, held, release))
     holder.start()
@@ -720,7 +725,7 @@ def _hold_row(row, then, held, release):
         with transaction.atomic():
             type(row).objects.select_for_update().get(id=row.id)
             held.set()
-            release.wait(60)
+            release.wait()
             if then:
                 then()
     finally:
@@ -736,7 +741,7 @@ def _hold_indexer(user, held, release):
         with transaction.atomic():
             Indexer.objects.select_for_update().get(user=user)
             held.set()
-            release.wait(60)
+            release.wait()
     finally:
         connections.close_all()
 
@@ -750,7 +755,7 @@ def _hold_lock(data_object, commit, held, release):
         with transaction.atomic():
             RevisionLock.objects.create(locked_object=data_object)
             held.set()
-            release.wait(90)
+            release.wait()
             if not commit:
                 transaction.set_rollback(True)
     finally:
