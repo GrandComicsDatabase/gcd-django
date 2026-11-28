@@ -51,7 +51,7 @@ from apps.gcd.models.publisher import PublisherSearchTable, \
                                       PrinterSearchTable
 from apps.gcd.models.story import StoryTable, MatchedSearchStoryTable, \
                                   HaystackMatchedStoryTable, HaystackStoryTable
-from apps.gcd.models.series import SeriesPublisherTable
+from apps.gcd.models.series import SeriesPublisherTable, TypedSeriesPublisherTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, \
                                   PAGE_RANGE_REGEXP, COUNT_RANGE_REGEXP
@@ -148,7 +148,7 @@ def generic_by_name(request, name, q_obj, sort,
             elif class_ is IndiciaPublisher:
                 table_format = IndiciaPublisherSearchTable
             elif class_ is Series:
-                table_format = SeriesPublisherTable
+                table_format = TypedSeriesPublisherTable
                 # Check for filter choices without fetching every Series row.
                 if things.exists():
                     filter = filter_series(request, things)

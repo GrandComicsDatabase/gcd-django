@@ -575,6 +575,61 @@ class SeriesPublisherTable(SeriesTable):
         return str(value)
 
 
+class TypedSeriesPublisherTable(SeriesPublisherTable):
+    """Batch the counts used when rendering a typed Series search page."""
+
+    class Meta(SeriesPublisherTable.Meta):
+        pass
+
+    def before_render(self, request):
+        super().before_render(request)
+        if not hasattr(self, 'page'):
+            return
+        # Use the actual table page after sorting and pagination. Export
+        # paths do not render the table and retain their original behavior.
+        records = [row.record for row in self.paginated_rows]
+        if not records:
+            return
+        series_ids = [record.pk for record in records]
+        cover_status_ids = {record.pk for record in records
+                            if record.issue_count and record.is_comics_publication}
+        database = records[0]._state.db
+
+        # Match scan_count and marked_scans_count: a cover's own deletion
+        # flag controls the scan count, while marked covers are counted as-is.
+        covers = (Cover.objects.using(database)
+                  .filter(issue__series_id__in=series_ids).order_by()
+                  .values('issue__series_id')
+                  .annotate(scans=Count('pk', filter=Q(deleted=False)),
+                            marked=Count('pk', filter=Q(marked=True))))
+        cover_counts = {series_id: (scans, marked)
+                        for series_id, scans, marked in
+                        covers.values_list('issue__series_id', 'scans', 'marked')}
+        issues = Issue.objects.using(database).filter(deleted=False).order_by()
+        missing_counts = dict(
+            issues.filter(series_id__in=cover_status_ids)
+            .exclude(cover__isnull=False, cover__deleted=False)
+            .values('series_id').annotate(total=Count('pk', distinct=True))
+            .values_list('series_id', 'total')
+        )
+        indexed_counts = dict(
+            issues.filter(series_id__in=series_ids,
+                          is_indexed__gt=INDEXED['some_data'])
+            # An issue is a base for this Series if it is not a variant or
+            # if its base issue belongs to a different Series.
+            .exclude(variant_of__series_id=F('series_id'))
+            .values('series_id').annotate(total=Count('pk'))
+            .values_list('series_id', 'total')
+        )
+
+        # Seed the existing cached properties on these page instances only.
+        for record in records:
+            record.scan_count, marked = cover_counts.get(record.pk, (0, 0))
+            if record.pk in cover_status_ids:
+                record.scan_needed_count = missing_counts.get(record.pk, 0) + marked
+            record.issue_indexed_count = indexed_counts.get(record.pk, 0)
+
+
 class CharacterSeriesTable(SeriesPublisherTable):
     appearances_count = tables.Column(accessor='appearances_count',
                                       verbose_name='Issues',
