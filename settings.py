@@ -49,11 +49,18 @@ TEMPLATES = [
                 'apps.gcd.context_processors.gcd',
             ],
             'loaders': [
-                # insert your TEMPLATE_LOADERS here
-                'django.template.loaders.filesystem.Loader',
-                'django.template.loaders.app_directories.Loader',
+                # The templates edited with templatesadmin are read from
+                # disk on each use, so that an edit shows at once.
+                'apps.gcd.template_loaders.ManagedContentLoader',
+                # The others are compiled once and kept between requests.
+                ('django.template.loaders.cached.Loader', [
+                    # insert your TEMPLATE_LOADERS here
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+                ]),
             ],
-            'debug': DEBUG,
+            # No 'debug' here: Django takes it from DEBUG as it is after
+            # settings_local.
         },
     },
 ]
@@ -108,6 +115,12 @@ DATABASES = {
     },
 }
 
+# accent-sensitive, case-insensitive collation for utf8mb4,
+# for MySQL use
+COLLATE_SEARCH = 'utf8mb4_0900_as_ci'
+# on MariaDB use
+# COLLATE_SEARCH = 'utf8mb4_uca1400_as_ci'
+
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE = (
    'django.middleware.csrf.CsrfViewMiddleware',
@@ -160,6 +173,7 @@ INSTALLED_APPS = (
     'apps.voting',
     'apps.stddata',
     'apps.mycomics',
+    'apps.api_v2',
     'compressor',
     'templatesadmin',
     'taggit',
@@ -167,6 +181,7 @@ INSTALLED_APPS = (
     'haystack',
     'bootstrap3',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_contact_form',
     'django_recaptcha',
     'crispy_forms',
