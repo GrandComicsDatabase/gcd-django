@@ -2,6 +2,7 @@
 
 
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 
 class DownloadForm(forms.Form):
@@ -10,21 +11,21 @@ class DownloadForm(forms.Form):
     purpose = forms.ChoiceField(
         required=False,
         widget=forms.RadioSelect,
-        choices=(('private', 'Private use'),
-                 ('non-commercial', 'Public / Non-Commercial use'),
-                 ('commercial', 'Public / Commercial use')),
-        label="[Optional] Purpose:")
+        choices=(('private', _('Private use')),
+                 ('non-commercial', _('Public / Non-Commercial use')),
+                 ('commercial', _('Public / Commercial use'))),
+        label=_("[Optional] Purpose:"))
 
     usage = forms.CharField(
         required=False,
         widget=forms.Textarea,
-        label="[Optional] How or where do you plan to use the data?")
+        label=_("[Optional] How or where do you plan to use the data?"))
 
     # Set required=False so we can supply a better error message.
     accept_license = forms.BooleanField(
         required=False,
-        label='I have read and accept the GCD data licensing terms and '
-              'crediting guidelines')
+        label=_('I have read and accept the GCD data licensing terms and '
+                'crediting guidelines'))
 
     def clean(self):
         cd = self.cleaned_data
@@ -32,7 +33,8 @@ class DownloadForm(forms.Form):
 
         if cd['accept_license'] is not True:
             raise forms.ValidationError(
-                'You must check the box indicating your acceptance of the '
-                'licensing and crediting terms in order to download the data.')
+                _('You must check the box indicating your acceptance of the '
+                  'licensing and crediting terms in order to download the '
+                  'data.'))
 
         return cd

@@ -5,16 +5,20 @@
 {% load i18n %}
 {% load statustags %}
 
-{% block title %} GCD :: International Statistics {% endblock %}
+{% block title %} GCD :: {% trans "International Statistics" %} {% endblock %}
 
 {% block view_body %}
 <div class="px-1 my-1">
-Statistics by {{ type }}, ordered by number of 
+{% if type == 'language' %}
+{% trans "Statistics by language, ordered by number of" %}
+{% else %}
+{% trans "Statistics by country, ordered by number of" %}
+{% endif %}
   <form class="inline" method="get"
         action="{% if type == 'language' %}{% url 'international_stats_language' %}{% else %}{% url 'international_stats_country' %}{% endif %}">
     {{ form }}
     <button class="btn btn-blue ml-1 mb-1 h-8">
-    <input type="submit" name="submit" value="Reorder">
+    <input type="submit" name="submit" value="{% trans 'Reorder' %}">
     </button>
   </form>
 </div>
@@ -22,7 +26,11 @@ Statistics by {{ type }}, ordered by number of
   {% for object, stats_for_object in stats %}
   <div class="w-full sm:w-1/2 px-1">
     <div class="text-lg label-gcd-blue">
-        Statistics for comics {% if type == 'country' %} published {% endif %} in
+        {% if type == 'country' %}
+        {% trans "Statistics for comics published in" %}
+        {% else %}
+        {% trans "Statistics for comics in" %}
+        {% endif %}
         <a class="text-white visited:text-white underline"
            href="{% url 'process_advanced_search' %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{{ type }}={{ object.code }}">
     {% if type == 'country' %} <img class="inline mb-1" src="{{ STATIC_URL }}img/gcd/flags/{{ object.code|lower }}.png" alt="{{ object }}">{% endif %}

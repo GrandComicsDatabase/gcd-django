@@ -4,7 +4,7 @@
 {% load i18n %}
 {% load display %}
 
-{% block title %}Issues with Several Covers{% endblock %}
+{% block title %}{% trans "Issues with Several Covers" %}{% endblock %}
 
 {% block css %}
 {{ block.super }}
@@ -45,14 +45,14 @@
   <table>
     {{ form.as_table }}
   </table>
-  <input type="submit" value="Submit">
+  <input type="submit" value="{% trans 'Submit' %}">
 </form>
 
 <table id="imp_in_use_results" class="listing">
   <tr>
-    <th> Publisher </th>
-    <th width="40%"> Series </th>
-    <th width="40%"> Issue </th>
+    <th> {% trans "Publisher" %} </th>
+    <th width="40%"> {% trans "Series" %} </th>
+    <th width="40%"> {% trans "Issue" %} </th>
   </tr>
 {% for issue in items %}
   <tr> {# class="{% cycle 'listing_even' 'listing_odd' as row_classes%}"> #}

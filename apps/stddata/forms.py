@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm, CharField
 from apps.stddata.models import Date
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 
 
 class DateForm(ModelForm):
@@ -12,8 +12,9 @@ class DateForm(ModelForm):
                    'day_uncertain')
 
     date = CharField(max_length=13, required=False,
-                     help_text='Enter date as YYYY-MM-DD. A ? can be used in '
-                               'each part to indicate uncertainty.')
+                     help_text=gettext_lazy(
+                       'Enter date as YYYY-MM-DD. A ? can be used in '
+                       'each part to indicate uncertainty.'))
 
     def __init__(self, *args, **kwargs):
         super(DateForm, self).__init__(*args, **kwargs)

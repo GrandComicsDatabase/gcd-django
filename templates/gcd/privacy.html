@@ -1,7 +1,8 @@
 {% extends "gcd/base_view.html" %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}GCD Privacy Policy{% endblock %}
+{% block title %}{% trans "GCD Privacy Policy" %}{% endblock %}
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
@@ -9,32 +10,47 @@
 {% endblock %}
 
 {% block view_body %}
-<h1>Privacy Policy</h1>
+<h1>{% trans "Privacy Policy" %}</h1>
 <p>
+{% blocktrans trimmed %}
 The Grand Comics Database <strong>does not share</strong>
 your registered information with any third party.
+{% endblocktrans %}
 <p>
+{% url "default_profile" as profile_url %}
+{% blocktrans trimmed %}
 We ask for personal information such as your email address when you register.
 This information is only used to provide functionality to you such as sending
 you feedback on any data contributions that you make to the site.  You may edit
-this information on your <a href="{% url "default_profile" %}">profile page</a>.
+this information on your <a href="{{ profile_url }}">profile page</a>.
+{% endblocktrans %}
 <p>
+{% blocktrans trimmed %}
 When a visitor requests or reads a page no more IP and other technical information is collected than is typically collected by web sites. We may keep raw logs of such transactions, but these will not be published or used to track legitimate users.
+{% endblocktrans %}
 </p>
 <p>
+{% blocktrans trimmed %}
 Please <a href="mailto:contact@comics.org">email us</a> if you have
 any concerns about what we collect.
+{% endblocktrans %}
 </p>
 
-<h3>Cookies and Web Beacons</h3>
+<h3>{% trans "Cookies and Web Beacons" %}</h3>
 <p>
+{% blocktrans trimmed %}
 We do use “cookies”, which are text files placed on your computer, to store information to allow you the ability to login and store information such as your personal preferences when you visit our site.
+{% endblocktrans %}
 </p>
 <p>
+{% blocktrans trimmed %}
 This website uses ad networks to display advertisements to support our site. Ad networks often use “cookies” and “web beacons” when they advertise on our site, which will transmit information including your IP address, the browser you used to visit our site, and in some cases, whether you have Flash installed, to the ad network where it might be stored. This is generally used for geotargeting purposes (showing New York real estate ads to someone in New York, for example) or showing certain ads based on specific sites visited (such as showing cooking ads to someone who frequents cooking sites).
+{% endblocktrans %}
 </p>
 <p>
+{% blocktrans trimmed %}
 The ad networks may also transfer this information to third parties where required to do so by law, or where such third parties process the information on the ad networks behalf. You may refuse the use of cookies by selecting the appropriate settings on your browser. You may also opt-out of various advertising programs at the <a href="http://www.networkadvertising.org/choices">Network Advertising Initiative</a>. However please note that if you do this you may not be able to use the full functionality of this website.  By using this website, you consent to the processing of data about you by the ad networks in the manner and for the purposes set out above.
+{% endblocktrans %}
 </p>
 {% endblock %}
 

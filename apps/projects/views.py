@@ -1,5 +1,6 @@
 from django.db.models import Count, Sum
 from django.db.models import F
+from django.utils.translation import gettext as _
 
 # from apps.stddata.models import Country, Language
 from apps.gcd.models import Publisher, Issue, StoryType, Series, Story, Creator
@@ -22,8 +23,8 @@ def issues_with_several_covers(request):
     qorder = ['series__name', 'series__year_began', 'number']
 
     vars = {
-        'heading': 'Issues',
-        'search_item': 'with several covers',
+        'heading': _('Issues'),
+        'search_item': _('with several covers'),
         'item_name': 'issue',
         'plural_suffix': 's',
     }
