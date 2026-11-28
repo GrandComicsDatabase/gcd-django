@@ -12,6 +12,51 @@
 {% with 'story' as changeset_type %}
   {{ revision.compare_changes|default:'' }}
   {% include 'oi/bits/compare.html' %}
+  {% if revision.source_name == 'story' and revision.changed.cover_boxes %}
+<div class="flex flex-wrap gap-2 mt-2">
+    {% for cover_tag in revision.cover_box_tags %}
+  {{ cover_tag }}
+    {% endfor %}
+</div>
+<table class="mt-2">
+  <tr class="border bg-blue-100 flex flex-col sm:table-row [&>th]:px-1">
+    <th> Number </th>
+    <th> Character </th>
+    <th> Cut-out before </th>
+    <th> Cut-out after </th>
+  </tr>
+    {% for after in revision.cover_box_revisions %}
+      {% with before=after.previous appearance=after.story_character_revision %}
+      {% with name=appearance.character %}
+  <tr class="align-top border flex flex-col sm:table-row [&>td]:px-1
+             {% if after.is_removed %}deleted
+             {% elif not before %}added
+             {% elif after.is_changed %}comparison_highlight{% endif %}">
+    <td> {{ forloop.counter }} </td>
+    <td> {{ name.character.object_markdown_name }}
+      {% if name.name != name.character.name %} - {{ name.name }}{% endif %}
+      {% if appearance.universe %} ({{ appearance.universe }}){% endif %}
+    </td>
+    <td>
+      {% if before %}{{ before.show_cut_out }}
+        {% if before.scan_date != before.cover.last_upload %}
+        <br>Drawn on an older scan
+        {% endif %}
+      {% endif %}
+    </td>
+    <td>
+      {% if not after.is_removed %}{{ after.show_cut_out }}
+        {% if after.scan_date != after.cover.last_upload %}
+        <br>Drawn on an older scan
+        {% endif %}
+      {% endif %}
+    </td>
+  </tr>
+      {% endwith %}
+      {% endwith %}
+    {% endfor %}
+</table>
+  {% endif %}
 {% endwith %}
 {% endwith %}
 {% endwith %}
