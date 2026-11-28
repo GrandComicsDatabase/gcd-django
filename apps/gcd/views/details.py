@@ -92,7 +92,8 @@ from apps.gcd.models.publisher import BrandEmblemPublisherTable, \
                                       DailyChangesPublisherTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
                                    CharacterSeriesTable, GroupSeriesTable, \
-                                   DailyChangesSeriesTable
+                                   DailyChangesSeriesTable, \
+                                   SeriesLanguageTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
                                   StoryTable
 from apps.gcd.views import paginate_response, ORDER_CHRONO, \
@@ -1391,9 +1392,9 @@ def show_publisher(request, publisher, preview=False):
     else:
         extra_string = ''
 
-    table = SeriesTable(publisher_series,
-                        template_name=TW_SORT_TABLE_TEMPLATE,
-                        order_by=('name'))
+    table = SeriesLanguageTable(publisher_series,
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('name'))
     RequestConfig(request, paginate={'per_page': 100,
                                      'page': page_number}).configure(table)
     context['table'] = table
@@ -1441,9 +1442,9 @@ def show_publisher_current_series(request, publisher_id):
                'plural_suffix': '',
                'heading': 'of current series for %s' % publisher
                }
-    table = SeriesTable(current_series,
-                        template_name=TW_SORT_TABLE_TEMPLATE,
-                        order_by=('name'))
+    table = SeriesLanguageTable(current_series,
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('name'))
     return generic_sortable_list(request, current_series, table,
                                  'gcd/search/tw_list_sortable.html', context)
 
