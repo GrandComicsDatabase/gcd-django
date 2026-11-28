@@ -61,6 +61,7 @@ from apps.gcd.views.details import (  # noqa: F401
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
+from apps.gcd.templatetags.credits import format_page_count
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM
 from apps.gcd.models.reprint import INTERNAL_REPRINT_ERROR, \
                                     validate_reprint_issue_ids
@@ -385,11 +386,12 @@ def validate_changeset_revisions(changeset, request):
            not issue.page_count_uncertain and \
            page_count_sum > issue.page_count and not page_count_uncertain:
             invalid.append((issue,
-                            ['Sum of the page count of all sequences is %d, '
-                             'which exceeds the issue page count of %d. In '
+                            ['Sum of the page count of all sequences is %s, '
+                             'which exceeds the issue page count of %s. In '
                              'doubt, flag page count uncertain for the '
                              'issue or at least one of the sequences.'
-                             % (page_count_sum, issue.page_count)]))
+                             % (format_page_count(page_count_sum),
+                                format_page_count(issue.page_count))]))
     return invalid
 
 
