@@ -123,10 +123,27 @@ class Indexer(models.Model):
             total_imps += grant.imps
         return total_imps
 
+    def assign_pending_changes(self, mentor):
+        """
+        Give mentor the pending changes of this indexer.  A change that
+        someone else holds is theirs to finish, so it is skipped.  Each
+        one is locked by its primary key: with a plan that merges two
+        indexes MySQL waits in spite of SKIP LOCKED.
+        """
+        changes = self.user.changesets
+        for change_id in changes.filter(state=states.PENDING) \
+                                .values_list('id', flat=True):
+            change = changes.model.objects \
+                            .select_for_update(skip_locked=True) \
+                            .filter(id=change_id, state=states.PENDING) \
+                            .first()
+            if change:
+                change.assign(approver=mentor, notes='')
+
     def add_imps(self, value):
         old_imps = self.imps
         self.imps = models.F('imps') + value
-        self.save()
+        self.save(update_fields=['imps'])
         # Read the sum back: a later save of this instance would otherwise
         # add value again.
         self.refresh_from_db(fields=['imps'])
