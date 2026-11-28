@@ -326,6 +326,9 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
     </li>
 {% endfor %}
   </ol>
+{% if cover_story or stories %}
+  <div class="text-sm mt-1"><span class="font-bold">Pages indexed:</span> {{ indexed_pages|format_page_count }}{% if issue.page_count %} of {{ issue|show_page_count }}{% endif %}</div>
+{% endif %}
 </div>
 {% endblock %}
 

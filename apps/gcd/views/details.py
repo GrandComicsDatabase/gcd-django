@@ -108,6 +108,7 @@ from apps.gcd.models.cover import CoverIssuePublisherTable, \
                                   CoverSeriesTable, \
                                   ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.gcd.forms import get_generic_select_form
+from apps.gcd.templatetags.display import sum_page_counts
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, CoverRevision, \
@@ -5768,6 +5769,8 @@ def show_issue(request, issue, preview=False):
     # to send the cover and interior stories to the UI separately, as the
     # UI should not be concerned with the designation of story 0 as the cover.
     cover_story, stories = issue.shown_stories()
+    indexed_pages = sum_page_counts([cover_story] + stories if cover_story
+                                    else stories)
 
     # get reservations which got approved and make unique for indexers
     oi_indexers = []
@@ -5806,6 +5809,7 @@ def show_issue(request, issue, preview=False):
        'next_issue': next_issue,
        'cover_story': cover_story,
        'stories': stories,
+       'indexed_pages': indexed_pages,
        'oi_indexers': oi_indexers,
        'image_tag': image_tag,
        'variant_image_tags': variant_image_tags,
