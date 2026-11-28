@@ -73,24 +73,27 @@ def download(request):
                                settings.SQLITE_DUMP)
 
     # Use a list of tuples because we want the MySQL dump (our primary format)
-    # to be first.
-    timestamps = []
+    # to be first.  Each tuple holds the name, the date and the size in bytes
+    # of a dump.
+    dumps = []
     for dump_info in (('MySQL', m_path), ('Name-Value', nv_path), ('SQLite', sqlite_path), ):
         try:
-            timestamps.append(
+            dump_stat = os.stat(dump_info[1])
+            dumps.append(
                 (dump_info[0],
                  datetime.fromtimestamp(
-                    os.stat(dump_info[1])[stat.ST_MTIME],
-                    timezone.utc).replace(tzinfo=None)))
+                    dump_stat[stat.ST_MTIME],
+                    timezone.utc).replace(tzinfo=None),
+                 dump_stat[stat.ST_SIZE]))
         except OSError as ose:
             if ose.errno == errno.ENOENT:
-                timestamps.append((dump_info[0], 'never'))
+                dumps.append((dump_info[0], 'never', None))
             else:
                 raise
 
     return render(request, 'stats/download.html',
                   {'method': request.method,
-                   'timestamps': timestamps,
+                   'dumps': dumps,
                    'form': form, })
 
 

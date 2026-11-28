@@ -16,7 +16,8 @@ license.  Private data use is not restricted.
 <p>
 For details, please read the following Board Resolutions:
 <ul class="object-page-link-list ps-8 columns-1">
-  <li> <a href="https://docs.comics.org/wiki/GCD_Board_Votes_-_2009#Data_License_and_proper_credit_in_derived_works">Data License (Creative Commons 3.0 Unported) and crediting guidelines</a>
+  <li> <a href="https://docs.comics.org/wiki/GCD_Board_Votes_-_2009#Data_License_and_proper_credit_in_derived_works">
+    Data License and crediting guidelines</a>
   <li> <a href="https://docs.comics.org/wiki/GCD_Board_Votes_-_2010#Data_Distribution_Policy">Data distribution policy</a>
   <li> <a href="https://www.comics.org/voting/ballot/316/">Upgrade Data License to CC BY-SA 4.0</a>
 </ul>
@@ -41,9 +42,10 @@ For details, please read the following Board Resolutions:
 
 <h2>Documentation</h2>
 <p>
-Currently, the dump is only available as a MySQL dump that includes table
-creation and data insert statements, but does not include a database creation
-statement.  <br> We used to offer a dump using the mysqldump utility's PostgreSQL
+The data is offered in three files: a MySQL dump, a Name-Value dump and an
+SQLite dump. The MySQL dump includes table creation and data insert
+statements, but does not include a database creation statement.
+<br> We used to offer a dump using the mysqldump utility's PostgreSQL
 compatibility mode, but that needed further post-processing and manual modifying
 of data types. Have a look at http://pgloader.io for migration from a MySQL database
 to a PostgreSQL.
@@ -63,11 +65,12 @@ If you are interested in automating a different dump format, please join
 
 <h2>Downloads</h2>
 <p>
-Data last updated:
+Date of the last update and size of each file:
 </p>
 <ul class="object-page-link-list ps-8 columns-1">
-{% for name, timestamp in timestamps %}
+{% for name, timestamp, size in dumps %}
   <li> {{ name }}: <span class="important">{{ timestamp }}</span>
+    {% if size is not None %}({{ size|filesizeformat }}){% endif %}
 {% endfor %}
 </ul>
 <form method="POST" action="{% url 'stats:download' %}" class="download">
