@@ -690,6 +690,8 @@ class Changeset(models.Model):
         Set last issue even if we are part of a current series, because
         the is_current flag denotes that already and we may want to use the
         last issue to date sometimes.
+
+        A change for an editor who is away goes to the general queue.
         """
         if self.approver is None and (
                 self.indexer.indexer.is_new and
@@ -697,6 +699,10 @@ class Changeset(models.Model):
                 self.change_type != CTYPES['cover'] and
                 self.change_type != CTYPES['image']):
             self.approver = self.indexer.indexer.mentor
+
+        editor = getattr(self.approver, 'indexer', None)
+        if editor is not None and editor.is_away():
+            self.approver = None
 
         new_state = states.PENDING
         if self.approver is not None:

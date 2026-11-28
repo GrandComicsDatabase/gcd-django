@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from datetime import date
 
 from django.conf import settings
 from django.db import models
@@ -49,6 +50,10 @@ class Indexer(models.Model):
 
     max_reservations = models.IntegerField(default=1)
     max_ongoing = models.IntegerField(default=0)
+    away_until = models.DateField(
+      null=True, blank=True,
+      help_text='Up to and including this day, changes that would go to '
+                'this editor go to the general queue.')
 
     mentor = models.ForeignKey(User, related_name='mentees', null=True,
                                on_delete=models.CASCADE, blank=True)
@@ -94,6 +99,14 @@ class Indexer(models.Model):
 
     def can_reserve_another_ongoing(self):
         return self.user.ongoing_reservations.count() < self.max_ongoing
+
+    def is_away(self):
+        """
+        Whether this editor is away today, so that changes do not go to
+        them directly.
+        """
+        return (self.away_until is not None and
+                self.away_until >= date.today())
 
     def calculate_imps(self):
         """

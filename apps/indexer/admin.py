@@ -21,7 +21,8 @@ class IndexerAdmin(admin.ModelAdmin):
                        'registration_key', 'registration_expires'),
         }),
         ('Indexing', {
-            'fields': ('mentor', 'is_new', 'max_reservations', 'max_ongoing'),
+            'fields': ('mentor', 'is_new', 'max_reservations', 'max_ongoing',
+                       'away_until'),
         }),
         ('Profile', {
             'fields': ('country', 'languages', 'interests', 'deceased'),
