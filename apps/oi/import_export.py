@@ -191,6 +191,13 @@ def _process_file(request, changeset_url, is_issue, use_csv=False):
     return lines, False
 
 
+def _empty_if_null(fields):
+    # JSON and YAML null entries become None in Python, but we want to treat
+    # them as empty strings for the import.
+    return {field: '' if value is None else value
+            for field, value in fields.items()}
+
+
 # order of the fields in line with the OI, but not
 # all fields (i.e. no_...) are present explicitly
 # relevant documentation and order is here:
@@ -247,10 +254,11 @@ def _find_story_type(request, changeset_url, story_type_name,
 
 
 def _process_sequence_data(request, sequence_fields, changeset):
+    sequence_fields = _empty_if_null(sequence_fields)
     parsed_data = {}
-    story_type, failure = _find_story_type(request, changeset,
-                                           sequence_fields['type'],
-                                           sequence_fields)
+    story_type, failure = _find_story_type(
+      request, urlresolvers.reverse('edit', kwargs={'id': changeset.id}),
+      sequence_fields.get('type', ''), sequence_fields)
     if failure:
         return story_type, True
     parsed_data['type'] = story_type
@@ -278,7 +286,7 @@ def _process_sequence_data(request, sequence_fields, changeset):
         parsed_data['genre'] = genres
 
     parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
-        _check_page_count(sequence_fields['page_count'])
+        _check_page_count(sequence_fields.get('page_count', ''))
 
     # check for none as value and process
     for field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
@@ -394,6 +402,7 @@ def _parse_issue_line(request, issue_fields, series, changeset_url):
 
 
 def _process_issue_data(request, issue_fields, series, changeset_url):
+    issue_fields = _empty_if_null(issue_fields)
     parsed_data = {}
     # use the string value
     for field in ['number', 'publication_date', 'keywords', 'price', 'notes']:
@@ -607,7 +616,8 @@ def import_issues_to_series_structured(request, series_id, use_yaml=False):
                     return _handle_import_error(request, series_url,
                                                 error_text)
                 for story_data in issue_data.get('story_set', []):
-                    if story_data.get('type', '').strip().lower() != 'cover':
+                    if (story_data.get('type') or '').strip().lower() \
+                       != 'cover':
                         error_text = 'Sequence for variant %s is not of ' \
                           'type cover.' % (issue_revision)
                         return _handle_import_error(request, series_url,
@@ -783,8 +793,8 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
             issue = Issue.objects.get(id=issue_id)
             if use_json or use_yaml:
                 return _import_sequences_structured(
-                  request, issue, changeset, issue_data.get('story_set'),
-                  running_number)
+                  request, issue, changeset,
+                  issue_data.get('story_set') or [], running_number)
             else:
                 return _import_sequences(request, issue, changeset,
                                          lines, running_number)
@@ -852,7 +862,7 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
                         error_text = f'Invalid JSON format: {e}'
                         return _handle_import_error(request, changeset_url,
                                                     error_text)
-                story_data = story_data.get('story_set')
+                story_data = story_data.get('story_set') or []
                 return _import_sequences_structured(request, issue, changeset,
                                                     story_data, running_number)
         else:
