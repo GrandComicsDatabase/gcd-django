@@ -2461,6 +2461,15 @@ class Revision(models.Model):
     def has_keywords(self):
         return self.keywords != ''
 
+    def objects_to_compare(self):
+        """
+        Objects that the compare page lists next to this revision, so that
+        the approver can check the change against them: a heading and rows
+        of (object, name, image, note). Derived classes override it; by
+        default there is nothing to list.
+        """
+        return '', []
+
 
 class OngoingReservation(models.Model):
     """
@@ -10193,6 +10202,25 @@ class CreatorSignatureRevision(Revision):
 
     def _handle_dependents(self, changes):
         self._handle_dependent_image_revision()
+
+    def objects_to_compare(self):
+        """
+        The other signatures of the creator that are not deleted, with
+        their images, in two queries for any number of signatures.
+        """
+        signatures = list(CreatorSignature.objects.filter(
+          creator_id=self.creator_id, deleted=False)
+          .exclude(id=self.creator_signature_id).order_by('name'))
+        images = {}
+        if signatures and not settings.FAKE_IMAGES:
+            images = {image.object_id: image for image in Image.objects.filter(
+              content_type=ContentType.objects.get_for_model(CreatorSignature),
+              object_id__in=[signature.id for signature in signatures],
+              type__name='CreatorSignature', deleted=False)}
+        return 'Other signatures of this creator', [
+          (signature, signature.name, images.get(signature.id),
+           'generic' if signature.generic else '')
+          for signature in signatures]
 
     def full_name(self):
         return str(self)

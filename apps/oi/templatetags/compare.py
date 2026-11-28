@@ -4,7 +4,8 @@ from django.conf import settings
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape as esc
+from django.utils.html import conditional_escape as esc, format_html, \
+                              format_html_join
 
 from stdnum import ean as stdean
 
@@ -864,3 +865,27 @@ def relation_source_is_in(value, relation_objs):
             if str(source.type) == str(value):
                 return True
     return False
+
+
+@register.simple_tag
+def objects_to_compare(revision):
+    '''
+    The objects that the type of the revision lists on its compare page,
+    each linked and followed by its note or else by its thumbnail.
+    '''
+    heading, rows = revision.objects_to_compare()
+    if not rows:
+        return ''
+    items = []
+    for data_object, name, image, note in rows:
+        if note:
+            shown = format_html(' [{}]', note)
+        elif image:
+            shown = format_html(' <img class="inline" src="{}" alt="{}">',
+                                image.thumbnail_url, name)
+        else:
+            shown = ''
+        items.append((absolute_url(data_object, descriptor=esc(name)), shown))
+    return format_html('<h3>{}:</h3>'
+                       '<ol class="object-page-numbered-list">{}</ol>',
+                       heading, format_html_join('', '<li>{}{}</li>', items))

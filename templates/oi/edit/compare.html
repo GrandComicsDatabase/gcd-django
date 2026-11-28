@@ -4,6 +4,7 @@
 {% load display %}
 {% load editing %}
 {% load mathfilter %}
+{% load compare %}
 
 {% block title %}
 GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
@@ -78,6 +79,7 @@ The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:re
   {% endif %}
 </p>
   {% include 'oi/bits/compare.html' %}
+  {% objects_to_compare revision %}
 {% endif %}
 
 {% if revision.external_link_revisions and not changeset_type == 'issue' %}
