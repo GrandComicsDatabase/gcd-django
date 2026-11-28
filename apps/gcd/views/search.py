@@ -1738,37 +1738,6 @@ def process_advanced(request, export_csv=False):
 
     return generic_sortable_list(request, items, table, template, context)
 
-    raise ValueError
-
-    heading = target.title() + ' Search Results'
-
-    item_name = target
-    plural_suffix = 's'
-    if item_name == 'sequence':
-        item_name = 'content item'
-    elif item_name == 'feature':
-        item_name = 'content_series'
-        plural_suffix = ''
-    elif item_name == 'series':
-        plural_suffix = ''
-
-    context = {
-        'advanced_search': True,
-        'item_name': item_name,
-        'plural_suffix': plural_suffix,
-        'heading': heading,
-        'query_string': query_string,
-    }
-
-    template = 'gcd/search/%s_list.html' % item_name
-
-    context['target'] = display_target
-    context['method'] = method
-    context['logic'] = logic
-    context['used_search_terms'] = used_search_terms
-
-    return paginate_response(request, items, template, context)
-
 
 def combine_q(data, *qobjs):
     """

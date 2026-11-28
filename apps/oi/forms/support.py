@@ -4,7 +4,6 @@ import re
 from datetime import date
 
 from django import forms
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.files import File
@@ -942,22 +941,6 @@ class KeywordsField(forms.CharField):
         keywords = [k for k in self._SPLIT_RE.split(value) if k]
         keywords.sort()
         return keywords
-
-
-class BrandEmblemSelect(forms.Select):
-    option_template_name = 'forms/widgets/select_brand.html'
-
-    def create_option(self, name, value, label, selected, index, subindex=None,
-                      attrs=None):
-        option_dict = super(BrandEmblemSelect, self)\
-                      .create_option(name, value, label, selected, index,
-                                     subindex=subindex, attrs=attrs)
-        if value:
-            brand = value.instance
-            if brand.emblem and not settings.FAKE_IMAGES:
-                option_dict['url'] = brand.emblem.icon_url
-                option_dict['image_width'] = brand.emblem.icon.width
-        return option_dict
 
 
 class ModifiedPagedownWidget(MarkdownxWidget):
