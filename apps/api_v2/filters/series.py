@@ -18,6 +18,7 @@ from apps.api_v2.filters.common import (
 from apps.gcd.models import Series
 from settings import COLLATE_SEARCH
 
+
 class SeriesFilterSet(TimestampFilterSet):
     """Filters for series list endpoints."""
 
