@@ -34,12 +34,27 @@ def _request_cache(request):
     return cache
 
 
+def pk_is_valid(model, pk):
+    """Return whether ``pk`` is a value the model's primary key can hold.
+
+    A detail URL carries any text as its id, such as ``recipients`` in
+    ``/awards/recipients/``. No row matches such a value, and a query
+    built with it raises before the view's own lookup can answer 404.
+    """
+    try:
+        model._meta.pk.get_prep_value(pk)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
 def make_last_modified(model, *, soft_delete=True, queryset_getter=None):
     """Return a ``last_modified(request, pk=None, **kwargs)`` callable.
 
     Detail (``pk`` provided) returns the row's ``modified`` timestamp,
-    or ``None`` if the row is missing or soft-deleted. List (``pk`` is
-    ``None``) returns ``Max('modified')`` across the model.
+    or ``None`` if the row is missing or soft-deleted, or if ``pk`` is
+    not a value the primary key can hold. List (``pk`` is ``None``)
+    returns ``Max('modified')`` across the model.
 
     ``soft_delete`` defaults to ``True`` and excludes ``deleted=True``
     rows; set to ``False`` for ``GcdLink``-style join tables that have
@@ -52,6 +67,8 @@ def make_last_modified(model, *, soft_delete=True, queryset_getter=None):
     """
 
     def _last_modified(request, pk=None, **kwargs):
+        if pk is not None and not pk_is_valid(model, pk):
+            return None
         cache = _request_cache(request)
         key = None if cache is None else _cache_key(model, request, pk)
         if key is not None and key in cache:
@@ -114,4 +131,5 @@ __all__ = [
     'last_modified',
     'make_etag',
     'make_last_modified',
+    'pk_is_valid',
 ]

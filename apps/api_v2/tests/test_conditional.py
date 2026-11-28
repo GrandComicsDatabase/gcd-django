@@ -6,7 +6,8 @@
 from datetime import datetime
 from unittest.mock import Mock
 
-from apps.api_v2.utils.conditional import make_last_modified
+from apps.api_v2.utils.conditional import make_etag, make_last_modified
+from apps.gcd.models import Award
 
 
 class _DummyModel:
@@ -99,3 +100,12 @@ def test_make_last_modified_caches_request_local_list_result():
     qs.order_by.assert_called_once_with('-modified')
     ordered_qs.values_list.assert_called_once_with('modified', flat=True)
     values_qs.first.assert_called_once_with()
+
+
+def test_conditional_helpers_treat_an_unparsable_pk_as_a_missing_row():
+    """A pk the model cannot parse gives no validators and no query."""
+    last_modified = make_last_modified(Award)
+    etag = make_etag(Award)
+
+    assert last_modified(request='request', pk='recipients') is None
+    assert etag(request='request', pk='recipients') is None
