@@ -275,7 +275,8 @@ def _diff_and_values(rev_class, revision_ids):
     """
     Return exact_diff(rev_class, revision_ids) and, read from the same
     rows, the new values that it compared: {revision id: {field name:
-    value}} for each id, with the values in the form of the diff.
+    value}} for each id whose row it read, with the values in the form
+    of the diff.
     """
     revision_ids = list(revision_ids)
     single, multi = _compared_fields(rev_class)
