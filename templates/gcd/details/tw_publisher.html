@@ -5,6 +5,13 @@
 {% load credits %}
 {% load django_tables2 %}
 
+{% block head %}
+  {{ block.super }}
+  <meta property="og:title" content="{{ publisher.name }}">
+  <meta name="description" property="og:description"
+        content="{{ publisher.meta_description }}">
+{% endblock %}
+
 {% block title %}
   GCD :: Publisher :: {{ publisher.name }}
 {% endblock %}

@@ -6,6 +6,13 @@
 {% load display %}
 {% load django_tables2 %}
 
+{% block head %}
+  {{ block.super }}
+  <meta property="og:title" content="{{ series.full_name }}">
+  <meta name="description" property="og:description"
+        content="{{ series.meta_description }}">
+{% endblock %}
+
 {% block title %}
   GCD :: Series :: {{ series.name }}
 {% endblock %}
