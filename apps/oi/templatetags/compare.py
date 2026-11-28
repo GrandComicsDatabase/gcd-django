@@ -1,3 +1,5 @@
+import re
+
 from django import template
 from diff_match_patch import diff_match_patch
 from django.conf import settings
@@ -22,6 +24,7 @@ from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
                            IssueCreditRevision
 from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
 from apps.oi.templatetags.editing import is_locked
+from apps.stddata.models import Currency
 
 register = template.Library()
 
@@ -48,6 +51,27 @@ def valid_barcode(barcode):
         barcode = barcode[:-2]
 
     return stdean.is_valid(barcode)
+
+
+def price_currency_note(price):
+    '''
+    Note the parts of a price without a currency code of the currency
+    table, e.g. "2.99 UDS" or "$2.99". The code is the first word of
+    letters, notes in parentheses left out, also inside brackets as in
+    "2/6 [0-2-6 GBP]". "FREE" and "[none]" are accepted for free issues
+    and issues without a price.
+    '''
+    codes = set(Currency.objects.values_list('code', flat=True))
+    codes.update(['FREE', 'none'])
+    unknown = []
+    for part in re.sub('[(][^)]*[)]', '', price).split(';'):
+        words = part.replace('[', ' ').replace(']', ' ').split()
+        words = [word for word in words if word.isalpha()]
+        if part.strip() and (not words or words[0] not in codes):
+            unknown.append('"%s"' % part.strip())
+    if unknown:
+        return ' (note: no known currency code in %s)' % ', '.join(unknown)
+    return ''
 
 
 def key_date_years_note(revision, item, label):
@@ -322,6 +346,10 @@ def field_value(revision, field):
                 return return_val + 'ISBNs are inequal)'
             elif value:
                 return '%s (note: invalid ISBN)' % value
+    elif field == 'price' and value and \
+            getattr(revision, 'changed', {}).get(field):
+        # only a new or changed price, not the previous one
+        return value + price_currency_note(value)
     elif field == 'barcode':
         if value:
             barcodes = value.split(';')
@@ -463,7 +491,8 @@ def diff_list(prev_rev, revision, field):
               added/deleted spans marked safe for template rendering.
             - For plain text fields ('notes', 'synopsis', 'bio', etc.):Returns
               the raw diff list of (op, text) tuples from diff_match_patch.
-            - For 'genre': Returns a diff list using field_value() instead.
+            - For 'genre' and 'price': Returns a diff list using
+              field_value() instead, so their notes are shown.
             - For unrecognized fields: Returns None.
     """
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing',
@@ -508,13 +537,13 @@ def diff_list(prev_rev, revision, field):
                  'synopsis', 'title', 'first_line', 'keywords', 'description',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name', 'sort_name',
-                 'price', 'indicia_frequency', 'variant_name',
+                 'indicia_frequency', 'variant_name',
                  'source_description', 'gcd_official_name', 'bio']:
         diff = diff_match_patch().diff_main(getattr(prev_rev, field),
                                             getattr(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
         return diff
-    if field == 'genre':
+    if field in ['genre', 'price']:
         diff = diff_match_patch().diff_main(field_value(prev_rev, field),
                                             field_value(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
