@@ -3,13 +3,12 @@ The approval of the deletion of an indicia publisher, when issues or
 changes of issues have come to use it since the deletion was asked for.
 """
 import threading
-import time
 from contextlib import contextmanager
 
 import pytest
 
 from django.contrib.auth.models import Permission, User
-from django.db import connection, connections, transaction
+from django.db import connections, transaction
 from django.test import Client
 from django.urls import reverse
 
@@ -19,6 +18,7 @@ from apps.oi import states
 from apps.oi.models import (
     Changeset, IndiciaPublisherRevision, IssueRevision, RevisionLock, CTYPES,
     _get_revision_lock)
+from apps.oi.tests.lock_waits import wait_for_lock_waits
 
 REFUSED = ('This indicia publisher cannot be deleted while issues, or '
            'changes of issues, use it; please discard this change.')
@@ -202,30 +202,6 @@ def test_an_edit_of_an_indicia_publisher_in_use_is_approved(
     assert indicia_publisher.name == 'Renamed Indicia Publisher'
 
 
-def _lock_waits(cursor, table):
-    """Return how many transactions wait for a lock on a row of table."""
-    cursor.execute(
-      'SELECT COUNT(*) FROM performance_schema.data_lock_waits w '
-      'JOIN performance_schema.data_locks l '
-      'ON l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID '
-      'WHERE l.OBJECT_SCHEMA = DATABASE() AND l.OBJECT_NAME = %s', [table])
-    return cursor.fetchone()[0]
-
-
-def _wait_for_lock_wait(table, timeout=30):
-    """
-    Wait until a transaction waits for a lock on a row of table, as the
-    server shows it.
-    """
-    end = time.monotonic() + timeout
-    with connection.cursor() as cursor:
-        while time.monotonic() < end:
-            if _lock_waits(cursor, table):
-                return
-            time.sleep(0.05)
-    raise AssertionError('no transaction waits for %s' % table)
-
-
 @contextmanager
 def _held(work):
     """
@@ -315,7 +291,7 @@ def test_deletion_waits_for_an_edit_or_approval_in_flight(
     with _held(lambda: _point_to(edit.issuerevisions.get(),
                                  unused_publisher)):
         thread, result = _approval_started(approver, deletion)
-        _wait_for_lock_wait('gcd_indicia_publisher')
+        wait_for_lock_waits('gcd_indicia_publisher')
     thread.join(60)
 
     _check_refused(result['response'], deletion, unused_publisher)
@@ -328,7 +304,7 @@ def test_deletion_waits_for_an_edit_or_approval_in_flight(
                            states.REVIEWING, approver=editor)
     with _held(lambda: _approve_change(change)):
         thread, result = _approval_started(approver, deletion)
-        _wait_for_lock_wait('gcd_indicia_publisher')
+        wait_for_lock_waits('gcd_indicia_publisher')
     thread.join(60)
 
     _check_refused(result['response'], deletion, unused_publisher)
