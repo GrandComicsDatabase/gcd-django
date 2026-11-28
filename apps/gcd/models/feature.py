@@ -412,7 +412,7 @@ class FeatureLogoTable(tables.Table):
         if not settings.FAKE_IMAGES and record.logo:
             return mark_safe('<a href="%s"><img src="%s"></a>' %
                              (record.get_absolute_url(),
-                              record.logo.thumbnail.url))
+                              record.logo.thumbnail_url))
 
     def render_name(self, record):
         name_link = '<a href="%s">%s</a>' % (record.get_absolute_url(),
