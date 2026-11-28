@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils import translation
 from apps.oi import states
 
 def gcd(request):
@@ -20,5 +21,19 @@ def gcd(request):
         stuff['USE_TEMPLATESADMIN'] = settings.USE_TEMPLATESADMIN
     if not hasattr(stuff, 'EDITING'):
         stuff['EDITING'] = False
+    stuff['page_language'] = page_language()
     return stuff
 
+
+def page_language():
+    """
+    The language for the lang attribute of a page: the active language if
+    it is one of the languages of the site (settings.LANGUAGES), otherwise
+    English. The front page takes any language in its address, to show the
+    counts of that language on a page in English.
+    """
+    try:
+        return translation.get_supported_language_variant(
+          translation.get_language())
+    except LookupError:
+        return 'en'
