@@ -57,11 +57,51 @@ def test_placeholder_of_limited_cover_has_spaced_attributes():
     assert _img_attributes(tag)['alt'] == 'No image yet'
 
 
+def _img_class_values(html):
+    """Return the values of every class attribute of the first img tag."""
+    found = []
+
+    class Parser(HTMLParser):
+        """Keep the attribute list of the first img tag in found."""
+
+        def handle_starttag(self, tag, attrs):
+            """Store the attribute list of an img tag if none is stored."""
+            if tag == 'img' and not found:
+                found.append(attrs)
+
+    Parser().feed(html)
+    return [value for name, value in found[0] if name == 'class']
+
+
+@pytest.mark.parametrize('zoom_level, width', [(ZOOM_SMALL, 100),
+                                               (ZOOM_MEDIUM, 200),
+                                               (ZOOM_LARGE, 400)])
+@pytest.mark.parametrize('can_have_cover', [True, False])
+def test_placeholder_without_cover_has_one_class(zoom_level, width,
+                                                 can_have_cover):
+    """The border and the width of the placeholder are in one class."""
+    tag = get_image_tag(None, 'Cover for Test Series #1', zoom_level,
+                        can_have_cover=can_have_cover)
+    classes = _img_class_values(tag)
+    assert len(classes) == 1
+    assert 'border-2' in classes[0].split()
+    assert 'w-[%spx]' % width in classes[0].split()
+
+
+def test_placeholder_of_limited_cover_has_one_class():
+    """The placeholder of a cover with limited display has one class."""
+    cover = SimpleNamespace(limit_display=True, is_wraparound=False)
+    tag = get_image_tag(cover, 'Cover for Test Series #1', ZOOM_MEDIUM)
+    classes = _img_class_values(tag)
+    assert len(classes) == 1
+    assert classes[0].split()[:2] == ['border-2', 'cover_img']
+
+
 @override_settings(FAKE_IMAGES=False)
 def test_compare_brand_emblem_has_spaced_attributes():
     """The emblem image that field_value builds for a brand is valid."""
     brand = SimpleNamespace(
-      emblem=SimpleNamespace(icon=SimpleNamespace(url='/media/emblem.png')),
+      emblem=SimpleNamespace(icon_url='/media/emblem.png'),
       get_absolute_url=lambda: '/brand/1/')
     value = field_value(SimpleNamespace(brand=brand), 'brand')
     assert _glued_attributes(value) == []

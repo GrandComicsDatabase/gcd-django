@@ -1,2 +1,3 @@
-# bin/dev runs inside the Linux containers too: keep LF on any checkout.
+# Shell scripts run inside the Linux containers: keep LF on any checkout.
 bin/dev text eol=lf
+*.sh text eol=lf

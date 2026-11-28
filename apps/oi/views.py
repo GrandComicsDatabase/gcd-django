@@ -34,6 +34,7 @@ from django_filters import ChoiceFilter, FilterSet, MultipleChoiceFilter
 
 from apps.stddata.models import Country
 
+from apps.indexer.models import Indexer
 from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import (
@@ -130,6 +131,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            CreatorDegreeRevisionForm,
                            CreatorSignatureRevisionForm,
                            DateRevisionForm)
+from apps.oi.forms.story import non_comics_sequence_types
 from apps.oi.forms.support import CREATOR_HELP_LINKS
 
 from apps.oi.covers import get_preview_image_tag, \
@@ -358,28 +360,36 @@ def validate_changeset_revisions(changeset, request):
     revisions = list(changeset.issuerevisions.filter(deleted=False))
     revisions.extend(changeset.storyrevisions.filter(deleted=False))
     page_count_sum = 0
+    page_count_uncertain = False
+    page_count_changed = False
     for revision in revisions:
         if type(revision) is StoryRevision and revision.page_count is not None:
             page_count_sum += revision.page_count
+            if revision.page_count_uncertain:
+                page_count_uncertain = True
         # A changeset can contain cloned sequences that the indexer did not
         # edit. Recompute comparison state so legacy data in those untouched
         # sequences does not become part of the indexer's required work.
         revision.compare_changes()
         if not revision.is_changed:
             continue
+        elif type(revision) in [StoryRevision, IssueRevision]:
+            if revision.changed['page_count'] or revision.changed['page_count_uncertain']:
+                page_count_changed = True
         messages = validate_revision_for_transition(revision, request)
         if messages:
             invalid.append((revision, messages))
     if changeset.change_type == CTYPES['issue'] and page_count_sum > 0:
         issue = changeset.issuerevisions.first()
-        if issue.page_count is not None and\
+        if issue.page_count is not None and page_count_changed and \
            not issue.page_count_uncertain and \
-           page_count_sum > issue.page_count:
+           page_count_sum > issue.page_count and not page_count_uncertain:
             invalid.append((issue,
                             ['Sum of the page count of all sequences is %d, '
                              'which exceeds the issue page count of %d. In '
                              'doubt, flag page count uncertain for the '
-                             'issue.' % (page_count_sum, issue.page_count)]))
+                             'issue or at least one of the sequences.'
+                             % (page_count_sum, issue.page_count)]))
     return invalid
 
 
@@ -771,7 +781,8 @@ def submit(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(),
+                                  id=id)
     if (request.user != changeset.indexer):
         return oi_render(
           request, 'indexer/error.html',
@@ -1267,21 +1278,13 @@ def assign(request, id):
               changeset.approver.indexer,
               redirect=False)
 
+    # One statement, so that of two editors only one becomes the mentor.
     if changeset.indexer.indexer.is_new and \
-       changeset.indexer.indexer.mentor is None and\
-       changeset.change_type is not CTYPES['cover']:
-
-        changeset.indexer.indexer.mentor = request.user
-        changeset.indexer.indexer.save()
-
-        for pending in changeset.indexer.changesets\
-                                        .filter(state=states.PENDING):
-            try:
-                pending.assign(approver=request.user, notes='')
-            except ValueError:
-                # Someone is already reviewing this.
-                # Unlikely, and just let it go.
-                pass
+       changeset.change_type is not CTYPES['cover'] and \
+       Indexer.objects.filter(id=changeset.indexer.indexer.id,
+                              mentor__isnull=True) \
+              .update(mentor=request.user):
+        changeset.indexer.indexer.assign_pending_changes(request.user)
 
     if comment_text:
         email_body = """
@@ -2848,7 +2851,9 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
           kwargs={'id': changeset_id}))
 
     form = form_class(request.POST)
-    if not form.is_valid():
+    if not form.is_valid() or not credits_formset.is_valid() \
+       or not external_link_formset.is_valid() \
+       or (code_number_formset and not code_number_formset.is_valid()):
         return _display_add_issue_form(request, series, form, credits_formset,
                                        code_number_formset,
                                        external_link_formset, None, None,
@@ -5422,10 +5427,11 @@ def _matching_sequence_refusal(issue_revision, story):
     Return why a copy of story cannot be added to issue_revision, or None.
 
     A variant holds a single cover sequence, and only if its cover artwork
-    differs from the base issue.
+    differs from the base issue. Any other issue refuses a type that its
+    non-comics series cannot hold.
     """
     if not issue_revision.variant_of:
-        return None
+        return _non_comics_type_refusal(issue_revision, story)
     if issue_revision.variant_cover_status != VCS_Codes.ARTWORK_DIFFERENCE:
         return 'A cover sequence can only be added to a variant if its ' \
                'cover artwork is different from the base issue.'
@@ -5436,6 +5442,29 @@ def _matching_sequence_refusal(issue_revision, story):
         return 'You cannot add more than one cover sequence to a variant ' \
                'issue.'
     return None
+
+
+def _non_comics_type_refusal(issue_revision, story):
+    """
+    Return why a copy of story cannot be added to issue_revision, or None.
+
+    An issue of a series which is not a comics publication holds only the
+    sequence types offered by its sequence form.
+    """
+    series = issue_revision.series
+    if series.is_comics_publication or issue_revision.issue is None:
+        return None
+    if non_comics_sequence_types(series, issue_revision.issue).filter(
+      id=story.type_id).exists():
+        return None
+    # StoryRevision.copied_revision turns a second cover into a cover reprint
+    if story.type_id == STORY_TYPES['cover'] and \
+       issue_revision.changeset.storyrevisions.filter(
+         issue=issue_revision.issue, type_id=STORY_TYPES['cover'],
+         deleted=False).exists():
+        return None
+    return 'Sequences of type "%s" cannot be added to this issue of a ' \
+           'non-comics publication.' % story.type.name
 
 
 def _reprint_sequence_refusal(reprint, changeset):
@@ -6879,6 +6908,7 @@ def show_queue(request, queue_name):
         'states': states,
         'countries': countries,
         'country_names': country_names,
+        'queue_empty': not changes.exists(),
         'data': [
           {
             'object_name': 'Awards',

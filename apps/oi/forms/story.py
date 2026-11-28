@@ -37,7 +37,7 @@ from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     _strip_list,
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
-    KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
+    KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS, CREDIT_NAME_LABEL,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
     BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
@@ -85,6 +85,25 @@ def _genre_choices(language=None, additional_genres=None):
           'class': 'overflow-y-auto max-h-60 border border-gray-400 '
                    'px-1 inline-block rounded'}),
         choices=choices)
+
+
+def non_comics_sequence_types(series, issue):
+    """
+    Return the sequence types offered for a new sequence in the issue of a
+    series which is not a comics publication.
+    """
+    sequence_filter = ['comic story', 'photo story', 'cartoon',
+                       'cover reprint (on interior page)',
+                       'comics-form advertising',
+                       'preview (from the publisher)']
+    if series.has_about_comics is True:
+        sequence_filter.append('about comics')
+        if issue.is_indexed == INDEXED['full']:
+            sequence_filter.extend(['cover',
+                                    'illustration'])
+        elif issue.is_indexed >= INDEXED['ten_percent']:
+            sequence_filter.extend(['cover',])
+    return StoryType.objects.filter(name__in=sequence_filter)
 
 
 def get_story_revision_form(revision=None, user=None,
@@ -140,18 +159,7 @@ def get_story_revision_form(revision=None, user=None,
             current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     elif not is_comics_publication:
-        sequence_filter = ['comic story', 'photo story', 'cartoon',
-                           'cover reprint (on interior page)',
-                           'comics-form advertising',
-                           'preview (from the publisher)']
-        if has_about_comics is True:
-            sequence_filter.append('about comics')
-            if issue.is_indexed == INDEXED['full']:
-                sequence_filter.extend(['cover',
-                                        'illustration'])
-            elif issue.is_indexed >= INDEXED['ten_percent']:
-                sequence_filter.extend(['cover',])
-        queryset = StoryType.objects.filter(name__in=sequence_filter)
+        queryset = non_comics_sequence_types(series, issue)
         # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
             current_type_not_allowed_id = revision.type.id
@@ -319,7 +327,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'A concise and clear description of the external source of '
                 'the credit.'
         }
-        labels = {'credit_name': 'Credit description'}
+        labels = {'credit_name': CREDIT_NAME_LABEL}
         widgets = {
             'sourced_by': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
@@ -336,6 +344,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
         self.helper.form_tag = False
         # self.helper.disable_csrf = True
         self.formset_helper = StoryFormSetHelper()
+        self.fields['creator'].label_suffix = ''
+        self.fields['credit_name'].label_suffix = ''
         fields = list(self.fields)
         fields.append('id')
         field_list = [BaseField(Field(field,
@@ -355,11 +365,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
                 'ghost work.',
-      label='<button hx-get="/select/creator/by_detail/" type="button" '
+      label='Creator: <br class="max-sm:hidden">'
+            '<button hx-get="/select/creator/by_detail/" type="button" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
             'hx-on:htmx:after-request="setSelectValue(event)" '
             'hx-swap="none" class="mx-0 btn-blue-editing inline">To Official'
-            '</button> Creator'
+            '</button>'
     )
 
     signature = forms.ModelChoiceField(

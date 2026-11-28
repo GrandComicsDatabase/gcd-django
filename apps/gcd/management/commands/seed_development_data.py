@@ -2,11 +2,12 @@
 
 import base64
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group as AuthGroup, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
-from django.core.management import BaseCommand, call_command
+from django.core.management import BaseCommand, CommandError, call_command
 from django.db import transaction
+from django.db.models import Q
 
 from apps.gcd.models import (
     Character,
@@ -34,23 +35,66 @@ from apps.gcd.models import (
     StoryType,
     Universe,
 )
+from apps.indexer.models import Indexer
+from apps.mycomics.models import Collection, Collector
 from apps.oi import states
 from apps.oi.models import (
     CTYPES,
     Changeset,
     ChangesetComment,
+    CharacterNameDetailRevision,
+    CharacterRevision,
+    CreatorNameDetailRevision,
+    CreatorRevision,
+    FeatureNameDetailRevision,
+    FeatureRevision,
+    GroupNameDetailRevision,
+    GroupRevision,
     IssueRevision,
+    PublisherRevision,
+    ReprintRevision,
     SeriesRevision,
     StoryCharacterRevision,
     StoryCreditRevision,
     StoryGroupRevision,
     StoryRevision,
+    UniverseRevision,
 )
 from apps.stddata.models import Country, Date, Language, Script
 from apps.stats.models import CountStats
 
 
 SAMPLE_PREFIX = '[GCD DEV]'
+SAMPLE_USERS = {1: 'admin', 2: 'editor', 3: 'dexter_1234', 4: 'anon'}
+SAMPLE_GROUPS = {
+    1: 'editor', 2: 'indexer', 3: 'admin', 4: 'member', 5: 'board',
+}
+SAMPLE_MEMBERSHIPS = {
+    1: (1, 3), 2: (2, 2), 3: (2, 1),
+    4: (2, 4), 5: (3, 2), 6: (4, 2),
+}
+SAMPLE_GROUP_PERMISSIONS = {
+    1: (2, ('can_reserve', 'indexer', 'indexer')),
+    2: (2, ('can_upload_cover', 'indexer', 'indexer')),
+    3: (2, ('can_upload_cover', 'gcd', 'cover')),
+    4: (1, ('can_approve', 'indexer', 'indexer')),
+    5: (1, ('can_mentor', 'indexer', 'indexer')),
+    6: (4, ('can_vote', 'indexer', 'indexer')),
+    7: (5, ('on_board', 'indexer', 'indexer')),
+    8: (3, ('change_user', 'auth', 'user')),
+    9: (3, ('change_indexer', 'indexer', 'indexer')),
+}
+SAMPLE_PROFILE_OWNERS = {user_id: user_id for user_id in SAMPLE_USERS}
+SAMPLE_COLLECTION_OWNERS = {
+    collection_id: user_id
+    for user_id in SAMPLE_USERS
+    for collection_id in (user_id, user_id + 100)
+}
+SAMPLE_RELATED_ROWS = (
+    (Indexer, 'user', SAMPLE_PROFILE_OWNERS),
+    (Collector, 'user', SAMPLE_PROFILE_OWNERS),
+    (Collection, 'collector', SAMPLE_COLLECTION_OWNERS),
+)
 SAMPLE_COMMENT = (
     '[GCD DEV] Seeded sample change history for local development. ✅'
 )
@@ -71,6 +115,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Seed data safely on a new database or refresh it on an existing one."""
         with transaction.atomic():
+            self._validate_sample_accounts()
+            self._validate_sample_related_rows()
+            self._validate_sample_groups()
             call_command('loaddata', 'users', verbosity=options['verbosity'])
             self._seed_catalog()
             self._seed_change_history()
@@ -81,6 +128,83 @@ class Command(BaseCommand):
                 'Development accounts, sample catalog data, and statistics are ready.'
             )
         )
+
+    def _validate_sample_accounts(self):
+        """Refuse conflicting fixture identities before changing accounts."""
+        accounts = User.objects.select_for_update().filter(
+            Q(pk__in=SAMPLE_USERS) | Q(username__in=SAMPLE_USERS.values()),
+        )
+        for account in accounts:
+            if SAMPLE_USERS.get(account.pk) != account.username:
+                raise CommandError(
+                    'Refusing to overwrite existing accounts: sample user IDs '
+                    'or usernames conflict. Use a separate empty development '
+                    'database; no fixture data was changed.'
+                )
+
+    def _validate_sample_related_rows(self):
+        """Preserve related rows that do not match the fixture's ownership."""
+        for model, owner_field, expected in SAMPLE_RELATED_ROWS:
+            owner_id = f'{owner_field}_id'
+            candidates = Q(pk__in=expected)
+            # One-to-one owners must also be free at the fixture's target ID.
+            # Collections are many-to-one: extra collections must stay valid.
+            if model._meta.get_field(owner_field).unique:
+                candidates |= Q(**{f'{owner_id}__in': expected.values()})
+            rows = model.objects.select_for_update().filter(candidates)
+            for pk, actual_owner in rows.values_list('pk', owner_id):
+                if expected.get(pk) != actual_owner:
+                    raise CommandError(
+                        'Refusing to overwrite existing account data: '
+                        'reserved sample relationships conflict in '
+                        f'{model._meta.label}. '
+                        'Use a separate empty development database; '
+                        'no fixture data was changed.'
+                    )
+
+    def _validate_sample_groups(self):
+        """Check group identities and both fixed-ID association tables."""
+        groups = AuthGroup.objects.select_for_update().filter(
+            Q(pk__in=SAMPLE_GROUPS) | Q(name__in=SAMPLE_GROUPS.values()),
+        )
+        for group in groups:
+            if SAMPLE_GROUPS.get(group.pk) != group.name:
+                raise CommandError(
+                    'Refusing to overwrite existing groups: sample group IDs '
+                    'or names conflict. Use a separate empty development '
+                    'database; no fixture data was changed.'
+                )
+
+        self._validate_sample_associations(
+            User.groups.through, ('user_id', 'group_id'), SAMPLE_MEMBERSHIPS,
+        )
+        # Permission IDs vary between databases; resolve fixture natural keys.
+        permissions = {
+            pk: (group_id,
+                 Permission.objects.get_by_natural_key(*permission_key).pk)
+            for pk, (group_id, permission_key)
+            in SAMPLE_GROUP_PERMISSIONS.items()
+        }
+        self._validate_sample_associations(
+            AuthGroup.permissions.through, ('group_id', 'permission_id'),
+            permissions,
+        )
+
+    def _validate_sample_associations(self, model, fields, expected):
+        """Reject reassigned rows and conflicting pairs before loading."""
+        candidates = Q(pk__in=expected)
+        for values in expected.values():
+            candidates |= Q(**dict(zip(fields, values)))
+        rows = model.objects.select_for_update().filter(candidates)
+        for pk, *values in rows.values_list('pk', *fields):
+            if expected.get(pk) != tuple(values):
+                raise CommandError(
+                    'Refusing to overwrite existing group associations: '
+                    'reserved sample relationships conflict in '
+                    f'{model._meta.label}. '
+                    'Use a separate empty development database; '
+                    'no fixture data was changed.'
+                )
 
     def _seed_catalog(self):
         """Create a compact, relationship-rich catalog sample idempotently."""
@@ -216,6 +340,7 @@ class Command(BaseCommand):
                 'birth_city': '',
                 'death_province': '',
                 'death_city': '',
+                'whos_who': '',
             },
         )
         # A creator saved through the site always has birth and death dates,
@@ -224,11 +349,17 @@ class Command(BaseCommand):
             creator.birth_date = creator.birth_date or Date.objects.create()
             creator.death_date = creator.death_date or Date.objects.create()
             creator.save(update_fields=['birth_date', 'death_date'])
+        # As on the site its whos_who is empty: a revision cannot store NULL.
+        if creator.whos_who is None:
+            creator.whos_who = ''
+            creator.save(update_fields=['whos_who'])
         script = Script.objects.filter(number=37).first()
         if script is None:
             script = Script.objects.filter(code='latn').first()
         if script is None:
-            script = Script.objects.create(number=37, code='latn', name='Latin')
+            # Creator names default to Latin by its id on the site.
+            script = Script.objects.create(pk=Script.LATIN_PK, number=37,
+                                           code='latn', name='Latin')
         creator_name, _ = CreatorNameDetail.objects.get_or_create(
             creator=creator,
             name=f'{SAMPLE_PREFIX} Alex Example',
@@ -355,7 +486,7 @@ class Command(BaseCommand):
         publisher.save(update_fields=['issue_count', 'series_count'])
 
     def _seed_change_history(self):
-        """Create one approved series revision with a sample comment."""
+        """Create the approved changes of the sample objects."""
         admin = User.objects.get(username='admin')
         comment = ChangesetComment.objects.filter(
             text=SAMPLE_COMMENT
@@ -385,6 +516,7 @@ class Command(BaseCommand):
             self._approved_revision(SeriesRevision, series, changeset)
         for issue in series.active_issues():
             self._seed_issue_history(issue, admin)
+        self._seed_object_history(series, admin)
 
     def _seed_issue_history(self, issue, admin):
         """Give an issue the approved revisions of an issue saved on the site.
@@ -392,14 +524,9 @@ class Command(BaseCommand):
         Editing an issue starts from the latest approved revision of the
         issue and of each of its sequences, credits, characters and groups.
         """
-        if issue.revisions.filter(changeset__state=states.APPROVED).exists():
+        changeset = self._approved_changeset(issue, admin)
+        if changeset is None:
             return
-        changeset = Changeset.objects.create(
-            state=states.APPROVED,
-            indexer=admin,
-            approver=admin,
-            change_type=CTYPES['issue'],
-        )
         self._approved_revision(IssueRevision, issue, changeset)
         for story in issue.active_stories():
             story_revision = self._approved_revision(StoryRevision, story,
@@ -411,6 +538,62 @@ class Command(BaseCommand):
                 for link in links:
                     self._approved_revision(revision_class, link, changeset,
                                             story_revision=story_revision)
+
+    def _seed_object_history(self, series, admin):
+        """Give the other sample objects the approved revisions of objects
+        saved on the site, with those of the names that editing reserves.
+        """
+        sample = Q(name__startswith=SAMPLE_PREFIX)
+        for revision_class, name_class, data_objects in (
+                (PublisherRevision, None, [series.publisher]),
+                (CreatorRevision, CreatorNameDetailRevision,
+                 Creator.objects.filter(
+                     gcd_official_name__startswith=SAMPLE_PREFIX)),
+                (FeatureRevision, FeatureNameDetailRevision,
+                 Feature.objects.filter(sample)),
+                (UniverseRevision, None, Universe.objects.filter(sample)),
+                (CharacterRevision, CharacterNameDetailRevision,
+                 Character.objects.filter(sample)),
+                (GroupRevision, GroupNameDetailRevision,
+                 Group.objects.filter(sample))):
+            for data_object in data_objects:
+                changeset = self._approved_changeset(data_object, admin)
+                if changeset is None:
+                    continue
+                revision = self._approved_revision(revision_class,
+                                                   data_object, changeset)
+                if name_class is None:
+                    continue
+                link = {f'{revision.source_name}_revision': revision}
+                for name in data_object.active_names():
+                    name_revision = self._approved_revision(
+                        name_class, name, changeset)
+                    name_revision.save_added_revision(changeset, **link)
+        for reprint in Reprint.objects.filter(
+                origin_issue__in=series.active_issues()):
+            if reprint.revisions.filter(
+                    changeset__state=states.APPROVED).exists():
+                continue
+            # The site saves a reprint link in the change of an issue.
+            issue_revision = reprint.origin_issue.revisions.filter(
+                changeset__state=states.APPROVED).first()
+            self._approved_revision(ReprintRevision, reprint,
+                                    issue_revision.changeset)
+
+    def _approved_changeset(self, data_object, admin):
+        """Return a new approved changeset of the type of data_object.
+
+        Return None if data_object already has an approved revision.
+        """
+        if data_object.revisions.filter(
+                changeset__state=states.APPROVED).exists():
+            return None
+        return Changeset.objects.create(
+            state=states.APPROVED,
+            indexer=admin,
+            approver=admin,
+            change_type=CTYPES[data_object._meta.model_name],
+        )
 
     def _approved_revision(self, revision_class, data_object, changeset,
                            **kwargs):
