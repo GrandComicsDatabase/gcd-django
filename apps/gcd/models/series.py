@@ -398,6 +398,23 @@ class Series(GcdData):
                 date += '?'
             return date
 
+    def year_range(self):
+        """
+        Return the first and the last year of the series.
+
+        The key dates of the first and the last issue widen the entered
+        years, which can be wrong. A series without an end year keeps
+        None as its last year.
+        """
+        year_began, year_ended = self.year_began, self.year_ended
+        for issue in (self.first_issue, self.last_issue):
+            if issue and issue.key_date:
+                year = int(issue.key_date[:4])
+                year_began = min(year_began, year)
+                if year_ended:
+                    year_ended = max(year_ended, year)
+        return year_began, year_ended
+
     def search_result_name(self):
         if self.issue_count <= 1 and not self.is_current:
             date = '%s%s' % (str(self.year_began),
