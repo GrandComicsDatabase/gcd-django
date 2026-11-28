@@ -51,10 +51,10 @@
 
   .btn-blue-editing {
     @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline;
+  }
 
-    a {
-      @apply text-black block hover:no-underline text-center;
-    }
+  .btn-blue-editing a {
+    @apply text-black block hover:no-underline text-center;
   }
 
   .btn-blue-editing:visited {
@@ -63,10 +63,10 @@
 
   .btn-blue {
     @apply bg-blue-500 text-white;
+  }
 
-    a {
-      @apply text-white visited:text-white hover:no-underline;
-    }
+  .btn-blue a {
+    @apply text-white visited:text-white hover:no-underline;
   }
 
   .markdownx-preview {
@@ -87,10 +87,10 @@
 
   .btn-queue-action {
     @apply font-normal block my-1 bg-stone-200 text-black text-sm text-center py-1 px-1 sm:px-2 sm:w-full w-24 rounded cursor-pointer hover:no-underline;
+  }
 
-    a {
-      @apply text-black block visited:text-black hover:no-underline text-center;
-    }
+  .btn-queue-action a {
+    @apply text-black block visited:text-black hover:no-underline text-center;
   }
 
   .btn-queue-action:hover {
@@ -117,33 +117,32 @@
 
   .tab-pane {
     @apply block;
+  }
 
-    &:not(.active) table,
-    &:not(.active) tbody {
-      @apply hidden;
-    }
+  .tab-pane:not(.active) table,
+  .tab-pane:not(.active) tbody {
+    @apply hidden;
   }
 
   .editing {
     @apply [&_tr]:flex [&_tr]:flex-col [&_tr]:sm:table-row [&_th]:text-left [&_th]:sm:text-right [&_th]:font-normal [&_th]:pe-2 [&_th]:align-top [&_th]:sm:w-44;
   }
 
-  .sortable_listing {
-    tr {
-      @apply hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left;
-    }
+  .sortable_listing tr {
+    @apply hover:bg-blue-50 flex flex-col mb-4 sm:table-row border
+      border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left;
+  }
 
-    td {
-      @apply ps-1 pe-2;
-    }
+  .sortable_listing td {
+    @apply ps-1 pe-2;
   }
 
   .sortable_heading {
     @apply bg-blue-100 md:top-0;
+  }
 
-    tr {
-      @apply align-top flex flex-col sm:table-row;
-    }
+  .sortable_heading tr {
+    @apply align-top flex flex-col sm:table-row;
   }
 
   .errorlist {
@@ -197,8 +196,10 @@
 html {
   background-color: white;
   font-size: 14px;
+}
 
-  @screen sm {
+@screen sm {
+  html {
     font-size: 15px;
   }
 }
@@ -206,20 +207,20 @@ html {
 @layer components {
   .object-page-numbered-list {
     @apply ms-2 list-decimal grid sm:grid-cols-2 ps-4;
+  }
 
-    li {
-      @apply pr-4;
-    }
+  .object-page-numbered-list li {
+    @apply pr-4;
   }
 }
 
 @layer components {
   .object-page-link-list {
     @apply list-disc sm:columns-2 list-outside ps-4;
+  }
 
-    li {
-      @apply pr-2;
-    }
+  .object-page-link-list li {
+    @apply pr-2;
   }
 }
 
