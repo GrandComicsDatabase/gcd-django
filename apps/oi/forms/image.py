@@ -4,11 +4,30 @@
 from collections import OrderedDict
 
 from django import forms
+from django.template.loader import render_to_string
 import django.urls as urlresolvers
 
 from apps.oi.models import CoverRevision, ImageRevision
 
 from .support import _get_comments_form_field, HiddenInputWithHelp
+
+
+class ImageUploadInput(forms.FileInput):
+    """
+    File input shown as the image upload card: a drop zone and, once a
+    file is chosen, its preview, name, dimensions and size.
+    """
+    class Media:
+        """The script that wires the card, printed by form.media."""
+        js = ('js/oi/image_upload.js',)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        """Put the plain file input inside the card."""
+        final_attrs = self.build_attrs(self.attrs, attrs)
+        return render_to_string(
+          'oi/bits/image_upload_widget.html',
+          {'field': super().render(name, value, attrs, renderer),
+           'input_id': final_attrs.get('id')})
 
 
 def get_cover_revision_form(revision=None, user=None):
