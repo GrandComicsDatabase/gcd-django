@@ -299,6 +299,8 @@ urlpatterns = [
       gcd_views.details.series_details,
       {'by_date': True},
       name='series_timeline'),
+    path('series/<int:series_id>/details/index_status/',
+      gcd_views.details.series_index_status, name='series_index_status'),
     path('series/<int:series_id>/details/creators/',
       gcd_views.details.series_creators, name='series_creators'),
     path('series/<int:series_id>/details/creator_names/',

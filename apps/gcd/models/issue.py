@@ -1160,3 +1160,28 @@ class SeriesDetailsIssueTable(PublisherIssueTable):
     def render_page_count(self, record):
         from apps.gcd.templatetags.credits import show_page_count
         return show_page_count(record)
+
+
+class SeriesIndexStatusTable(tables.Table):
+    issue = tables.Column(accessor='number', order_by='sort_code',
+                          verbose_name='Issue')
+    page_count = tables.Column(verbose_name='Total Pages', empty_values=())
+    indexed_pages = tables.Column(verbose_name='Indexed Pages')
+    comic_pages = tables.Column(verbose_name='Comic Pages')
+    ad_pages = tables.Column(verbose_name='Ad Pages')
+    unknown_credits = tables.Column(verbose_name='"?" Credits')
+    cover_sequence = tables.BooleanColumn(verbose_name='Cover Sequence',
+                                          yesno='Yes,No')
+    cover_scan = tables.BooleanColumn(verbose_name='Cover Scan',
+                                      yesno='Yes,No')
+    other_scans = tables.Column(verbose_name='Other Scans')
+
+    render_issue = SeriesDetailsIssueTable.render_issue
+    value_issue = SeriesDetailsIssueTable.value_issue
+    render_page_count = SeriesDetailsIssueTable.render_page_count
+
+    def render_indexed_pages(self, value):
+        from apps.gcd.templatetags.credits import format_page_count
+        return format_page_count(value)
+
+    render_comic_pages = render_ad_pages = render_indexed_pages

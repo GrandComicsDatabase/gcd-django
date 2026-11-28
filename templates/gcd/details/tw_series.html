@@ -49,6 +49,7 @@
           <ul class="object-page-link-list">
             <li><a href="{% url 'series_details' series_id=series.id %}">Details by Issue</a></li>
             <li><a href="{% url 'series_timeline' series_id=series.id %}">Series Monthly Timeline</a></li>
+            <li><a href="{% url 'series_index_status' series_id=series.id %}">Indexing State by Issue</a></li>
           </ul>
           <ul class="object-page-link-list">
             <li><a href='{% url "series_overview" series_id=series.id %}'>Cover and Main Story Overview</a></li>
