@@ -81,6 +81,7 @@ class IssueFilterSet(TimestampFilterSet):
     on_sale_iso_week = django_filters.CharFilter(
         method='filter_on_sale_iso_week',
         validators=[validate_iso_week],
+        label='On sale ISO week',
     )
 
     class Meta:

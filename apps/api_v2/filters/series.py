@@ -27,6 +27,7 @@ class SeriesFilterSet(TimestampFilterSet):
     )
     search = django_filters.CharFilter(
         method='filter_search',
+        label='Search',
         help_text=(
             'Case-insensitive, accent-sensitive title search ranked by exact '
             'title, title prefix, token prefix, then substring. Equal-ranked '

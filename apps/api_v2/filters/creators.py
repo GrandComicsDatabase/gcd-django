@@ -184,18 +184,22 @@ class CreatorFilterSet(TimestampFilterSet):
     birth_date__gte = django_filters.CharFilter(
         method='filter_birth_date_gte',
         validators=[validate_partial_date],
+        label='Birth date is greater than or equal to',
     )
     birth_date__lte = django_filters.CharFilter(
         method='filter_birth_date_lte',
         validators=[validate_partial_date],
+        label='Birth date is less than or equal to',
     )
     death_date__gte = django_filters.CharFilter(
         method='filter_death_date_gte',
         validators=[validate_partial_date],
+        label='Death date is greater than or equal to',
     )
     death_date__lte = django_filters.CharFilter(
         method='filter_death_date_lte',
         validators=[validate_partial_date],
+        label='Death date is less than or equal to',
     )
     death_date__isnull = StrictBooleanFilter(
         field_name='death_date',
