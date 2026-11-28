@@ -499,7 +499,7 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
     with _held_row(old_publisher):
         thread = _started(results, 'revert',
                           lambda: reverting.post(_revert_url(relinked)))
-        _wait_for_lock_wait('gcd_indicia_publisher')
+        wait_for_lock_waits('gcd_indicia_publisher')
         # It waits before it writes anything.
         assert _row_locks('oi_issue_revision') == 0
     thread.join(90)
@@ -576,7 +576,7 @@ def test_requests_at_the_same_moment(settings, monkeypatch,
                 threads.append(_started(
                   results, 'revert',
                   lambda: reverting.post(_revert_url(counted))))
-                _wait_for_lock_wait('oi_revision_lock')
+                wait_for_lock_waits('oi_revision_lock')
         finally:
             for thread in threads:
                 thread.join(90)
