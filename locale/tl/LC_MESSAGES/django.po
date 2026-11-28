@@ -1,0 +1,1661 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+# Entries with the comment "Automatic translation (AI)" were translated by AI.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-26 09:03+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: tl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n % 10 == 4 || n % 10 == 6 || n % 10 "
+"== 9);\n"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/gcd/models/story.py:1263 apps/gcd/templatetags/credits.py:610
+msgid "page"
+msgid_plural "pages"
+msgstr[0] "pahina"
+msgstr[1] "pahina"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/gcd/templatetags/credits.py:280
+msgid "Job Number"
+msgstr "Numero ng Trabaho"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/gcd/templatetags/credits.py:284
+msgid "First Line of Dialogue or Text"
+msgstr "Unang Linya ng Diyalogo o Teksto"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/gcd/templatetags/credits.py:292
+msgid "Reprinted"
+msgstr "Muling Inilimbag"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/gcd/templatetags/credits.py:883
+msgid "Reprints"
+msgstr "Mga Muling Limbag"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/gcd/templatetags/credits.py:909
+msgid "Parts of this issue are reprinted"
+msgstr "Muling inilimbag ang ilang bahagi ng isyung ito"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_complete.html:5
+#: apps/indexer/templates/indexer/password_reset_complete.html:9
+msgid "Password reset complete"
+msgstr "Tapos na ang pag-reset ng password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_complete.html:11
+msgid "Your password has been set.  You may go ahead and log in now."
+msgstr ""
+"Naitakda na ang iyong password.  Maaari ka nang mag-log in ngayon."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_complete.html:13
+#: templates/mycomics/user_base.html:62
+msgid "Log In"
+msgstr "Mag-log In"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:5
+#: apps/indexer/templates/indexer/password_reset_form.html:5
+#: apps/indexer/templates/indexer/password_reset_form.html:9
+msgid "Password reset"
+msgstr "Pag-reset ng password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:11
+msgid "Enter new password"
+msgstr "Ilagay ang bagong password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:13
+msgid ""
+"Please enter your new password twice so we can verify you typed it in "
+"correctly."
+msgstr ""
+"Pakilagay nang dalawang beses ang iyong bagong password para matiyak "
+"naming tama ang pagkaka-type mo."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:18
+msgid "New password:"
+msgstr "Bagong password:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:20
+msgid "Confirm password:"
+msgstr "Kumpirmahin ang password:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:21
+msgid "Change my password"
+msgstr "Palitan ang aking password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:26
+msgid "Password reset unsuccessful"
+msgstr "Hindi nagtagumpay ang pag-reset ng password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_confirm.html:28
+msgid ""
+"The password reset link was invalid, possibly because it has already been "
+"used.  Please request a new password reset."
+msgstr ""
+"Hindi wasto ang link para sa pag-reset ng password, marahil dahil nagamit "
+"na ito.  Pakihiling muli ang pag-reset ng password."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_done.html:5
+msgid "Password reset successful"
+msgstr "Matagumpay ang pag-reset ng password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_done.html:9
+msgid "Password reset sent"
+msgstr "Naipadala na ang pag-reset ng password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_done.html:11
+msgid ""
+"We've e-mailed you instructions for setting your password to the e-mail "
+"address you submitted. You should receive it shortly."
+msgstr ""
+"Nagpadala kami ng mga tagubilin sa pagtatakda ng iyong password sa e-mail "
+"address na ibinigay mo. Dapat ay matanggap mo ito sa ilang sandali."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_email.html:3
+msgid "You're receiving this e-mail because you requested a password reset"
+msgstr ""
+"Natanggap mo ang e-mail na ito dahil humiling ka ng pag-reset ng password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_email.html:4
+#, python-format
+msgid "for your user account at %(site_name)s"
+msgstr "para sa iyong user account sa %(site_name)s"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_email.html:6
+msgid "Please go to the following page and choose a new password:"
+msgstr "Pakipuntahan ang sumusunod na pahina at pumili ng bagong password:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_email.html:10
+msgid "Thanks for using our site!"
+msgstr "Salamat sa paggamit ng aming site!"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_email.html:12
+#, python-format
+msgid "The %(site_name)s team"
+msgstr "Ang koponan ng %(site_name)s"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_form.html:11
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll e-mail "
+"instructions for setting a new one."
+msgstr ""
+"Nakalimutan mo ba ang iyong password? Ilagay ang iyong e-mail address sa "
+"ibaba, at magpapadala kami sa e-mail ng mga tagubilin sa pagtatakda ng "
+"bago."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_form.html:16
+msgid "E-mail address:"
+msgstr "E-mail address:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/indexer/templates/indexer/password_reset_form.html:16
+msgid "Reset my password"
+msgstr "I-reset ang aking password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/inducks/templatetags/flatfile.py:27
+#: apps/inducks/templatetags/flatfile.py:118
+msgid "translation"
+msgstr "salin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/inducks/templatetags/flatfile.py:105
+msgid "script"
+msgstr "iskrip"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/inducks/templatetags/flatfile.py:110
+msgid "plot"
+msgstr "banghay"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:229
+msgid "Collection saved."
+msgstr "Nai-save ang koleksyon."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:251
+#, python-format
+msgid "Collection <b>%s</b> deleted."
+msgstr "Binura ang koleksyong <b>%s</b>."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:378
+#, python-format
+msgid "Item <b>%s</b> removed from %s"
+msgstr "Inalis ang item na <b>%s</b> sa %s"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:418
+msgid "Item moved between collections"
+msgstr "Inilipat ang item sa ibang koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:425
+#, python-format
+msgid ""
+"Item status for own/want differed from default of new collection <b>%s</b> "
+"and was changed."
+msgstr ""
+"Iba ang status na pag-aari/hinahanap ng item sa default ng bagong "
+"koleksyong <b>%s</b>, kaya ito ay binago."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:435 apps/mycomics/views.py:457
+#, python-format
+msgid ""
+"Item status is set to for sale due to default of new collection <b>%s</b>."
+msgstr ""
+"Itinakdang ibinebenta ang status ng item dahil sa default ng bagong "
+"koleksyong <b>%s</b>."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:444
+msgid "Item copied between collections"
+msgstr "Kinopya ang item sa ibang koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:448
+msgid "Own/want default for new collection differs from item status."
+msgstr ""
+"Iba ang default na pag-aari/hinahanap ng bagong koleksyon sa status ng "
+"item."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:462 apps/mycomics/views.py:464
+msgid "Item unchanged"
+msgstr "Walang binago sa item"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:503 apps/mycomics/views.py:601
+msgid "Sell date"
+msgstr "Petsa ng pagbenta"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:507 apps/mycomics/views.py:604
+msgid "Acquisition date"
+msgstr "Petsa ng pagkuha"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:598
+msgid "Item saved."
+msgstr "Nai-save ang item."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:605
+msgid "Date was entered in wrong format."
+msgstr "Mali ang format ng inilagay na petsa."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:612 apps/mycomics/views.py:690
+#: apps/mycomics/views.py:1415
+msgid "Some data was entered incorrectly."
+msgstr "May ilang datos na mali ang pagkakalagay."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:684
+msgid "Items saved."
+msgstr "Nai-save ang mga item."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:869
+msgid "More than 500 lines. Please split the import file into smaller chunks."
+msgstr ""
+"Higit sa 500 linya. Pakihati ang file na ii-import sa mas maliliit na "
+"bahagi."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1075
+#, python-format
+msgid "%s is already subscribed for the collection %s."
+msgstr "Naka-subscribe na ang %s sa koleksyong %s."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1083
+#, python-format
+msgid "Series %s is now subscribed for the collection %s."
+msgstr "Naka-subscribe na ngayon ang seryeng %s sa koleksyong %s."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1087
+msgid "Selected series is not ongoing."
+msgstr "Hindi na kasalukuyang inilalathala ang napiling serye."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1152
+msgid "Reading order saved."
+msgstr "Nai-save ang listahan ng babasahin."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1187
+#, python-format
+msgid "Reading Order <b>%s</b> deleted."
+msgstr "Binura ang listahan ng babasahin na <b>%s</b>."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1421
+#, python-format
+msgid "Item %s saved."
+msgstr "Nai-save ang item na %s."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1450
+#, python-format
+msgid "Item <b>%s</b> removed from Reading List %s"
+msgstr "Inalis ang item na <b>%s</b> sa Listahan ng Babasahin na %s"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1470
+msgid "Settings saved."
+msgstr "Nai-save ang mga setting."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1501
+msgid "Location saved."
+msgstr "Nai-save ang lokasyon."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1504
+msgid "Entered data was incorrect."
+msgstr "Mali ang inilagay na datos."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/mycomics/views.py:1523
+msgid "Location deleted."
+msgstr "Binura ang lokasyon."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/oi/views.py:230
+msgid "Submit Changes For Approval"
+msgstr "Isumite ang mga Pagbabago para Aprubahan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/oi/views.py:231
+msgid "Approve"
+msgstr "Aprubahan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/oi/views.py:232
+msgid "Send Back To Indexer"
+msgstr "Ibalik sa Tagapag-index"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/oi/views.py:758
+msgid "This change still contains invalid issue or sequence data."
+msgstr ""
+"May hindi wastong datos pa rin ng isyu o sekwensya ang pagbabagong ito."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/oi/views.py:793
+#, python-brace-format
+msgid ""
+"Correct and save the revisions, then select <strong>{submit}</strong>. "
+"Affected revisions:"
+msgstr ""
+"Iwasto at i-save ang mga rebisyon, pagkatapos ay piliin ang "
+"<strong>{submit}</strong>. Mga apektadong rebisyon:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/oi/views.py:1687
+#, python-brace-format
+msgid ""
+"Enter an explanation in the comment field before selecting "
+"<strong>{send_back}</strong>."
+msgstr ""
+"Maglagay ng paliwanag sa field ng komento bago piliin ang "
+"<strong>{send_back}</strong>."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/stddata/forms.py:35
+msgid "Date given in a wrong format"
+msgstr "Mali ang format ng ibinigay na petsa"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/stddata/forms.py:68
+msgid "Month is not between 1 and 12."
+msgstr "Wala sa pagitan ng 1 at 12 ang buwan."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: apps/stddata/forms.py:81
+msgid "Day is not between 1 and 31."
+msgstr "Wala sa pagitan ng 1 at 31 ang araw."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:6
+msgid "day before"
+msgstr "nakaraang araw"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:8
+msgid "year before"
+msgstr "nakaraang taon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:10
+#: templates/gcd/bits/choose_month.html:4
+msgid "month before"
+msgstr "nakaraang buwan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:27
+msgid "January"
+msgstr "Enero"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:28
+msgid "February"
+msgstr "Pebrero"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:29
+msgid "March"
+msgstr "Marso"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:30
+msgid "April"
+msgstr "Abril"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:31
+msgid "May"
+msgstr "Mayo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:32
+msgid "June"
+msgstr "Hunyo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:33
+msgid "July"
+msgstr "Hulyo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:34
+msgid "August"
+msgstr "Agosto"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:35
+msgid "September"
+msgstr "Setyembre"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:36
+msgid "October"
+msgstr "Oktubre"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:37
+msgid "November"
+msgstr "Nobyembre"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:38
+msgid "December"
+msgstr "Disyembre"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:43
+#: templates/gcd/bits/choose_month.html:10
+#: templates/gcd/bits/choose_week.html:13
+#: templates/gcd/bits/pagination_bar.html:64
+#: templates/gcd/bits/series_issue_header.html:76
+#: templates/gcd/bits/tw_pagination_bar.html:81
+#: templates/gcd/bits/tw_series_navigation.html:24
+msgid "Go"
+msgstr "Pumunta"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:48
+msgid "day after"
+msgstr "susunod na araw"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:50
+msgid "year after"
+msgstr "susunod na taon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_date.html:52
+#: templates/gcd/bits/choose_month.html:12
+msgid "month after"
+msgstr "susunod na buwan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_week.html:5
+msgid "week before"
+msgstr "nakaraang linggo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/choose_week.html:17
+msgid "week after"
+msgstr "susunod na linggo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:6
+msgid "You are logged in as "
+msgstr "Naka-log in ka bilang "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:7
+msgid "Editing"
+msgstr "Pag-edit"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:8
+msgid "Profile"
+msgstr "Profile"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:11
+msgid "Admin"
+msgstr "Admin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:15
+msgid "Logout"
+msgstr "Mag-log out"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:21 templates/mycomics/index.html:49
+msgid "email"
+msgstr "email"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:23 templates/mycomics/index.html:50
+msgid "password"
+msgstr "password"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:25 templates/gcd/index.html:109
+#: templates/mycomics/index.html:51
+msgid "Login"
+msgstr "Mag-log in"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:29 templates/mycomics/index.html:60
+msgid "Forgot password?"
+msgstr "Nakalimutan ang password?"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_login.html:32 templates/mycomics/index.html:61
+msgid "Register"
+msgstr "Magparehistro"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_menu.html:8 templates/gcd/tw_index.html:23
+msgid "About the GCD"
+msgstr "Tungkol sa GCD"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_menu.html:11 templates/gcd/tw_index.html:27
+msgid "How to Help"
+msgstr "Paano Tumulong"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_menu.html:13
+msgid "Documentation Wiki"
+msgstr "Wiki ng Dokumentasyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_menu.html:16
+msgid "Mailing Lists"
+msgstr "Mga Mailing List"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_menu.html:17 templates/gcd/tw_index.html:24
+msgid "Contact Us"
+msgstr "Makipag-ugnayan sa Amin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_menu.html:19
+msgid "Donate"
+msgstr "Mag-donate"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_search_box.html:6
+#: templates/gcd/bits/front_page_search_box.html:19
+msgid "Search"
+msgstr "Maghanap"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_search_box.html:17
+msgid "Sort by"
+msgstr "Ayusin ayon sa"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/front_page_search_box.html:20
+msgid "Advanced&nbsp;Query"
+msgstr "Masusing&nbsp;Paghahanap"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:8
+#: templates/gcd/bits/tw_issue_data.html:28
+msgid "Volume"
+msgstr "Tomo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:11
+#: templates/gcd/bits/tw_issue_data.html:31 templates/inducks/issue.html:20
+msgid "Price"
+msgstr "Presyo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:13
+#: templates/gcd/bits/tw_issue_data.html:33 templates/inducks/issue.html:21
+#: templates/inducks/issue.html:30
+msgid "Pages"
+msgstr "Mga Pahina"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:16
+#: templates/gcd/bits/tw_issue_data.html:36
+msgid "Indicia Frequency"
+msgstr "Dalas ng Labas ayon sa Indicia"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:20
+#: templates/gcd/bits/tw_issue_data.html:40
+msgid "On-sale Date"
+msgstr "Petsa ng Paglabas"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:25
+#: templates/gcd/bits/tw_issue_data.html:45
+msgid "Publisher's Age Guidelines"
+msgstr "Gabay sa Edad ng Tagapaglathala"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:29
+#: templates/gcd/bits/tw_issue_data.html:49
+msgid "Indicia&nbsp;/&nbsp;Colophon Publisher"
+msgstr "Tagapaglathala sa Indicia&nbsp;/&nbsp;Kolopon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/issue_data.html:32
+#: templates/gcd/bits/tw_issue_data.html:52
+msgid "Publisher's Brand"
+msgstr "Tatak ng Tagapaglathala"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:7
+msgid "contact us"
+msgstr "makipag-ugnayan sa amin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:10
+msgid "donate"
+msgstr "mag-donate"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:15
+#, python-format
+msgid ""
+"\n"
+"    If you believe any of this data to be incorrect, please\n"
+"      <a class=\"new_window\" href=\"https://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"         target=\"_blank\">let us know</a>.\n"
+"    "
+msgstr ""
+"\n"
+"    Kung sa tingin mo ay may mali sa alinman sa mga datos na ito,\n"
+"      <a class=\"new_window\" href=\"https://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"         target=\"_blank\">pakipaalam sa amin</a>.\n"
+"    "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:25
+msgid "Cover thumbnails are used for identification purposes only."
+msgstr ""
+"Ginagamit lamang ang maliliit na larawan ng pabalat upang makilala ang "
+"isyu."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:26
+msgid ""
+"All rights to cover images reserved by the respective copyright holders."
+msgstr ""
+"Nakalaan sa kani-kaniyang may-hawak ng karapatang-ari ang lahat ng "
+"karapatan sa mga larawan ng pabalat."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:32
+#, python-format
+msgid ""
+"\n"
+"All portions of <a href=\"https://www.comics.org/\" "
+"rel=\"cc:attributionURL\">the %(site_name)s</a>&trade;, except where noted "
+"otherwise, are\n"
+"copyrighted by the GCD and are licensed under a <a rel=\"license\" "
+"href=\"https://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
+"Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. This "
+"includes but is not necessarily limited to our database schema and data "
+"distribution format.\n"
+"    "
+msgstr ""
+"\n"
+"Ang lahat ng bahagi ng <a href=\"https://www.comics.org/\" rel=\"cc:"
+"attributionURL\">%(site_name)s</a>&trade;, maliban kung may ibang "
+"nakasaad, ay\n"
+"may karapatang-ari ng GCD at lisensyado sa ilalim ng <a rel=\"license\" "
+"href=\"https://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
+"Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. "
+"Kasama rito, ngunit hindi lamang limitado sa, ang aming database schema at "
+"format ng pamamahagi ng datos.\n"
+"    "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:40
+#, python-format
+msgid "The GCD <a href=\"%(privacy_url)s\">Privacy Policy</a>."
+msgstr "Ang <a href=\"%(privacy_url)s\">Patakaran sa Privacy</a> ng GCD."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/legalese.html:43
+msgid ""
+"The <a href=\"https://github.com/GrandComicsDatabase/gcd-django\">GCD Web "
+"Site code</a> is licensed under the <a href=\"http://www.gnu.org/licenses/"
+"gpl.html\">GNU General Public License</a>."
+msgstr ""
+"Ang <a href=\"https://github.com/GrandComicsDatabase/gcd-django\">code ng "
+"Web Site ng GCD</a> ay lisensyado sa ilalim ng <a href=\"http://www.gnu."
+"org/licenses/gpl.html\">GNU General Public License</a>."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/series_issue_header.html:57
+#: templates/gcd/bits/series_issue_header.html:59
+#: templates/gcd/bits/tw_series_navigation.html:6
+#: templates/gcd/bits/tw_series_navigation.html:8
+msgid "Previous Issue"
+msgstr "Nakaraang Isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/series_issue_header.html:81
+#: templates/gcd/bits/series_issue_header.html:83
+#: templates/gcd/bits/tw_series_navigation.html:28
+#: templates/gcd/bits/tw_series_navigation.html:30
+msgid "Next Issue"
+msgstr "Susunod na Isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/single_story_credits.html:18
+#, python-format
+msgid ""
+"\n"
+"      page%(suffix)s\n"
+"    "
+msgstr ""
+"\n"
+"      pahina%(suffix)s\n"
+"    "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/tw_front_page_content.html:32
+#, python-format
+msgid ""
+"\n"
+"    The <b>Grand Comics Database (GCD)</b> is a nonprofit, internet-based "
+"organization of international volunteers\n"
+"    dedicated to building an open database covering all printed comics "
+"throughout the world.</p>\n"
+"  <p> Give <a class=\"link-no-visited font-bold\" "
+"href=\"%(search_url)s\">our search</a> a try, use <a class=\"link-no-visited "
+"font-bold\" href=\"https://my.comics.org/\">my.comics.org</a> to track and "
+"manage\n"
+"    your comic collection, or look how\n"
+"    you can <a class=\"link-no-visited font-bold\" "
+"href=\"#how_to_contribute\">contribute</a>.\n"
+"  "
+msgstr ""
+"\n"
+"    Ang <b>Grand Comics Database (GCD)</b> ay isang di-pangkalakal na "
+"organisasyon sa internet ng mga boluntaryo mula sa iba't ibang bansa\n"
+"    na nagtatayo ng isang bukas na database ng lahat ng inilimbag na komiks "
+"sa buong mundo.</p>\n"
+"  <p> Subukan ang <a class=\"link-no-visited font-bold\" "
+"href=\"%(search_url)s\">aming paghahanap</a>, gamitin ang <a "
+"class=\"link-no-visited font-bold\" href=\"https://my.comics.org/\">my."
+"comics.org</a> para subaybayan at pamahalaan\n"
+"    ang iyong koleksyon ng komiks, o alamin kung paano\n"
+"    ka <a class=\"link-no-visited font-bold\" "
+"href=\"#how_to_contribute\">makapag-aambag</a>.\n"
+"  "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/tw_front_page_content.html:67 templates/gcd/index.html:59
+msgid "Disclaimer"
+msgstr "Paunawa"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/tw_front_page_content.html:70 templates/gcd/index.html:63
+msgid ""
+"The Grand Comics Database Project (GCD) is a volunteer project with the goal "
+"of documenting and indexing all comics for the free use of scholars, "
+"historians, researchers, and fans."
+msgstr ""
+"Ang Grand Comics Database Project (GCD) ay isang proyekto ng mga "
+"boluntaryo na naglalayong idokumento at i-index ang lahat ng komiks para "
+"sa malayang paggamit ng mga iskolar, historyador, mananaliksik, at "
+"tagahanga."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/tw_front_page_content.html:73 templates/gcd/index.html:66
+msgid ""
+"The GCD acknowledges that the all-encompassing research nature of the "
+"project may result in the posting of cover scans for comics with images that "
+"some may find objectionable."
+msgstr ""
+"Kinikilala ng GCD na dahil sa malawak na saklaw ng pananaliksik ng "
+"proyekto, maaaring mailathala ang mga scan ng pabalat ng mga komiks na may "
+"mga larawang maaaring ituring ng ilan na hindi kanais-nais."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/tw_front_page_content.html:76 templates/gcd/index.html:69
+msgid "Viewer discretion is advised."
+msgstr "Pinapayuhan ang mga tumitingin na mag-ingat sa pagpapasya."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/bits/tw_front_page_content.html:79 templates/gcd/index.html:72
+msgid "The Grand Comics Database Team"
+msgstr "Ang Koponan ng Grand Comics Database"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/details/tw_feature_logo.html:68
+msgid "Replace Feature Logo Scan"
+msgstr "Palitan ang Scan ng Logo ng Tampok"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/details/tw_feature_logo.html:72
+msgid "Delete Feature Logo Scan"
+msgstr "Burahin ang Scan ng Logo ng Tampok"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/details/tw_feature_logo.html:80
+msgid "Add Feature Logo Scan"
+msgstr "Magdagdag ng Scan ng Logo ng Tampok"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/details/tw_issue.html:363
+msgid "Edit With Another Issue"
+msgstr "I-edit Kasabay ng Ibang Isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/details/tw_single_story.html:41
+#, python-format
+msgid ""
+"\n"
+"    page%(suffix)s\n"
+"  "
+msgstr ""
+"\n"
+"    pahina%(suffix)s\n"
+"  "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:130
+msgid "Useful Links"
+msgstr "Mga Kapaki-pakinabang na Link"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:134
+msgid "Today's covers"
+msgstr "Mga pabalat ngayong araw"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:135
+msgid "Today's changes"
+msgstr "Mga pagbabago ngayong araw"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:136
+msgid "On-sale this week"
+msgstr "Labas ngayong linggo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:137
+msgid "On-sale this month"
+msgstr "Labas ngayong buwan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:138
+msgid "International statistics"
+msgstr "Pandaigdigang istatistika"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:140 templates/gcd/tw_index.html:126
+msgid "by Language"
+msgstr "ayon sa Wika"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:141 templates/gcd/tw_index.html:127
+msgid "by Country"
+msgstr "ayon sa Bansa"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:167 templates/gcd/tw_index.html:88
+msgid "Last Updated Language Issues"
+msgstr "Mga Huling Na-update na Isyu sa Tagalog"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:177 templates/gcd/tw_index.html:96
+msgid "Statistics for Language Comics"
+msgstr "Istatistika ng Komiks sa Tagalog"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:188 templates/gcd/tw_index.html:107
+msgid "Last Updated Issues"
+msgstr "Mga Huling Na-update na Isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/index.html:198 templates/gcd/tw_index.html:115
+msgid "Statistics"
+msgstr "Istatistika"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/status/covers_to_replace.html:18
+msgid "Covers marked for replacement"
+msgstr "Mga pabalat na minarkahang papalitan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/status/daily_changes.html:15
+#: templates/gcd/status/daily_changes.html:229
+msgid "Changes for "
+msgstr "Mga pagbabago sa "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/status/daily_covers.html:18
+#: templates/gcd/status/daily_covers.html:44
+msgid "Covers for "
+msgstr "Mga pabalat sa "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/status/daily_covers.html:25
+#: templates/gcd/status/daily_covers.html:50
+msgid " covers posted"
+msgstr " pabalat na nai-post"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/tw_index.html:25
+msgid "How to Search"
+msgstr "Paano Maghanap"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/tw_index.html:28
+msgid "Today's Covers"
+msgstr "Mga Pabalat Ngayong Araw"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/tw_index.html:29
+msgid "Today's Changes"
+msgstr "Mga Pagbabago Ngayong Araw"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/tw_index.html:30
+msgid "On-sale Weekly"
+msgstr "Labas Ngayong Linggo"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/tw_index.html:31
+msgid "On-sale Monthly"
+msgstr "Labas Ngayong Buwan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/gcd/tw_index.html:123
+msgid "International Statistics"
+msgstr "Pandaigdigang Istatistika"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/help.html:7 templates/mycomics/bits/help.html:14
+#: templates/mycomics/collection_item.html:15
+#: templates/mycomics/collection_item.html:66
+#: templates/mycomics/collections.html:31
+#: templates/mycomics/collections.html:49
+#: templates/mycomics/reading_order_item.html:15
+#: templates/mycomics/reading_orders.html:31
+#: templates/mycomics/settings.html:14 templates/mycomics/settings.html:32
+#: templates/mycomics/settings.html:50 templates/mycomics/settings.html:70
+msgid "Close"
+msgstr "Isara"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/help.html:8
+msgid "Help for "
+msgstr "Tulong para sa "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/indexing_links.html:6
+msgid "Search Inside Collection"
+msgstr "Maghanap sa Loob ng Koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/indexing_links.html:9
+msgid "Unindexed Issues"
+msgstr "Mga Isyung Hindi pa Na-index"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/indexing_links.html:12
+msgid "Needed Covers"
+msgstr "Mga Kailangang Pabalat"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/series_control.html:19
+msgid "Subscribe"
+msgstr "Mag-subscribe"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/series_control.html:31
+#: templates/mycomics/bits/tw_series_control.html:42
+msgid "subscribed for"
+msgstr "naka-subscribe sa"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/bits/tw_series_control.html:30
+msgid "Subscribe Series For"
+msgstr "I-subscribe ang Serye sa"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:21
+#: templates/mycomics/collection_item.html:45
+msgid "Remove issue from collection "
+msgstr "Alisin ang isyu sa koleksyong "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:22
+#: templates/mycomics/collection_item.html:46
+#: templates/mycomics/reading_order.html:22
+#: templates/mycomics/reading_order_item.html:40
+msgid "Do you want to remove the issue <b>"
+msgstr "Gusto mo bang alisin ang isyung <b>"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:24
+#: templates/mycomics/collection_item.html:29
+#: templates/mycomics/collection_item.html:48
+#: templates/mycomics/collection_item.html:74
+#: templates/mycomics/collection_subscriptions.html:15
+#: templates/mycomics/collection_subscriptions.html:32
+#: templates/mycomics/collections.html:16
+#: templates/mycomics/collections.html:38
+#: templates/mycomics/collections.html:77
+#: templates/mycomics/reading_order.html:24
+#: templates/mycomics/reading_order_item.html:23
+#: templates/mycomics/reading_order_item.html:42
+#: templates/mycomics/reading_orders.html:16
+#: templates/mycomics/reading_orders.html:38
+#: templates/mycomics/settings.html:22 templates/mycomics/settings.html:40
+#: templates/mycomics/settings.html:60 templates/mycomics/settings.html:80
+#: templates/mycomics/tw_generic_edit_form.html:41
+msgid "Cancel"
+msgstr "Kanselahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:25
+#: templates/mycomics/collection_item.html:49
+#: templates/mycomics/collection_subscriptions.html:16
+#: templates/mycomics/collection_subscriptions.html:38
+#: templates/mycomics/collections.html:17
+#: templates/mycomics/collections.html:39
+#: templates/mycomics/reading_order.html:25
+#: templates/mycomics/reading_order_item.html:43
+#: templates/mycomics/reading_orders.html:17
+#: templates/mycomics/reading_orders.html:39
+#: templates/mycomics/settings.html:23 templates/mycomics/settings.html:41
+#: templates/mycomics/settings.html:61 templates/mycomics/settings.html:81
+msgid "Confirm"
+msgstr "Kumpirmahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:42
+msgid "Collection Details"
+msgstr "Mga Detalye ng Koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:46
+msgid "Series"
+msgstr "Mga Serye"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:53
+#: templates/mycomics/collection_series.html:20
+#: templates/mycomics/collection_subscriptions.html:54
+msgid "Subscriptions"
+msgstr "Mga Subscription"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:56
+#: templates/mycomics/collection_item.html:107
+#: templates/mycomics/collection_series.html:23
+#: templates/mycomics/reading_order.html:46
+#: templates/mycomics/reading_order_item.html:78
+#: templates/mycomics/settings.html:145 templates/mycomics/settings.html:168
+msgid "Edit"
+msgstr "I-edit"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:65
+msgid "These issues of the collection were deleted from the GCD:"
+msgstr "Binura sa GCD ang mga isyung ito ng koleksyon:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:66
+msgid "Filters"
+msgstr "Mga Filter"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:74
+msgid "Edit Shown Items"
+msgstr "I-edit ang mga Ipinapakitang Item"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection.html:76
+#: templates/mycomics/collection_series.html:33
+#: templates/mycomics/collection_subscriptions.html:67
+#: templates/mycomics/user_base.html:35
+msgid "Collections"
+msgstr "Mga Koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:16
+#: templates/mycomics/reading_order_item.html:16
+msgid "Editing item in collection"
+msgstr "Pag-edit ng item sa koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:30
+#: templates/mycomics/generic_edit_form.html:19
+#: templates/mycomics/reading_order_item.html:24
+#: templates/mycomics/settings.html:128
+#: templates/mycomics/tw_generic_edit_form.html:42
+msgid "Submit"
+msgstr "Isumite"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:75
+msgid "Copy"
+msgstr "Kopyahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:76
+msgid "Move"
+msgstr "Ilipat"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:100
+#: templates/mycomics/reading_order_item.html:71
+msgid "Also in:"
+msgstr "Makikita rin sa:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:110
+msgid "Delete from collection"
+msgstr "Burahin sa koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:113
+msgid "To other collection"
+msgstr "Sa ibang koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:121
+msgid "This issue was deleted from the GCD."
+msgstr "Binura sa GCD ang isyung ito."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:122
+msgid "See its change history."
+msgstr "Tingnan ang kasaysayan ng mga pagbabago nito."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:133
+msgid "Issue is in digital form."
+msgstr "Nasa digital na anyo ang isyu."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:135
+msgid "Notes: "
+msgstr "Mga tala: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:136
+msgid "Tags: "
+msgstr "Mga tag: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:138
+msgid "Location: "
+msgstr "Lokasyon: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:141
+msgid "Purchase location: "
+msgstr "Lugar ng pagbili: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:144
+msgid "Grade: "
+msgstr "Grado: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:147
+#: templates/mycomics/reading_order_item.html:101
+msgid "Was read: "
+msgstr "Nabasa na: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:150
+msgid "For sale: "
+msgstr "Ibinebenta: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:153
+msgid "Signed: "
+msgstr "May pirma: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:156
+msgid "Price paid: "
+msgstr "Presyong ibinayad: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:159
+msgid "Market value: "
+msgstr "Halaga sa merkado: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:162
+msgid "Sell price: "
+msgstr "Presyo ng pagbenta: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:165
+msgid "Acquisition date: "
+msgstr "Petsa ng pagkuha: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:168
+msgid "Sell date: "
+msgstr "Petsa ng pagbenta: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_item.html:171
+msgid "My rating: "
+msgstr "Aking marka: "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_series.html:9
+msgid "Collection details"
+msgstr "Mga detalye ng koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_series.html:13
+msgid "Issues"
+msgstr "Mga Isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_subscriptions.html:12
+#: templates/mycomics/collection_subscriptions.html:29
+msgid "Unsubscribe series in collection "
+msgstr "Ihinto ang subscription ng serye sa koleksyong "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_subscriptions.html:13
+#: templates/mycomics/collection_subscriptions.html:30
+msgid "Do you want to unsubscribe from the series <b>"
+msgstr "Gusto mo bang ihinto ang subscription sa seryeng <b>"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collection_subscriptions.html:58
+msgid "Pull"
+msgstr "Kunin ang mga Bagong Isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:13
+#: templates/mycomics/collections.html:32
+msgid "Remove Collection"
+msgstr "Alisin ang Koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:14
+msgid "Do you want to remove the collection <b>"
+msgstr "Gusto mo bang alisin ang koleksyong <b>"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:35
+msgid "Do you want to remove this collection?"
+msgstr "Gusto mo bang alisin ang koleksyong ito?"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:50
+msgid "Import Issues Into A Collection"
+msgstr "Mag-import ng mga Isyu sa isang Koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:53
+msgid "Select file:"
+msgstr "Pumili ng file:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:57
+msgid ""
+"\n"
+"              <p>On the following page you get a list of candidate issues "
+"based on the uploaded file.\n"
+"              From that, mark those issues which you want to import into a "
+"collection, e.g. for\n"
+"              variants you likely will only want to add one. After clicking "
+"'Select issues' you\n"
+"              can choose a collection and confirm the import.</p>\n"
+"\n"
+"              <p>For computational reasons, do not import more than 500 "
+"lines per file.\n"
+"              Larger files need to be split beforehand.</p>\n"
+"\n"
+"              <p>One can import a csv-file, where each line has tab-"
+"separated entries for an issue.\n"
+"              First entry is the series name, second entry the issue "
+"number.\n"
+"              Optionally a third entry for the publisher name, and a fourth "
+"entry for the language code.</p>\n"
+"\n"
+"              <p>One can also try to import an exported file from "
+"comicbookdb.com that will be identified by a first line starting with "
+"\"Title,Issue Number,Issue Name\".\n"
+"              The series name, issue number, publisher name, and the year "
+"the series began will be determined from the exported lists.\n"
+"              Note that publisher names might need a search-and-replace "
+"before an import, some publishers (e.g. DC, Image) are handled by the code.\n"
+"              Some series names need a search-and-replace in the to be "
+"imported file, Annuals do as well as.</p>\n"
+"            "
+msgstr ""
+"\n"
+"              <p>Sa susunod na pahina, makikita mo ang listahan ng mga "
+"posibleng isyu batay sa na-upload na file.\n"
+"              Mula roon, markahan ang mga isyung gusto mong i-import sa "
+"isang koleksyon; halimbawa, sa mga\n"
+"              variant ay malamang isa lang ang gusto mong idagdag. "
+"Pagkatapos i-click ang 'Select issues',\n"
+"              maaari kang pumili ng koleksyon at kumpirmahin ang "
+"pag-import.</p>\n"
+"\n"
+"              <p>Dahil sa limitasyon ng pagproseso, huwag mag-import ng "
+"higit sa 500 linya bawat file.\n"
+"              Kailangang hatiin muna ang mas malalaking file.</p>\n"
+"\n"
+"              <p>Maaaring mag-import ng csv-file na ang bawat linya ay may "
+"mga entry para sa isang isyu na pinaghihiwalay ng tab.\n"
+"              Ang unang entry ay ang pangalan ng serye, ang ikalawa ay ang "
+"numero ng isyu.\n"
+"              Opsyonal ang ikatlong entry para sa pangalan ng "
+"tagapaglathala, at ang ikaapat para sa code ng wika.</p>\n"
+"\n"
+"              <p>Maaari ring subukang mag-import ng file na na-export mula "
+"sa comicbookdb.com, na makikilala sa unang linyang nagsisimula sa "
+"\"Title,Issue Number,Issue Name\".\n"
+"              Kukunin mula sa mga na-export na listahan ang pangalan ng "
+"serye, numero ng isyu, pangalan ng tagapaglathala, at ang taon ng "
+"pagsisimula ng serye.\n"
+"              Tandaan na maaaring kailanganing gamitan ng hanapin-at-palitan "
+"ang mga pangalan ng tagapaglathala bago mag-import; ang ilang tagapaglathala "
+"(hal. DC, Image) ay inaasikaso na ng code.\n"
+"              Kailangan ding gamitan ng hanapin-at-palitan ang ilang "
+"pangalan ng serye sa file na ii-import, gayundin ang mga Annual.</p>\n"
+"            "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:78
+msgid "Import No Variants"
+msgstr "I-import nang Walang Variant"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:79
+#: templates/mycomics/collections.html:92
+msgid "Import"
+msgstr "I-import"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:90
+msgid "Collections List"
+msgstr "Listahan ng mga Koleksyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/collections.html:95
+#: templates/mycomics/reading_orders.html:51
+msgid "Add New"
+msgstr "Magdagdag ng Bago"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/index.html:30 templates/mycomics/user_base.html:37
+msgid "Help"
+msgstr "Tulong"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/index.html:44
+msgid "Your username and password didn't match. Please try again."
+msgstr "Hindi tugma ang iyong username at password. Pakisubukang muli."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_order.html:21
+#: templates/mycomics/reading_order_item.html:39
+msgid "Remove issue from reading order "
+msgstr "Alisin ang isyu sa listahan ng babasahin na "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_order.html:42
+msgid "Reading Order"
+msgstr "Listahan ng Babasahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_order_item.html:81
+msgid "Delete from reading order"
+msgstr "Burahin sa listahan ng babasahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_order_item.html:98
+msgid "Story:"
+msgstr "Kuwento:"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_orders.html:13
+#: templates/mycomics/reading_orders.html:32
+msgid "Remove Reading List"
+msgstr "Alisin ang Listahan ng Babasahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_orders.html:14
+msgid "Do you want to remove the reading list <b>"
+msgstr "Gusto mo bang alisin ang listahan ng babasahin na <b>"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_orders.html:35
+msgid "Do you want to remove this reading list?"
+msgstr "Gusto mo bang alisin ang listahan ng babasahing ito?"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/reading_orders.html:49
+#: templates/mycomics/user_base.html:36
+msgid "Reading Lists"
+msgstr "Mga Listahan ng Babasahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:15 templates/mycomics/settings.html:33
+msgid "Remove Location"
+msgstr "Alisin ang Lokasyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:18
+msgid "Do you want to remove this location?"
+msgstr "Gusto mo bang alisin ang lokasyong ito?"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:19 templates/mycomics/settings.html:37
+msgid "This location is selected for some of your items."
+msgstr "Napili ang lokasyong ito para sa ilan sa iyong mga item."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:36
+msgid "Do you want to remove this purchase location?"
+msgstr "Gusto mo bang alisin ang lugar ng pagbiling ito?"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:51
+msgid "Edit Location"
+msgstr "I-edit ang Lokasyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:71
+msgid "Edit Purchase Location"
+msgstr "I-edit ang Lugar ng Pagbili"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:120
+msgid "Settings"
+msgstr "Mga Setting"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:132
+msgid "Locations"
+msgstr "Mga Lokasyon"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:135 templates/mycomics/settings.html:158
+msgid "Add"
+msgstr "Magdagdag"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:149 templates/mycomics/settings.html:172
+msgid "Delete"
+msgstr "Burahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/settings.html:155
+msgid "Purchase Locations"
+msgstr "Mga Lugar ng Pagbili"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/tw_reading_order.html:37
+msgid "Edit Reading List"
+msgstr "I-edit ang Listahan ng Babasahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/tw_reading_order.html:45
+msgid "Copy Reading List"
+msgstr "Kopyahin ang Listahan ng Babasahin"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/user_base.html:9
+msgid "News for "
+msgstr "Mga Balita tungkol sa "
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/user_base.html:38
+msgid "News"
+msgstr "Mga Balita"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/mycomics/user_base.html:56
+msgid "Log Out"
+msgstr "Mag-log Out"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+#: templates/oi/base_view.html:8
+msgid ""
+"Cloudflare verification is required. <a href=\"/\" target=\"_blank\" "
+"rel=\"noopener\"> Verify in a new tab </a>, close that tab, then retry this "
+"field. Your unsaved changes will remain here."
+msgstr ""
+"Kailangan ang beripikasyon ng Cloudflare. <a href=\"/\" target=\"_blank\" "
+"rel=\"noopener\"> Mag-verify sa bagong tab </a>, isara ang tab na iyon, at "
+"subukang muli ang field na ito. Mananatili rito ang iyong mga pagbabagong "
+"hindi pa nai-save."
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "publishers"
+msgstr "tagapaglathala"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "brands"
+msgstr "tatak ng tagapaglathala"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "indicia publishers"
+msgstr "tagapaglathala sa indicia"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "series"
+msgstr "serye"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "issues"
+msgstr "isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "variant issues"
+msgstr "variant na isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "issue indexes"
+msgstr "na-index na isyu"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "covers"
+msgstr "pabalat"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "stories"
+msgstr "kuwento"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "creators"
+msgstr "manlilikha"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Script"
+msgstr "Iskrip"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Pencils"
+msgstr "Guhit"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Inks"
+msgstr "Tinta"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Colors"
+msgstr "Kulay"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Letters"
+msgstr "Letra"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Characters"
+msgstr "Mga Tauhan"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Feature"
+msgstr "Tampok"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Genre"
+msgstr "Genre"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Keywords"
+msgstr "Mga Keyword"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Synopsis"
+msgstr "Buod"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Title"
+msgstr "Pamagat"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Isbn"
+msgstr "ISBN"
+
+# Automatic translation (AI), not yet reviewed by a native speaker.
+msgid "Barcode"
+msgstr "Barcode"
