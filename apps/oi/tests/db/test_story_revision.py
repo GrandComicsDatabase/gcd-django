@@ -105,6 +105,7 @@ def test_create_edit_revision(any_edit_story_rev, story_add_values,
                               old_status, new_status):
     rev = any_edit_story_rev
     rev.issue.is_indexed = old_status
+    rev.issue.save()
     rev.issue.series.is_comics_publication = is_comics
     rev.issue.series.save()
 
@@ -180,6 +181,7 @@ def test_create_move_revision(any_edit_story_rev, story_add_values,
 
     rev = any_edit_story_rev
     rev.issue.is_indexed = old_pre_status
+    rev.issue.save()
     rev.issue.series.is_comics_publication = old_is_comics
     rev.issue.series.save()
 

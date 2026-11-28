@@ -1,0 +1,292 @@
+"""
+Two changes of one series approved at the same moment: requests that
+really run at once, each with a connection of its own, so each commits.
+"""
+import threading
+import time
+from contextlib import contextmanager
+
+import pytest
+
+from django.contrib.auth.models import Permission, User
+from django.db import OperationalError, connection, connections, transaction
+from django.test import Client
+from django.urls import reverse
+
+from apps.gcd.models import Publisher, Series
+from apps.indexer.models import Indexer
+from apps.oi import states
+from apps.oi.models import (
+    Changeset, IssueRevision, PublisherRevision, SeriesRevision, CTYPES,
+    _get_revision_lock)
+from apps.oi.tests.lock_waits import wait_for_lock_waits
+from apps.stats.models import CountStats
+
+# MariaDB has no processlist table in its Performance Schema.
+MYSQL_OTHER_CONNECTIONS = (
+  'SELECT ID FROM performance_schema.processlist '
+  'WHERE DB = DATABASE() AND ID <> CONNECTION_ID()')
+
+MARIADB_OTHER_CONNECTIONS = (
+  'SELECT ID FROM information_schema.PROCESSLIST '
+  'WHERE DB = DATABASE() AND ID <> CONNECTION_ID()')
+
+
+@pytest.fixture
+def statistics(any_country):
+    """
+    The statistics that an approval updates; a transactional test empties
+    the database when it ends, so each test makes them again.
+    """
+    CountStats.objects.init_stats()
+    CountStats.objects.init_stats(country=any_country)
+
+
+@pytest.fixture
+def editor(any_country):
+    """An editor who may approve changes."""
+    user = User.objects.create_user('editor', password='editor')
+    Indexer.objects.create(user=user, country=any_country)
+    user.user_permissions.add(*Permission.objects.filter(
+      codename__in=['can_reserve', 'can_approve'],
+      content_type__app_label='indexer'))
+    return user
+
+
+def _assigned(editor, changeset):
+    """Assign changeset to editor; return a client of editor."""
+    client = Client()
+    client.force_login(editor)
+    response = client.post(reverse('process', kwargs={'id': changeset.id}),
+                           {'assign': 'Assign', 'comments': ''})
+    assert response.status_code == 302
+    return client
+
+
+def _approve(client, changeset):
+    """Post the approval of changeset; return the response."""
+    return client.post(reverse('process', kwargs={'id': changeset.id}),
+                       {'approve': 'Approve', 'comments': ''})
+
+
+def _started(target, name):
+    """
+    Start target in a daemon thread, which has a connection of its own.
+    Once _stop gives up waiting for the thread, each of its queries fails
+    before it reaches the server: a thread that outlives its test cannot
+    write in the database, even on a new connection.
+    """
+    stopped = threading.Event()
+
+    def refuse_once_stopped(execute, sql, params, many, context):
+        """Send the query, unless the test has stopped the thread."""
+        if stopped.is_set():
+            raise OperationalError('the test has stopped this thread')
+        return execute(sql, params, many, context)
+
+    def run():
+        """Run target with each of its queries checked."""
+        with connection.execute_wrapper(refuse_once_stopped):
+            target()
+
+    thread = threading.Thread(target=run, name=name, daemon=True)
+    thread.stopped = stopped
+    thread.start()
+    return thread
+
+
+def _stop(thread):
+    """
+    Wait until thread has ended, before the test database is emptied. If
+    it still runs after a minute, refuse its queries from then on, and end
+    the other connections to the test database, so that a wait there
+    stops with an error, until the thread has ended and the server has
+    closed them all, for at most 30 s; then fail.
+    """
+    thread.join(60)
+    if not thread.is_alive():
+        return
+    thread.stopped.set()
+    if connection.mysql_is_mariadb:
+        other_connections = MARIADB_OTHER_CONNECTIONS
+    else:
+        other_connections = MYSQL_OTHER_CONNECTIONS
+    end = time.monotonic() + 30
+    with connection.cursor() as cursor:
+        while True:
+            alive = thread.is_alive()
+            cursor.execute(other_connections)
+            ids = [row[0] for row in cursor.fetchall()]
+            if not (alive or ids) or time.monotonic() > end:
+                break
+            for connection_id in ids:
+                try:
+                    cursor.execute('KILL %s', [connection_id])
+                except OperationalError as error:
+                    if error.args[0] != 1094:  # unknown thread id: it ended
+                        raise
+            time.sleep(0.05)
+    message = 'the %s thread did not end in 60 s' % thread.name
+    assert not alive, message + ', and still runs'
+    assert not ids, (
+        message + ', and the test database still has other connections')
+    raise AssertionError(message)
+
+
+@contextmanager
+def _held(work):
+    """
+    In the block, a thread with a connection of its own has done work in
+    a transaction that it keeps open, holding the rows that it wrote; the
+    transaction commits when the block ends.
+    """
+    held, release = threading.Event(), threading.Event()
+    failures = []
+
+    def hold():
+        """Do work, then keep its transaction open until release."""
+        try:
+            with transaction.atomic():
+                work()
+                held.set()
+                release.wait(60)
+        except Exception as error:
+            failures.append(error)
+            held.set()
+        finally:
+            connections.close_all()
+
+    holder = _started(hold, 'holder')
+    try:
+        assert held.wait(30) and not failures, failures
+        yield
+    finally:
+        release.set()
+        _stop(holder)
+    assert not failures, failures
+
+
+def _approval_started(client, changeset):
+    """
+    Start the approval of changeset in a thread with a connection of its
+    own; return the thread and the dict that gets its response.
+    """
+    result = {}
+
+    def run():
+        """Post the approval and keep the response, or the error."""
+        try:
+            result['response'] = _approve(client, changeset)
+        except Exception as error:
+            result['response'] = error
+        finally:
+            connections.close_all()
+
+    return _started(run, 'approval'), result
+
+
+def _added_after(issue, indexer, issue_add_values):
+    """The add of an issue after issue, not yet approved; its revision."""
+    changeset = Changeset.objects.create(state=states.REVIEWING,
+                                         indexer=indexer,
+                                         change_type=CTYPES['issue_add'])
+    values = dict(issue_add_values, series=issue.series, after=issue,
+                  number='43')
+    values.pop('indicia_printer', None)
+    values.pop('brand_emblem', None)
+    return IssueRevision.objects.create(changeset=changeset, **values)
+
+
+def _commit(revision):
+    """Commit revision, read again in this connection, as an approval."""
+    type(revision).objects.get(id=revision.id).commit_to_display()
+
+
+def _change(indexer, data_object, revision_class, change_type, **values):
+    """A submitted change of data_object, holding its lock, with values."""
+    changeset = Changeset.objects.create(state=states.PENDING,
+                                         indexer=indexer,
+                                         change_type=change_type)
+    assert _get_revision_lock(data_object, changeset=changeset)
+    revision = revision_class.clone(data_object=data_object,
+                                    changeset=changeset)
+    for name, value in values.items():
+        setattr(revision, name, value)
+    revision.save()
+    return changeset
+
+
+@pytest.mark.django_db(transaction=True)
+def test_an_edit_approved_during_an_add_keeps_the_new_last_issue(
+        statistics, any_added_issue, issue_add_values, any_indexer, editor):
+    """
+    An edit of an issue approved while the add of a later issue of its
+    series commits: the series keeps the added issue as its last one and
+    in its issue count.
+    """
+    issue_count = Series.objects.get(
+        id=any_added_issue.series_id).issue_count
+    added = _added_after(any_added_issue, any_indexer, issue_add_values)
+    edit = _change(any_indexer, any_added_issue, IssueRevision,
+                   CTYPES['issue'])
+    approver = _assigned(editor, edit)
+
+    thread = None
+    try:
+        with _held(lambda: _commit(added)):
+            thread, result = _approval_started(approver, edit)
+            wait_for_lock_waits('gcd_series')
+    finally:
+        if thread is not None:
+            _stop(thread)
+
+    assert result['response'].status_code == 302
+    added.refresh_from_db()
+    series = Series.objects.get(id=any_added_issue.series_id)
+    assert series.last_issue_id == added.issue_id
+    assert series.issue_count == issue_count + 1
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize('parent', ['series', 'publisher'])
+def test_an_edit_of_a_parent_approved_during_an_add_keeps_its_counts(
+        statistics, parent, any_added_issue, issue_add_values, any_indexer,
+        editor):
+    """
+    An edit of the series, or of its publisher, approved while the add of
+    an issue of the series commits: the edited row keeps the issue count
+    of the add, and the publisher counts the issue once.
+    """
+    series = Series.objects.get(id=any_added_issue.series_id)
+    publisher = Publisher.objects.get(id=series.publisher_id)
+    series_count, publisher_count = series.issue_count, publisher.issue_count
+    added = _added_after(any_added_issue, any_indexer, issue_add_values)
+    if parent == 'series':
+        edit = _change(any_indexer, series, SeriesRevision, CTYPES['series'],
+                       notes='Edited notes')
+    else:
+        edit = _change(any_indexer, publisher, PublisherRevision,
+                       CTYPES['publisher'], notes='Edited notes')
+    approver = _assigned(editor, edit)
+
+    thread = None
+    try:
+        with _held(lambda: _commit(added)):
+            thread, result = _approval_started(approver, edit)
+            wait_for_lock_waits('gcd_%s' % parent)
+    finally:
+        if thread is not None:
+            _stop(thread)
+
+    assert result['response'].status_code == 302
+    added.refresh_from_db()
+    series.refresh_from_db()
+    publisher.refresh_from_db()
+    if parent == 'series':
+        assert series.issue_count == series_count + 1
+        assert series.last_issue_id == added.issue_id
+        assert series.notes == 'Edited notes'
+        assert publisher.issue_count == publisher_count + 1
+    else:
+        assert publisher.issue_count == publisher_count + 1
+        assert publisher.notes == 'Edited notes'
