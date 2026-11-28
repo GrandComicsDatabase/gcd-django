@@ -68,7 +68,9 @@ def _together(*calls):
     """
     Run calls in threads that start together and return their results.
     Fail if one of them is still running after its join, and raise the
-    exception that one of them raised.
+    exception that one of them raised.  If a thread cannot start, the
+    barrier is broken, so that the started ones end, and the error of the
+    start is raised once they have ended.
     """
     barrier = threading.Barrier(len(calls))
     results = [None] * len(calls)
@@ -84,8 +86,15 @@ def _together(*calls):
 
     threads = [threading.Thread(target=run, args=(index, call))
                for index, call in enumerate(calls)]
-    for thread in threads:
-        thread.start()
+    started = []
+    try:
+        for thread in threads:
+            thread.start()
+            started.append(thread)
+    except BaseException:
+        barrier.abort()
+        _joined(started)
+        raise
     for thread in threads:
         thread.join(60)
     assert not any(thread.is_alive() for thread in threads), \
