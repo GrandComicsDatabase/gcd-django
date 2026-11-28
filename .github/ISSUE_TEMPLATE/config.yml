@@ -1,0 +1,13 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Wrong data in a record
+    url: https://errors.comics.org/enter_bug.cgi?product=GCD
+    about: >-
+      Wrong catalogue data goes to the Error Tracker. "Report Information" on
+      an issue page and "let us know" at the foot of a page fill in its
+      address.
+  - name: Security
+    url: https://github.com/GrandComicsDatabase/gcd-django/security
+    about: >-
+      Report a vulnerability privately with "Report a vulnerability", as
+      SECURITY.md describes, never in a public issue.

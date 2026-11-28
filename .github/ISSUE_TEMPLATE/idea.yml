@@ -1,0 +1,23 @@
+name: Idea
+description: A new function or a change to the site.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        The [gcd-tech list](https://groups.google.com/group/gcd-tech/) is the
+        main place for discussion; a larger change is best raised there too.
+  - type: textarea
+    id: need
+    attributes:
+      label: What it would help with
+      description: Who needs it, and what they cannot do today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What the site would do, and on which pages.
+    validations:
+      required: true
