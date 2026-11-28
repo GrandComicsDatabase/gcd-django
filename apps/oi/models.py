@@ -6818,7 +6818,31 @@ class StoryRevision(Revision):
                 setattr(self, credit_type, old_credits)
                 self.save()
 
-    def migrate_single_feature(self, feature):
+    @staticmethod
+    def _whole_feature_names(names, feature):
+        """
+        Keep the names that are the whole text or, for 'Name [x]', the
+        whole Name with a disambiguation beginning with x, which is how
+        the Feature name field reads a bracket.
+        """
+        whole = names.filter(name=feature)
+        name, bracket, rest = feature.partition(' [')
+        if bracket:
+            whole |= names.filter(
+              name=name,
+              feature__disambiguation__istartswith=rest.rstrip(']'))
+        return whole
+
+    def migrate_single_feature(self, feature, translate=True):
+        """
+        Link the one feature that has the text as its whole name.
+
+        A name that only contains the text is not linked: 'Amor' is not
+        'Prins Namor'. With translate, a whole name of another language
+        is linked through its one translation. Returns True if a link was
+        made, None if no name of the series language contains the text,
+        False otherwise.
+        """
         from apps.select.views import FeatureNameAutocomplete
         if self.issue:
             series = self.issue.series
@@ -6827,17 +6851,16 @@ class StoryRevision(Revision):
         self.forwarded = {'language_code': series.language.code,
                           'type': self.type_id}
         self.q = feature
-        feature_name = FeatureNameAutocomplete.get_queryset(
-          self, interactive=False)
-        if feature_name.count() > 1:
-            feature_name = feature_name.filter(name=feature)
+        found = FeatureNameAutocomplete.get_queryset(self, interactive=False)
+        feature_name = self._whole_feature_names(found, feature)
         if feature_name.count() == 1:
             self.feature_name.add(feature_name.get())
             return True
-        if feature_name.count() == 0:
+        if feature_name.count() == 0 and translate:
             self.forwarded = {'type': self.type_id}
-            feature_name = FeatureNameAutocomplete.get_queryset(
-              self, interactive=False)
+            feature_name = self._whole_feature_names(
+              FeatureNameAutocomplete.get_queryset(self, interactive=False),
+              feature)
             if feature_name.count() == 1:
                 feature_other_language = feature_name.get().feature
                 translations = feature_other_language.translations().filter(
@@ -6846,6 +6869,8 @@ class StoryRevision(Revision):
                     self.feature_name.add(translations.get().to_feature
                                                             .official_name())
                     return True
+        if not found.exists():
+            return None
         return False
 
     def migrate_feature(self):
@@ -6857,10 +6882,15 @@ class StoryRevision(Revision):
                 save_feature = feature
                 feature = feature.replace('  ', ' ')
                 migrated = self.migrate_single_feature(feature)
-                if not migrated and feature.find('[') > 1:
-                    feature = feature[:feature.find('[')]
-                    feature = feature.strip()
-                    migrated = self.migrate_single_feature(feature)
+                # Drop the bracketed notes at the end and try once more in
+                # the series language, only if the text with them matched
+                # no name there: 'Toto [Soldino]' is not 'Toto [Rob-Vel]'.
+                start = feature.find('[')
+                notes = re.sub(r'\[[^\]]*\]?', '', feature[start:])
+                if migrated is None and start > 1 and not notes.strip():
+                    feature = feature[:start].strip()
+                    migrated = self.migrate_single_feature(
+                      feature, translate=False)
                 if not migrated:
                     if old_features:
                         old_features += '; ' + save_feature
