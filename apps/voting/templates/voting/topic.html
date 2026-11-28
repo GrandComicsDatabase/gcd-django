@@ -62,7 +62,7 @@ Your current vote{{ votes.count|pluralize }}:
   <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
     <td> {{ vote.name }} </td>
     <td> {{ vote|show_rank:request.user }} </td>
-    <td> {{ vote.text }}</td>
+    <td> {{ vote.text|default:'' }}</td>
   </tr>
             {% endfor %}
 </table>
