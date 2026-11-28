@@ -21,6 +21,12 @@ def validate_reprint_issue_ids(origin_issue_id, target_issue_id):
 class Reprint(GcdLink):
     class Meta:
         app_label = 'gcd'
+        indexes = [
+            models.Index(
+                fields=['origin_issue', 'target_issue', 'id'],
+                name='gcd_reprint_v2_browse_idx',
+            ),
+        ]
 
     origin = models.ForeignKey(Story, on_delete=models.CASCADE,
                                related_name='to_all_reprints', null=True)
