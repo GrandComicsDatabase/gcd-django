@@ -5,11 +5,12 @@ from django.forms.models import inlineformset_factory
 
 from collections import OrderedDict
 
-from dal import autocomplete
+from dal import autocomplete, forward
 
 from apps.gcd.models import Character, Group, CharacterRelationType, \
                             GroupMembership, GroupRelationType, Universe, \
                             StoryCharacter
+from apps.stddata.models import Language
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -418,6 +419,9 @@ class CharacterRelationRevisionForm(forms.ModelForm):
         # help_texts = FEATURE_RELATION_HELP_TEXTS
         labels = {'relation_type': 'Relation', }
 
+    field_order = ['from_character', 'relation_type', 'to_character_language',
+                   'to_character']
+
     from_character = forms.ModelChoiceField(
         queryset=Character.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='character_autocomplete',
@@ -425,11 +429,25 @@ class CharacterRelationRevisionForm(forms.ModelForm):
         label='Character A'
     )
 
+    # only narrows the list of Character B, it is not saved
+    to_character_language = forms.ModelChoiceField(
+        queryset=Language.objects.filter(
+          id__in=Character.objects.filter(deleted=False).values('language')),
+        to_field_name='code',
+        required=False,
+        empty_label='All languages',
+        label='Language of B',
+        help_text='Character B lists only the characters of this language.'
+    )
+
     to_character = forms.ModelChoiceField(
         queryset=Character.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='character_autocomplete',
                                          forward=['language_code',
-                                                  'relation_type'],
+                                                  'relation_type',
+                                                  forward.Field(
+                                                    'to_character_language',
+                                                    'language')],
                                          attrs={'style': 'min-width: 45em'}),
         label='Character B'
     )
