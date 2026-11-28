@@ -5,6 +5,8 @@ from django import template
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
+from django.utils.translation import gettext_noop
+from django.utils.translation import pgettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 import django.urls as urlresolvers
@@ -275,9 +277,25 @@ def __credit_visible(value):
     return value is not None and value != ''
 
 
+# The labels that __label() looks up with _(field.title()), which
+# makemessages cannot read, so they are marked here for the message files.
+CREDIT_LABELS = (
+    gettext_noop('Script'), gettext_noop('Pencils'), gettext_noop('Inks'),
+    gettext_noop('Colors'), gettext_noop('Letters'),
+    gettext_noop('Characters'), gettext_noop('Feature'),
+    gettext_noop('Genre'), gettext_noop('Pages'), gettext_noop('Keywords'),
+    gettext_noop('Synopsis'), gettext_noop('Title'), gettext_noop('Isbn'),
+    gettext_noop('Barcode'),
+)
+
+
 def __label(story, field):
     if field == 'job_number':
         return _('Job Number')
+    elif field == 'editing':
+        # The editor credit; "Editing" alone is the link to the editing
+        # of the database on the front page.
+        return pgettext('credit', 'Editing')
     elif field == 'feature_logo':
         return 'Feature Logo'
     elif field == 'first_line':

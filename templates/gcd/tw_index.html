@@ -97,7 +97,7 @@
           </div>
           <div class="ps-1">
             {% for stat in stats_for_language %}
-              {{ stat.count|intcomma }} {% trans stat.name %}<br>
+              {{ stat.count|intcomma }} {{ stat.name_for_count }}<br>
             {% endfor %}
           </div>
         </div>
@@ -116,7 +116,7 @@
           </div>
           <div class="ps-1">
             {% for stat in stats %}
-              {{ stat.count|intcomma }} {% trans stat.name %}<br>
+              {{ stat.count|intcomma }} {{ stat.name_for_count }}<br>
             {% endfor %}
           </div>
           <div class="label-gcd-blue">

@@ -30,7 +30,7 @@ Statistics by {{ type }}, ordered by number of
     </div>
     <div class="px-2">
     {% for stat in stats_for_object %}
-      {{ stat.count|intcomma }} {% trans stat.name %}<br>
+      {{ stat.count|intcomma }} {{ stat.name_for_count }}<br>
     {% endfor %}
     </div>
   </div>

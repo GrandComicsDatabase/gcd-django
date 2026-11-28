@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.conf import settings
+from django.utils.translation import npgettext_lazy
 from django.contrib.auth.models import User
 
 from apps.stddata.models import Country, Language
@@ -132,6 +133,30 @@ class CountStatsManager(models.Manager):
                                   language=language, country=country)
 
 
+# The values of CountStats.name with their singular and plural, for the
+# message files. The key 'count' makes npgettext_lazy choose the form when
+# the name is formatted with {'count': ...}: see name_for_count(). The
+# context keeps these plural entries apart from a plain entry of the same
+# word, such as the story type 'cover'.
+STAT_NAMES = {
+    'publishers': npgettext_lazy(
+        'statistics', 'publisher', 'publishers', 'count'),
+    'brands': npgettext_lazy('statistics', 'brand', 'brands', 'count'),
+    'indicia publishers': npgettext_lazy(
+        'statistics', 'indicia publisher', 'indicia publishers', 'count'),
+    'series': npgettext_lazy('statistics', 'series', 'series', 'count'),
+    'issues': npgettext_lazy('statistics', 'issue', 'issues', 'count'),
+    'variant issues': npgettext_lazy(
+        'statistics', 'variant issue', 'variant issues', 'count'),
+    'issue indexes': npgettext_lazy(
+        'statistics', 'issue index', 'issue indexes', 'count'),
+    'covers': npgettext_lazy('statistics', 'cover', 'covers', 'count'),
+    'stories': npgettext_lazy('statistics', 'story', 'stories', 'count'),
+    'creators': npgettext_lazy(
+        'statistics', 'creator', 'creators', 'count'),
+}
+
+
 class CountStats(models.Model):
     """
     Store stats from gcd database.
@@ -151,6 +176,12 @@ class CountStats(models.Model):
 
     def __str__(self):
         return self.name + ": " + str(self.count)
+
+    def name_for_count(self):
+        """The name in the language of the page, in the form of the count."""
+        if self.name not in STAT_NAMES:
+            return self.name
+        return STAT_NAMES[self.name] % {'count': self.count}
 
 
 class RecentIndexedIssueManager(models.Manager):
