@@ -43,12 +43,12 @@ def issue_revision(any_added_issue, any_editing_changeset):
 
 
 def _assert_details_left_out(revision):
-    """Check that a revision has none of the details."""
+    """Check that a revision has none of the details, but its universe."""
     for field in ('first_line', 'job_number', 'keywords', 'synopsis', 'notes',
                   'reprint_notes'):
         assert getattr(revision, field) == '', field
     assert not revision.story_arc.exists()
-    assert not revision.universe.exists()
+    assert revision.universe.count() == 1
 
 
 def _assert_job_kept(revision):
@@ -91,8 +91,8 @@ def test_details_are_the_fields_the_option_names():
     from apps.oi.models import STORY_DETAIL_FIELDS
 
     assert STORY_DETAIL_FIELDS == {
-      'first_line', 'job_number', 'story_arc', 'universe', 'keywords',
-      'synopsis', 'notes', 'reprint_notes'}
+      'first_line', 'job_number', 'story_arc', 'keywords', 'synopsis',
+      'notes', 'reprint_notes'}
 
 
 @pytest.mark.django_db

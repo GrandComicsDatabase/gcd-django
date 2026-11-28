@@ -5997,10 +5997,11 @@ def _order_civilian_after_alias(story_characters):
 
 
 # Data of a sequence that a copy can leave out, because it usually belongs
-# to the original only. Credits, feature, characters and type are not here.
+# to the original only. Credits, feature, characters, universe and type are
+# not here: the universe stays, as it does for the characters.
 STORY_DETAIL_FIELDS = frozenset({
-    'first_line', 'job_number', 'story_arc', 'universe', 'keywords',
-    'synopsis', 'notes', 'reprint_notes'})
+    'first_line', 'job_number', 'story_arc', 'keywords', 'synopsis',
+    'notes', 'reprint_notes'})
 
 
 class StoryRevision(Revision):

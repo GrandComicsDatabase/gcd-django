@@ -38,8 +38,8 @@
           <p><label><input type="checkbox" id="copy-all-characters"> Copy characters for all sequences</label></p>
           <p><label>
             <input type="checkbox" id="copy-all-omit-details">
-            Leave out first line, job number, story arcs, universe, keywords,
-            synopsis, notes and reprint notes for all sequences
+            Leave out first line, job number, story arcs, keywords, synopsis,
+            notes and reprint notes for all sequences
           </label></p>
         </fieldset>
       {% endif %}
@@ -63,8 +63,8 @@
             <input type="checkbox" name="omit_story_details_ids"
                    value="{{ row.story.id }}"
                    {% if row.omit_story_details %}checked{% endif %}>
-            Leave out first line, job number, story arcs, universe, keywords,
-            synopsis, notes and reprint notes
+            Leave out first line, job number, story arcs, keywords, synopsis,
+            notes and reprint notes
           </label></p>
           {% with story=row.story preview=1 %}
             {% include "gcd/details/tw_single_story.html" %}
@@ -136,8 +136,8 @@
           </tr>
           <tr>
             <th><label for="omit_story_details">
-              Leave out first line, job number, story arcs, universe, keywords,
-              synopsis, notes and reprint notes:
+              Leave out first line, job number, story arcs, keywords, synopsis,
+              notes and reprint notes:
             </label></th>
             <td>
               <input type="checkbox" name="omit_story_details" value=True
