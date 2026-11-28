@@ -107,8 +107,62 @@ CTYPES = {
     'group_relation': 35,
     'universe': 36,
     'story_arc': 37,
-    'story_arc_relation': 38
+    'story_arc_relation': 38,
+    'bulk': 39
 }
+
+# Revision sets of a 'bulk' changeset, in canonical order.  Parents come
+# first; for sequences the unchanged issue revisions that anchor their
+# issues come before the sequence revisions.
+BULK_REVISION_ORDER = (
+    'publisherrevisions',
+    'indiciapublisherrevisions',
+    'brandgrouprevisions',
+    'brandrevisions',
+    'printerrevisions',
+    'indiciaprinterrevisions',
+    'seriesrevisions',
+    'issuerevisions',
+    'storyrevisions',
+)
+
+# The order of the objects of a set of a 'bulk' changeset on its page, as
+# in their lists: issues as in their series, sequences as in their issues,
+# series by name; any other object by its id.  The id of a series keeps
+# apart two series of one name and year.
+BULK_OBJECT_ORDER = {
+    'seriesrevisions': ('series',),
+    'issuerevisions': ('issue__series', 'issue__series_id',
+                       'issue__sort_code'),
+    'storyrevisions': ('issue__series', 'issue__series_id',
+                       'issue__sort_code', 'sequence_number'),
+}
+
+# Singular and plural names of the objects of a 'bulk' changeset, as in
+# the queues.
+BULK_OBJECT_NAMES = {
+    'publisherrevisions': ('publisher', 'publishers'),
+    'indiciapublisherrevisions': ('indicia / colophon publisher',
+                                  'indicia / colophon publishers'),
+    'brandgrouprevisions': ('brand group', 'brand groups'),
+    'brandrevisions': ('brand emblem', 'brand emblems'),
+    'printerrevisions': ('printer', 'printers'),
+    'indiciaprinterrevisions': ('indicia printer', 'indicia printers'),
+    'seriesrevisions': ('series', 'series'),
+    'issuerevisions': ('issue', 'issues'),
+    'storyrevisions': ('sequence', 'sequences'),
+}
+
+
+def bulk_object_name(revision):
+    """
+    Name of the object of a revision in a 'bulk' changeset: a sequence by
+    its issue and number, any other object as itself.
+    """
+    if revision.source_name == 'story':
+        return '%s sequence %s' % (revision.issue, revision.sequence_number)
+    return str(revision)
+
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['brand'],
@@ -335,6 +389,10 @@ class Changeset(models.Model):
         self._inline_revision = None
 
     def _revision_sets(self):
+        if self.change_type == CTYPES['bulk']:
+            return tuple(self._bulk_revision_set(name)
+                         for name in BULK_REVISION_ORDER)
+
         if self.change_type in [CTYPES['issue'], CTYPES['variant_add'],
                                 CTYPES['two_issues']]:
             return (self.issuerevisions.all(),
@@ -515,6 +573,53 @@ class Changeset(models.Model):
                     self.imagerevisions.all(),
                     self.datasourcerevisions.all())
 
+    def _bulk_revision_set(self, name):
+        """
+        Return the revisions of one set of a 'bulk' changeset, with the
+        objects that their names need.
+        """
+        related = {
+            'seriesrevisions': ('series',),
+            'issuerevisions': ('issue', 'series'),
+            'storyrevisions': ('story', 'issue__series'),
+        }
+        revisions = getattr(self, name).all()
+        if name in related:
+            revisions = revisions.select_related(*related[name])
+        return revisions
+
+    def bulk_target(self):
+        """
+        Return the name and the revisions, in BULK_OBJECT_ORDER, of the
+        set that holds the changed objects of a 'bulk' changeset: the last
+        non-empty set, since earlier sets only hold anchors, such as the
+        issues of changed sequences.  Return (None, None) when every set
+        is empty.
+        """
+        for name in reversed(BULK_REVISION_ORDER):
+            revisions = self._bulk_revision_set(name).order_by(
+              *BULK_OBJECT_ORDER.get(name, ()), 'id')
+            if revisions.exists():
+                return name, revisions
+        return None, None
+
+    def _bulk_name(self):
+        """
+        Name of a 'bulk' changeset: its first changed object and the number
+        of the others.
+        """
+        name, revisions = self.bulk_target()
+        if name is None:
+            return 'Empty bulk change'
+        count = revisions.count()
+        first_name = bulk_object_name(revisions[0])
+        others = count - 1
+        if not others:
+            return first_name
+        singular, plural = BULK_OBJECT_NAMES[name]
+        return '%s and %d other %s' % (first_name, others,
+                                       singular if others == 1 else plural)
+
     @property
     def revisions(self):
         """
@@ -592,6 +697,7 @@ class Changeset(models.Model):
             # TODO check creators re inline
             self.inline() or
             self.change_type in [CTYPES['issue'],
+                                 CTYPES['bulk'],
                                  CTYPES['variant_add'],
                                  CTYPES['two_issues'],
                                  CTYPES['series_bond'],
@@ -606,6 +712,15 @@ class Changeset(models.Model):
             )
         ) and not self.deleted()
 
+    def refuse_manual_edit(self):
+        """
+        Refuse, for a bulk change, an edit of its revisions by hand or the
+        addition of other revisions: only its operations change it.
+        """
+        if self.change_type == CTYPES['bulk']:
+            raise ErrorWithMessage('A bulk change is changed only by its '
+                                   'operations.')
+
     def ordered_issue_revisions(self):
         """
         Used in the display.  Natural revision order must be by timestamp.
@@ -613,6 +728,8 @@ class Changeset(models.Model):
         return self.issuerevisions.order_by('revision_sort_code', 'id')
 
     def queue_name(self):
+        if self.change_type == CTYPES['bulk']:
+            return self._bulk_name()
         if self.change_type in CTYPES_BULK:
             ir_count = self.issuerevisions.count()
             if self.change_type == CTYPES['issue_bulk']:
@@ -657,6 +774,8 @@ class Changeset(models.Model):
             return '[ADDED]'
         elif self.change_type == CTYPES['variant_add']:
             return '[VARIANT + BASE]'
+        elif self.change_type == CTYPES['bulk']:
+            return '[BULK]'
         return next(self.cached_revisions).queue_descriptor()
 
     def changeset_action(self):
@@ -666,7 +785,7 @@ class Changeset(models.Model):
         """
         if self.change_type in [CTYPES['issue_add'], CTYPES['variant_add']]:
             return ACTION_ADD
-        elif self.change_type == CTYPES['issue_bulk']:
+        elif self.change_type in [CTYPES['issue_bulk'], CTYPES['bulk']]:
             return ACTION_MODIFY
         revision = next(self.cached_revisions)
         if revision.deleted:
@@ -703,6 +822,19 @@ class Changeset(models.Model):
             new_state = states.REVIEWING
         return new_state
 
+    def _refuse_unready_bulk(self, action):
+        """
+        Raise ErrorWithMessage if this is a bulk change that its author
+        cannot hand on yet, saying why; action says what cannot be done.
+        """
+        if self.change_type == CTYPES['bulk']:
+            # imported here, as apps.oi.bulk imports this module
+            from apps.oi.bulk import submit_messages
+            messages = submit_messages(self)
+            if messages:
+                raise ErrorWithMessage('This bulk change cannot be %s. %s' %
+                                       (action, ' '.join(messages)))
+
     def submit(self, notes='', delete=False):
         """
         Submit changes for approval.
@@ -716,6 +848,7 @@ class Changeset(models.Model):
            not (delete and self.state == states.UNRESERVED):
             raise ErrorWithMessage(
                   "Only OPEN changes can be submitted for approval.")
+        self._refuse_unready_bulk('submitted')
 
         new_state = self._check_approver()
 
@@ -822,13 +955,20 @@ class Changeset(models.Model):
                              new_state=new_state)
         self.approver = None
         self.state = new_state
-        self.save()
+        if self.change_type == CTYPES['bulk'] and new_state == states.OPEN:
+            # An open bulk change counts its reservation from its last
+            # work, which unassigning it is not.
+            self.save(update_fields=['approver'])
+        else:
+            self.save()
 
     def discuss(self, commenter, notes=''):
         if self.state not in [states.OPEN, states.REVIEWING] or \
            self.approver is None:
             raise ErrorWithMessage(
                   "Only changes with an approver may be discussed.")
+        if self.state == states.OPEN:
+            self._refuse_unready_bulk('discussed')
 
         self.comments.create(commenter=commenter,
                              text=notes,
@@ -858,6 +998,13 @@ class Changeset(models.Model):
            self.approver is None:
             raise ErrorWithMessage(
                   "Only REVIEWING changes with an approver can be approved.")
+
+        if self.change_type == CTYPES['bulk']:
+            # imported here, as apps.oi.bulk imports this module
+            from apps.oi.bulk import approval_refusal
+            refusal = approval_refusal(self)
+            if refusal:
+                raise ErrorWithMessage(refusal)
 
         for revision in self.revisions:
             # TODO rethink the depency handling during committing
@@ -937,7 +1084,12 @@ class Changeset(models.Model):
         to the database.
         """
         self.imps = 0
-        if self.change_type in CTYPES_BULK and self.issuerevisions.count() > 1:
+        if self.change_type == CTYPES['bulk']:
+            # imported here, as apps.oi.bulk imports this module
+            from apps.oi.bulk import changeset_imps
+            self.imps = changeset_imps(self)
+        elif (self.change_type in CTYPES_BULK and
+              self.issuerevisions.count() > 1):
             # Currently, bulk changes are only allowed when the changes
             # are uniform across all revisions in the change.  When we
             # allow non-uniform changes we may need to calculate all of
@@ -1010,7 +1162,8 @@ class Changeset(models.Model):
     def __str__(self):
         if self.inline():
             return str(self.inline_revision())
-        if self.change_type in CTYPES_BULK:
+        if self.change_type in CTYPES_BULK or \
+           self.change_type == CTYPES['bulk']:
             return self.queue_name()
         if self.change_type == CTYPES['issue']:
             return str(self.issuerevisions.all()[0])
@@ -4261,7 +4414,9 @@ class IssueRevision(Revision):
         super(IssueRevision, self).compare_changes(
           compare_revision=compare_revision)
         if not self.deleted and not self.changed['editing']:
-            if self.changeset.change_type == CTYPES['issue_bulk']:
+            # a bulk change without credit revisions keeps the credits
+            if self.changeset.change_type in [CTYPES['issue_bulk'],
+                                              CTYPES['bulk']]:
                 if not self.changeset.issuecreditrevisions.exists():
                     return
             credits = self.issue_credit_revisions.filter(
@@ -6262,7 +6417,12 @@ class StoryRevision(Revision):
     def compare_changes(self, compare_revision=None):
         super(StoryRevision, self).compare_changes(
           compare_revision=compare_revision)
-        for credit_type in CREDIT_TYPES:
+        credit_types = CREDIT_TYPES
+        if self.changeset.change_type == CTYPES['bulk'] and \
+           not self.changeset.storycreditrevisions.exists():
+            # a bulk change without credit revisions keeps the credits
+            credit_types = ()
+        for credit_type in credit_types:
             if not self.deleted and not self.changed[credit_type]:
                 credits = self.story_credit_revisions.filter(
                                credit_type__name=credit_type)

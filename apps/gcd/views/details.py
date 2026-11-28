@@ -203,6 +203,15 @@ def generic_sortable_list(request, items, table, template, context,
                                      'per_page': per_page,
                                      'page': page_number}).configure(table)
     export_format = request.GET.get("_export", None)
+    # Imported here, as apps.oi.views imports this module.
+    from apps.oi import bulk
+    table.bulk_change = (paginator.p.count > 0 and
+                         not getattr(table, 'no_export', False) and
+                         not context.get('no_bulk_edit') and
+                         not context.get('json_download_url') and
+                         bulk.entry_allowed(request.user, items))
+    if export_format == 'bulk' and table.bulk_change:
+        return bulk.start_from_list(request, items)
     if TableExport.is_valid_format(export_format):
         if request.user.is_authenticated:
             exporter = TableExport(export_format, table)

@@ -400,7 +400,8 @@ def test_copy_sequence_starts_at_dedicated_selector(cover):
     request.session = {}
     issue = SimpleNamespace(id=20, changeset_id=10, variant_of=None,
                             issue=object())
-    changeset = SimpleNamespace(indexer=request.user)
+    changeset = SimpleNamespace(indexer=request.user,
+                                refuse_manual_edit=lambda: None)
     with patch('apps.oi.views.IssueRevision.objects.select_for_update'), \
             patch('apps.oi.views.get_object_or_404', return_value=issue), \
             patch('apps.oi.views.Changeset.objects.select_for_update') as locked:
