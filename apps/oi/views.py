@@ -3326,11 +3326,16 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
 
     if 'editing' in selected_fields:
         credits = compare_revision.issue_credit_revisions.exclude(deleted=True)
+        if compare_revision.changeset.change_type == CTYPES['issue_bulk'] and \
+           not compare_revision.changeset.issuecreditrevisions.exists():
+            # A bulk change without credit revisions keeps the credits of
+            # the issue, so those are the credits of its last revision.
+            credits = issue.active_credits
         existing_credits = revision.issue_credit_revisions\
                                    .exclude(deleted=True)
         for credit in credits:
             q_vals = {}
-            for field in credit._get_single_value_fields():
+            for field in IssueCreditRevision._get_single_value_fields():
                 q_vals[field] = getattr(credit, field)
             credit_revision = revision.issue_credit_revisions.filter(
                                        Q(**q_vals), deleted=False)
