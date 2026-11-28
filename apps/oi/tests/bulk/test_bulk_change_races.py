@@ -354,7 +354,7 @@ def test_requests_at_the_same_moment(settings,
               lambda: author.post(reverse('edit_issues_in_bulk') +
                                   '?changeset=%d' % changeset.id,
                                   _pages('40'))))
-            _wait_for_lock_wait('oi_changeset')
+            wait_for_lock_waits('oi_changeset')
             # It waits before it writes anything.
             assert _row_locks('oi_issue_revision') == 0
     finally:
@@ -510,7 +510,7 @@ def test_requests_at_the_same_moment(settings,
             threads.append(_started(
               results, 'sweep', lambda: _repeatable_read(
                 lambda: approver.get(reverse('clear_issues')))))
-            _wait_for_lock_wait('oi_changeset')
+            wait_for_lock_waits('oi_changeset')
     finally:
         _joined(threads)
 
@@ -774,31 +774,6 @@ def _run(results, name, call):
         results[name] = error
     finally:
         connections.close_all()
-
-
-def _lock_waits(cursor, table):
-    """Return how many transactions wait for a lock on a row of table."""
-    cursor.execute(
-      'SELECT COUNT(*) FROM performance_schema.data_lock_waits w '
-      'JOIN performance_schema.data_locks l '
-      'ON l.ENGINE_LOCK_ID = w.REQUESTING_ENGINE_LOCK_ID '
-      'WHERE l.OBJECT_SCHEMA = DATABASE() AND l.OBJECT_NAME = %s', [table])
-    return cursor.fetchone()[0]
-
-
-def _wait_for_lock_wait(table, waiting=1, timeout=30):
-    """
-    Wait until waiting transactions, one by default, wait for a lock on a
-    row of table, as the server shows it.
-    """
-    end = time.monotonic() + timeout
-    with connection.cursor() as cursor:
-        while time.monotonic() < end:
-            if _lock_waits(cursor, table) >= waiting:
-                return
-            time.sleep(0.05)
-    raise AssertionError('fewer than %d transactions wait for %s'
-                         % (waiting, table))
 
 
 def _row_locks(table):
