@@ -645,12 +645,13 @@ def creator_overview(request, creator_id):
 
 def creator_issues(request, creator_id, series_id=None, feature_id=None,
                    character_id=None, group_id=None, publisher_id=None,
-                   country=None, language=None, universe_id=None):
+                   country=None, language=None, universe_id=None,
+                   story_arc_id=None):
     return checklist_by_id(request, creator_id, series_id=series_id,
                            feature_id=feature_id, character_id=character_id,
                            group_id=group_id, publisher_id=publisher_id,
                            country=country, language=language,
-                           universe_id=universe_id)
+                           universe_id=universe_id, story_arc_id=story_arc_id)
 
 
 def creator_edited_issues(request, creator_id, series_id=None,
@@ -744,7 +745,7 @@ def creator_series(request, creator_id, country=None, language=None):
 def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                     feature_id=None, co_creator_id=None, group_id=None,
                     publisher_id=None, edits=False, country=None,
-                    language=None, universe_id=None):
+                    language=None, universe_id=None, story_arc_id=None):
     """
     Provides checklists for a Creator. These include results for all
     CreatorNames and for the overall House Name all uses of that House Name.
@@ -833,6 +834,15 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                                story__deleted=False).distinct()
         heading = 'for creator %s on feature %s' % (creator,
                                                     feature)
+    elif story_arc_id:
+        story_arc = get_gcd_object(StoryArc, story_arc_id)
+        issues = issues.filter(story__credits__creator__creator=creator,
+                               story__type__id__in=story_types,
+                               story__credits__credit_type__id__lt=6,
+                               story__story_arc=story_arc,
+                               story__credits__deleted=False,
+                               story__deleted=False).distinct()
+        heading = 'for creator %s on story arc %s' % (creator, story_arc)
     elif edits:
         heading = 'edited by creator %s' % (creator)
     elif co_creator_id:
@@ -3588,6 +3598,31 @@ def show_story_arc(request, story_arc, preview=False):
                'arc_stories_reprinted': reprinted_stories,
                'preview': preview}
     return render(request, 'gcd/details/tw_story_arc.html', context)
+
+
+def story_arc_creators(request, story_arc_id):
+    """
+    List the creators with a linked credit in the stories of a story arc.
+    """
+    story_arc = get_gcd_object(StoryArc, story_arc_id)
+    creators = Creator.objects.filter(
+      creator_names__storycredit__story__story_arc=story_arc,
+      creator_names__storycredit__story__type__id__in=CORE_TYPES,
+      creator_names__storycredit__deleted=False,
+      creator_names__storycredit__credit_type__id__lt=6).distinct()
+    creators = _annotate_creator_list(creators)
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'creator',
+        'plural_suffix': 's',
+        'heading': 'working on Story Arc %s' % (story_arc)
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = _table_creators_list_or_grid(request, creators, context,
+                                         resolve_name='story_arc',
+                                         object=story_arc)
+    return generic_sortable_list(request, creators, table, template, context)
 
 
 def story_arc_relation(request, story_arc_relation_id):
